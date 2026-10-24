@@ -4,12 +4,18 @@
 
 | 文档 | 内容 | 什么时候看 |
 |---|---|---|
+| [USAGE.md](USAGE.md) | 安装、TMDB 配置、资源记录、备份与快捷键 | 首次使用应用 |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
+| [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |
+| [QUARK-FOLDERS.md](QUARK-FOLDERS.md) | 官方工具授权、目录读取配置与待验收边界 | 连接指定夸克文件夹 |
 | [REQUIREMENTS.md](REQUIREMENTS.md) | 产品范围、功能要求、数据与安全要求、体验要求、验收标准（含状态标记） | 判断某个功能该不该做、是否已完成 |
 | [DESIGN.md](DESIGN.md) | 视觉令牌、排版规则、PS5 式聚焦交互、动效、可访问性、组件约定 | 改界面之前 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 分层、IPC 清单、数据库结构与迁移、备份恢复、安全模型、目录树 | 改数据层/主进程之前 |
 | [VERIFICATION.md](VERIFICATION.md) | 构建与测试命令、用例与需求的对应关系、截图清单、已知限制 | 交付前、排查回归 |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | 安装报错、打包失败、TEMP 不可用、DNS 污染、数据库异常的处理步骤 | 装不上 / 打包失败时 |
 | [AUDIT-2026-10-24.md](AUDIT-2026-10-24.md) | 最近一次前端审计：发现、修复、证据 | 想了解为什么这样写 |
+| [REPAIRS-2026-10-24.md](REPAIRS-2026-10-24.md) | 持续修复、视觉调整与实际验证证据 | 跟踪最近修改 |
+| [HANDOFF-HISTORY.md](HANDOFF-HISTORY.md) | 此前 DSH 交付与产物记录，明确标记为历史结果 | 查阅交接历史 |
 
 ## 维护约定
 
@@ -20,12 +26,13 @@
 
 ## 当前状态（2026-10-24）
 
-| 项目 | 值 |
+| 项目 | 状态 |
 |---|---|
-| 版本 | 1.0.0 |
-| 数据库 schema | v2 |
-| 自动化测试 | 4 个文件 / 49 个用例，全部通过 |
-| 安装包 | `release/My-Cinema-1.0.0-Setup.exe`（115.59 MB） |
-| 免安装版 | `release/My-Cinema-1.0.0-portable-win64.zip`（161.83 MB） |
-| 界面截图 | `artifacts/screenshots/` 共 16 张 |
-| 未验证项 | Electron 窗口启动、TMDB 带 Key 的在线搜索、安装器静默安装（见 VERIFICATION.md） |
+| 版本 / 数据库 | 1.0.0 / schema v2 |
+| 自动化测试 | 最近一次业务测试：8 个文件、82 项通过 |
+| 构建与界面 | 最近一次构建通过；Linux 真实 Electron 无显示器诊断模式检查通过 |
+| 当前截图 | [界面预览](GALLERY.md)，与最近一次字体调整一致 |
+| Windows 发行产物 | 本轮未重新打包；尺寸与此前交付结果见[历史记录](HANDOFF-HISTORY.md) |
+| 待验收 | Windows 安装后的完整桌面、字体与缩放；真实 TMDB 在线链路；夸克真实账号目录读取 |
+
+详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

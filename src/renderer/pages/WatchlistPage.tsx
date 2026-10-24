@@ -7,7 +7,9 @@ import { useToast } from '../lib/toast';
 import { useAsyncData } from '../lib/useAsync';
 import { EmptyState, ErrorState, SkeletonGrid } from '../components/primitives';
 import { Icon } from '../components/icons';
-import { formatDate, imageUrl, statusLabel } from '../lib/format';
+import { PageHeading } from '../components/PageHeading';
+import { PosterImage } from '../components/PosterImage';
+import { formatDate, statusLabel } from '../lib/format';
 
 const SORT_OPTIONS: Array<{ value: LibrarySort; label: string }> = [
   { value: 'collected_desc', label: '最近收藏' },
@@ -45,12 +47,7 @@ export function WatchlistPage() {
 
   return (
     <>
-      <div className="section-head">
-        <h1 className="section-title" style={{ fontSize: 22 }}>
-          想看
-        </h1>
-        <span className="section-sub">{entries.loading ? '…' : `${list.length} 部待看`}</span>
-        <span className="spacer" />
+      <PageHeading title="想看清单" eyebrow="THE WATCHLIST" description={entries.loading ? '正在读取想看清单…' : entries.error ? '清单暂时无法读取。' : `${list.length} 部作品，留给下一次观影。`}>
         <select
           className="select"
           style={{ width: 'auto' }}
@@ -64,7 +61,7 @@ export function WatchlistPage() {
             </option>
           ))}
         </select>
-      </div>
+      </PageHeading>
 
       {entries.loading && !entries.data ? (
         <SkeletonGrid count={6} />
@@ -81,13 +78,12 @@ export function WatchlistPage() {
           </Link>
         </EmptyState>
       ) : (
-        <div className="row-list">
-          {list.map((entry) => (
+        <div className="row-list watchlist-list">
+          {list.map((entry, index) => (
             <div key={entry.id} className="row-card">
+              <span className="watchlist-number">{String(index + 1).padStart(2, '0')}</span>
               <Link to={`/film/${entry.film.id}`} className="row-poster">
-                {imageUrl(entry.film.posterPath) ? (
-                  <img src={imageUrl(entry.film.posterPath) as string} alt="" loading="lazy" />
-                ) : null}
+                <PosterImage film={entry.film} />
               </Link>
               <div className="row-main">
                 <Link to={`/film/${entry.film.id}`} className="row-title">
@@ -111,7 +107,7 @@ export function WatchlistPage() {
                   disabled={busyId === entry.id}
                   onClick={() => void setStatus(entry.id, 'watching', entry.film.title)}
                 >
-                  开始观看
+                  标记在看
                 </button>
                 <button
                   type="button"

@@ -31,8 +31,8 @@ export function CollectionDetailPage() {
   }, [pickerOpen]);
 
   if (!collectionId) return null;
-  if (detail.loading && !detail.data) return <LoadingRow label="正在读取专题…" />;
-  if (detail.error) return <ErrorState message={detail.error} onRetry={detail.reload} />;
+  if (detail.loading && !detail.data) return <div className="cinema-status"><LoadingRow label="正在读取专题…" /></div>;
+  if (detail.error) return <div className="cinema-status"><ErrorState message={detail.error} onRetry={detail.reload} /></div>;
   if (!detail.data) return null;
 
   const { collection, entries } = detail.data;

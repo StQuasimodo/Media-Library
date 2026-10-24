@@ -102,6 +102,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     assert.equal(metrics.pageOverflow, false, `${name}: horizontal page overflow`);
     assert.equal(metrics.brokenImages, 0, `${name}: broken images`);
     assert.equal(metrics.topbarTop, 0, `${name}: navigation moved out of view`);
+    assert.equal(await js("document.querySelector('.sidebar') === null && document.querySelectorAll('nav[aria-label=\"主导航\"]').length === 1"), true, `${name}: shared cinema navigation`);
     if (await js("!!document.querySelector('.home')")) {
       assert.equal(await js("document.querySelector('.sidebar') === null"), true, 'home must use the cinema navigation');
       if (await js("document.querySelector('.page').scrollTop === 0")) {
@@ -148,11 +149,50 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   assert.equal(await js("document.querySelector('.page').scrollTop"), 0);
   checks.push('route change resets page scroll');
   await shot('03-library');
+  await js(`(() => {
+    const input = document.querySelector('[aria-label="搜索影视库"]');
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Matrix');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await waitFor("document.querySelector('.result-count')?.textContent === '1 部' && document.querySelector('.poster-title')?.textContent === '黑客帝国'");
+  await js("document.querySelector('.active-filters button').click()");
+  await waitFor("document.querySelector('.result-count')?.textContent === '3 部'");
+  await js(`(() => {
+    const select = document.querySelector('[aria-label="按年份筛选"]');
+    select.value = '2001'; select.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`);
+  await waitFor("document.querySelector('.result-count')?.textContent === '1 部' && document.querySelector('.poster-title')?.textContent === '没有剧照的收藏'");
+  await js("document.querySelector('.active-filters button').click()");
+  await waitFor("document.querySelector('.result-count')?.textContent === '3 部'");
+  checks.push('library search, year filter and clear through real UI');
+  await shot('library-1024', 1024, 680);
+  win.setContentSize(1440, 900);
   await route(`/film/${data.films[0].film.id}`, "!!document.querySelector('.film-title')");
   assert.equal(await js("document.querySelector('.film-section-head')?.textContent.includes('我的记录')"), true);
   await shot('04-film');
+  await js("document.querySelector('.film-tools summary').click()");
+  await waitFor("document.querySelector('.film-tools').open");
+  await js("[...document.querySelectorAll('.film-tools button')].find(b=>b.textContent.includes('编辑资料')).click()");
+  await waitFor("!!document.querySelector('.modal')");
+  await js("[...document.querySelectorAll('.modal button')].find(b=>b.textContent.trim()==='取消').click()");
+  await waitFor("!document.querySelector('.modal')");
+  await js("document.querySelector('.film-tools').open = false; document.querySelector('.cinema-primary').click()");
+  await waitFor("document.querySelector('.page').scrollTop > 0");
+  await delay(550);
+  const resourceTop = await js("document.querySelector('#resources').getBoundingClientRect().top");
+  assert.ok(resourceTop >= 88 && resourceTop < 900, 'resource shortcut must leave the heading visible below navigation');
+  checks.push('film more-actions edit dialog and resource navigation');
+  await js("document.querySelector('.page').scrollTo({top:0,behavior:'instant'})");
+  await shot('film-1024', 1024, 680);
+  win.setContentSize(1440, 900);
   await route('/collections', "!!document.querySelector('.collection-grid')");
   await shot('05-collections');
+  await js("document.querySelector('.collection-actions button').click()");
+  await waitFor("!!document.querySelector('.modal')");
+  assert.equal(await js("location.hash"), '#/collections', 'edition edit must not follow the cover link');
+  await js("[...document.querySelectorAll('.modal button')].find(b=>b.textContent.trim()==='取消').click()");
+  await waitFor("!document.querySelector('.modal')");
+  checks.push('edition edit controls do not navigate');
   await route(`/collections/${data.collection.id}`, "!!document.querySelector('.collection-stage-title')");
   assert.equal(await js("document.querySelectorAll('.collection-film').length"), 2);
   await shot('06-collection');
@@ -170,6 +210,17 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   await shot('08-collection-empty');
   await route(`/film/${data.missing.film.id}`, `document.querySelector('.film-title')?.textContent === ${JSON.stringify(data.missing.film.title)}`);
   await shot('07-film-no-art');
+  await route('/watchlist', "document.querySelectorAll('.watchlist-list .row-card').length === 3");
+  await shot('12-watchlist');
+  await shot('watchlist-1024', 1024, 680);
+  win.setContentSize(1440, 900);
+  const markedEntry = await js("document.querySelector('.watchlist-list .row-title').textContent");
+  await js("document.querySelector('.watchlist-list .row-actions button').click()");
+  await waitFor("document.querySelectorAll('.watchlist-list .row-card').length === 2");
+  assert.equal(await js(`window.cinema.library.list({watchStatus:'watching'}).then(items=>items.some(e=>e.film.title===${JSON.stringify(markedEntry)}))`), true);
+  checks.push('watchlist status update persists through real IPC');
+  await route('/settings', "!!document.querySelector('.settings-layout')");
+  await shot('13-settings');
   await route('/settings#quark', "!!document.querySelector('#quark')");
   assert.equal(await js("location.hash.startsWith('#/settings')"), true);
   assert.equal(await js("document.querySelector('.page').scrollTop > 0"), true, 'settings anchor must survive page scroll reset');
@@ -211,4 +262,5 @@ seed().then((data) => {
   // Load the real production entry after selecting the disposable userData.
   require(join(root, 'dist-electron', 'main.cjs'));
 }).catch((error) => { console.error(error); app.exit(1); });
-setTimeout(() => { console.error('[desktop-smoke] timeout'); app.exit(1); }, 45_000).unref();
+// Includes multi-size captures and functional checks across all seven pages.
+setTimeout(() => { console.error('[desktop-smoke] timeout'); app.exit(1); }, 90_000).unref();

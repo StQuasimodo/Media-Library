@@ -6,13 +6,13 @@
 
 ![当前开发版首页](artifacts/review-2026-10-24/home-redesign.png)
 
-首页已按“优先去掉管理后台骨架”的反馈重做：无侧栏、整窗电影背景、顶部悬浮导航、上方焦点轨道和下方电影信息。影视库等管理页仍保留原布局。
+首页已按“优先去掉管理后台骨架”的反馈重做：无侧栏、整窗电影背景、顶部悬浮导航、上方焦点轨道和下方电影信息。影视库、详情、专题、想看与设置也已统一顶部导航，移除固定侧栏；保留筛选、编辑及资源管理能力。
 
 [上一版首页](artifacts/review-2026-10-24/01-home.png) · [切换焦点](artifacts/review-2026-10-24/home-redesign-focus.png) · [首屏之后](artifacts/review-2026-10-24/home-redesign-curation.png) · [1024窗口](artifacts/review-2026-10-24/home-redesign-1024.png) · [空收藏](artifacts/review-2026-10-24/home-redesign-empty.png)
 
 当前开发版截图来自 Linux 无显示器模式下的真实 Electron 应用，使用独立测试数据；夸克清单来自测试工具，不代表真实账号已接通。
 
-[影视详情](artifacts/review-2026-10-24/04-film.png) · [专题详情](artifacts/review-2026-10-24/06-collection.png) · [夸克文件夹界面](artifacts/review-2026-10-24/09-quark-folder.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
+[影视库](artifacts/review-2026-10-24/gallery-library.png) · [影视详情](artifacts/review-2026-10-24/gallery-film.png) · [专题](artifacts/review-2026-10-24/gallery-collections.png) · [想看](artifacts/review-2026-10-24/gallery-watchlist.png) · [专题详情](artifacts/review-2026-10-24/gallery-edition.png) · [夸克文件夹界面](artifacts/review-2026-10-24/09-quark-folder.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
 
 ---
 
@@ -39,7 +39,7 @@
 
 **首页（沉浸式主视觉 + 聚焦轨道）**
 
-- 首页使用独立沉浸外壳：不显示侧栏；背景铺满整个首屏，导航叠在画面上，短窗口调整焦点海报尺寸以保留首要操作。
+- 全应用统一顶部导航；首页采用沉浸模式：背景铺满整个首屏，导航叠在画面上，短窗口调整焦点海报尺寸以保留首要操作。
 - 主视觉上方是一条横向**聚焦轨道**：鼠标悬停或键盘方向键切换选中项时，背景图交叉淡入、标题 / 原名 / 年份 / 时长 / 评分 / 简介同步更新，页面不发生重排。
 - 固定的横向槽位里，选中海报更大、浅色细轮廓；键盘焦点使用冰蓝色。标题、状态与元信息在画面下部展示。轨道只滚动自身，不把整页向上拉。
 - 背景切换只使用本地缓存（`mycinema://`），切换前预解码目标图，避免闪烁与重复请求；减少动效时改为直接切换。
@@ -47,15 +47,15 @@
 
 **详情页（电影主视觉优先）**
 
-- 顶部大幅背景图 + 海报 + 标题叠加在渐变上，主操作只有两个（编辑收藏信息、加入专题），其余（刷新资料 / 编辑资料 / 移除）收敛为图标按钮。
+- 顶部大幅背景图 + 海报 + 标题叠加在渐变上，首要操作为查看资源，编辑记录与加入专题为次要操作；刷新资料 / 编辑资料 / 移除收拢在「更多操作」中。
 - 下方以细分隔线组织简介、我的记录、夸克资源；右侧为评分、观看状态、专题与资料信息，不使用厚重卡片容器。
 
-**导航与材质**：首页无侧栏，顶部导航覆盖在背景上；向下浏览专题时导航底色变实以避免文字重叠。管理页面保留常规导航。首页主操作用米白色，冰蓝主要用于键盘焦点。
+**导航与材质**：全应用无固定侧栏；首页、电影和专题详情的顶部导航覆盖在背景上，滚动后底色变实；列表和设置采用实色顶栏。首页主操作用米白色，冰蓝主要用于键盘焦点。
 
 | | |
 |---|---|
 | ![首页](artifacts/review-2026-10-24/home-redesign.png) | ![切换聚焦](artifacts/review-2026-10-24/home-redesign-focus.png) |
-| ![详情页](artifacts/screenshots/03-film-detail.png) | ![空状态](artifacts/screenshots/11-empty-home.png) |
+| ![详情页](artifacts/review-2026-10-24/gallery-film.png) | ![空状态](artifacts/screenshots/11-empty-home.png) |
 
 ---
 
@@ -313,7 +313,9 @@ docs/                   REQUIREMENTS / DESIGN / ARCHITECTURE / VERIFICATION / AU
 
 ---
 
-## 十三、验收记录（本次交付）
+## 十三、此前 DSH 交付记录（历史结果）
+
+以下表格记录此前交付，不代表当前工作区重跑结果。当前 Linux 云环境：82 个测试、完整构建及真实 Electron（无显示器诊断模式）检查通过，详见[本轮修复记录](docs/REPAIRS-2026-10-24.md)。Windows 完整桌面与在线 TMDB 链路仍待验收。
 
 | 检查项 | 结果 |
 |---|---|
@@ -329,7 +331,7 @@ docs/                   REQUIREMENTS / DESIGN / ARCHITECTURE / VERIFICATION / AU
 
 ## 十四、已知限制
 
-1. **本机无法创建 Electron 窗口**：`electron.exe` 在 `BrowserWindow` 创建阶段直接崩溃（`STATUS_BREAKPOINT` / `ACCESS_VIOLATION`；已尝试 `--no-sandbox`、`--disable-gpu`、`--single-process`、关闭硬件加速、offscreen，均无效），而 `electron --version`（Node 模式）正常。因此界面验证改用「真实构建产物 + 真实服务层 + 无头 Chromium」完成（第九节）。**安装包本身的窗口行为仍需在正常 Windows 桌面会话中双击验证。**
+1. **此前 Windows 环境无法创建 Electron 窗口**：`electron.exe` 在 `BrowserWindow` 创建阶段直接崩溃（`STATUS_BREAKPOINT` / `ACCESS_VIOLATION`；已尝试 `--no-sandbox`、`--disable-gpu`、`--single-process`、关闭硬件加速、offscreen，均无效），而 `electron --version`（Node 模式）正常。因此界面验证改用「真实构建产物 + 真实服务层 + 无头 Chromium」完成（第九节）。**安装包本身的窗口行为仍需在正常 Windows 桌面会话中双击验证。**
 2. **未使用真实 TMDB Key 做在线搜索验证**：环境内没有可用 Key。已验证的是：真实请求可到达 `api.tmdb.org`（未带 Key 返回 401，并正确映射为「API Key 无效」）、超时 / 限流 / 无结果 / 镜像回退等分支均有测试覆盖。填入 Key 后的成功链路需用户首次使用时确认。未配置 Key 时应用完整可用（手动录入 + 全部本地功能）。
 3. 仅支持 Windows x64；无自动更新服务（个人自用，手动覆盖安装即可，数据保留在 userData）。
 4. JSON 导出为单向归档格式，暂不支持回灌导入（恢复请用数据库备份）。

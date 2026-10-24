@@ -7,6 +7,7 @@ import { useAsyncData } from '../lib/useAsync';
 import { CollectionCard } from '../components/CollectionCard';
 import { ConfirmDialog, EmptyState, ErrorState, Field, Modal } from '../components/primitives';
 import { Icon } from '../components/icons';
+import { PageHeading } from '../components/PageHeading';
 
 export function CollectionsPage({ onOpenImport }: { onOpenImport: () => void }) {
   const { version, invalidate } = useAppState();
@@ -80,17 +81,9 @@ export function CollectionsPage({ onOpenImport }: { onOpenImport: () => void }) 
 
   return (
     <>
-      <div className="section-head">
-        <h1 className="section-title" style={{ fontSize: 22 }}>
-          专题
-        </h1>
-        <span className="section-sub">用线索把收藏重新编排</span>
-        <span className="spacer" />
-        <button type="button" className="btn btn-primary" onClick={openCreate}>
-          <Icon name="plus" size={15} />
-          新建专题
-        </button>
-      </div>
+      <PageHeading title="我的专题" eyebrow="PERSONAL EDITIONS" description="沿着导演、情绪或一段记忆，重新编排收藏。">
+        <button type="button" className="btn btn-secondary" onClick={openCreate}><Icon name="plus" size={14} /> 新建专题</button>
+      </PageHeading>
 
       {collections.loading && !collections.data ? (
         <div className="collection-grid">

@@ -63,8 +63,8 @@ export function FilmDetailPage() {
   }, [searchParams, detail.data]);
 
   if (!filmId) return null;
-  if (detail.loading && !detail.data) return <LoadingRow label="正在读取影视资料…" />;
-  if (detail.error) return <ErrorState message={detail.error} onRetry={detail.reload} />;
+  if (detail.loading && !detail.data) return <div className="cinema-status"><LoadingRow label="正在读取影视资料…" /></div>;
+  if (detail.error) return <div className="cinema-status"><ErrorState message={detail.error} onRetry={detail.reload} /></div>;
   if (!detail.data) return null;
 
   const { film, entry, resources } = detail.data;
@@ -150,6 +150,7 @@ export function FilmDetailPage() {
       <section className={`film-stage${backdrop || poster ? '' : ' no-art'}`}>
         <HeroBackdrop src={backdrop} posterSrc={poster} />
         <div className="film-stage-scrim" />
+        <Link to="/library" className="stage-back"><Icon name="chevronLeft" size={13} /> 返回影视库</Link>
 
         <div className="film-stage-inner">
           <div className="film-poster">
@@ -184,14 +185,18 @@ export function FilmDetailPage() {
               ) : null}
             </div>
 
+            {entry.favoriteReason ? <blockquote className="film-dedication"><span className="visually-hidden">收藏理由：</span>{entry.favoriteReason}</blockquote> : null}
             <div className="film-actions">
+              <button type="button" className="btn cinema-primary" onClick={() => resourcesRef.current?.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'instant' : 'smooth' })}>
+                查看资源 <Icon name="chevronRight" size={14} />
+              </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setEditEntryOpen(true)}
               >
                 <Icon name="star" size={15} />
-                编辑收藏信息
+                编辑记录
               </button>
               <button
                 type="button"
@@ -202,39 +207,44 @@ export function FilmDetailPage() {
                 加入专题
               </button>
 
-              <div className="film-action-group">
-                {film.metadataSource === 'tmdb' ? (
+              <details className="film-tools" onKeyDown={(event) => {
+                if (event.key === 'Escape') { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
+              }}>
+                <summary>更多操作 <Icon name="chevronRight" size={12} /></summary>
+                <div className="film-tools-menu">
+                  {film.metadataSource === 'tmdb' ? (
+                    <button
+                      type="button"
+                      className="btn btn-icon"
+                      title="从 TMDB 刷新资料"
+                      aria-label="从 TMDB 刷新资料"
+                      onClick={refreshMetadata}
+                      disabled={refreshing}
+                    >
+                      {refreshing ? <span className="spinner" /> : <Icon name="refresh" size={16} />} 刷新资料
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="btn btn-icon"
-                    title="从 TMDB 刷新资料"
-                    aria-label="从 TMDB 刷新资料"
-                    onClick={refreshMetadata}
-                    disabled={refreshing}
+                    title="编辑影视资料"
+                    aria-label="编辑影视资料"
+                    onClick={() => setEditFilmOpen(true)}
                   >
-                    {refreshing ? <span className="spinner" /> : <Icon name="refresh" size={16} />}
+                    <Icon name="edit" size={16} /> 编辑资料
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="btn btn-icon"
-                  title="编辑影视资料"
-                  aria-label="编辑影视资料"
-                  onClick={() => setEditFilmOpen(true)}
-                >
-                  <Icon name="edit" size={16} />
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-icon"
-                  title="从收藏库移除"
-                  aria-label="从收藏库移除"
-                  onClick={() => setRemoveFilmOpen(true)}
-                  style={{ color: 'rgba(226, 119, 111, 0.9)' }}
-                >
-                  <Icon name="trash" size={16} />
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    className="btn btn-icon"
+                    title="从收藏库移除"
+                    aria-label="从收藏库移除"
+                    onClick={() => setRemoveFilmOpen(true)}
+                    style={{ color: 'rgba(226, 119, 111, 0.9)' }}
+                  >
+                    <Icon name="trash" size={16} /> 移除收藏
+                  </button>
+                </div>
+              </details>
             </div>
           </div>
         </div>

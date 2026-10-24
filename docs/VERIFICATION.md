@@ -4,7 +4,7 @@
 
 ```powershell
 pnpm typecheck              # tsc --noEmit
-pnpm test                   # vitest run（4 文件 / 49 用例）
+pnpm test                   # vitest run（8 文件 / 82 用例）
 pnpm build                  # 类型检查 + 主进程打包 + 渲染层构建
 pnpm package                # 安装包 + 免安装 zip（自动处理 TMP / PATH / 镜像）
 pnpm package:dir            # 只生成免安装目录 release/win-unpacked
@@ -95,15 +95,17 @@ powershell -File scripts/check-environment.ps1   # 临时目录 / 数据目录 /
 
 ## 5. 当前验证结论
 
+2026-10-24 Linux 云环境重新验证；此前 Windows 打包结果不视为本轮重新构建。真实 Electron 截图使用独立 SQLite 夹具、本地缓存图片和显式诊断参数，详见 [修复记录](REPAIRS-2026-10-24.md)。
+
 | 检查 | 结果 |
 |---|---|
 | `tsc --noEmit` | 通过，0 错误 |
-| `vitest run` | 49 / 49 通过 |
+| `vitest run` | 82 / 82 通过 |
 | `build.mjs` | 通过 |
-| `electron-builder --win` | 通过，安装包已生成 |
-| 安装包内容核对 | 通过 |
-| 截图巡检 | 16 张，主视觉/聚焦/空态/无图/宽屏均已检查 |
-| Electron 窗口启动 | **未验证**（环境限制） |
+| `electron-builder --win` | 本轮未执行；历史报告通过 |
+| 安装包内容核对 | 本轮未执行；历史报告通过 |
+| 截图巡检 | 当前真实 Electron 截图覆盖首页、影视库、详情、专题、想看及设置，含小窗口、空态和无图 |
+| Electron 窗口启动 | Linux 无显示器诊断模式通过；Windows 交互桌面待验收 |
 | TMDB 带 Key 的在线搜索 | **未验证**（无凭据） |
 | 安装器静默安装 | **未验证**：本会话无交互桌面，`Setup.exe /S` 在初始化阶段不返回（已确认未写入注册表 / 开始菜单 / 安装目录，无残留）。免安装 zip 已核对结构完整（含 `My Cinema.exe`、`app.asar`、better-sqlite3 原生二进制） |
 
@@ -111,7 +113,7 @@ powershell -File scripts/check-environment.ps1   # 临时目录 / 数据目录 /
 
 ## 6. 已知限制
 
-1. Electron 窗口无法在本机创建；安装包需在正常 Windows 桌面会话中双击验证。
+1. Linux 已运行真实 Electron BrowserWindow；Windows 安装后的交互桌面、字体与缩放仍需验收。
    - 若双击安装包报 `error writing temporary file`，是 NSIS 无法写入 `%TEMP%`：运行 `scripts/check-environment.ps1` 或改用免安装 zip。应用自身已把 Chromium 临时目录改到 `%APPDATA%\My Cinema\tmp`，不受该问题影响。
 2. 没有可用 TMDB API Key：只验证了请求可达与 401 错误映射，未验证成功搜索。
 3. 仅 Windows x64；无自动更新。

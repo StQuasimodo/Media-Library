@@ -8,6 +8,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/pages.css';
+import './styles/gallery.css';
 import './styles/home.css';
 
 const container = document.getElementById('root');

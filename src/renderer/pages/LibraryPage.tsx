@@ -4,8 +4,9 @@ import { api } from '../lib/api';
 import { useAppState } from '../lib/appState';
 import { useAsyncData, useDebounced } from '../lib/useAsync';
 import { consumeSearchFocus } from '../lib/shortcuts';
-import { AddPosterTile, EmptyState, ErrorState, PosterCard, SkeletonGrid } from '../components/primitives';
+import { EmptyState, ErrorState, PosterCard, SkeletonGrid } from '../components/primitives';
 import { Icon } from '../components/icons';
+import { PageHeading } from '../components/PageHeading';
 
 const SORT_OPTIONS: Array<{ value: LibrarySort; label: string }> = [
   { value: 'collected_desc', label: '最近收藏' },
@@ -72,7 +73,10 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
 
   return (
     <>
-      <div className="toolbar">
+      <PageHeading title="全部收藏" eyebrow="THE COLLECTION" description="电影、剧集，以及留给自己的观影记录。">
+        <button type="button" className="btn btn-secondary" onClick={onOpenImport}><Icon name="plus" size={14} /> 添加作品</button>
+      </PageHeading>
+      <div className="toolbar library-toolbar">
         <div className="search-field">
           <span className="search-icon">
             <Icon name="search" size={15} />
@@ -143,10 +147,7 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
 
         <span className="toolbar-spacer" />
         <span className="result-count">{entries.loading ? '…' : `${list.length} 部`}</span>
-        <button type="button" className="btn btn-primary" onClick={onOpenImport}>
-          <Icon name="plus" size={15} />
-          添加作品
-        </button>
+
       </div>
 
       {hasFilters ? (
@@ -212,7 +213,6 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
           {list.map((entry) => (
             <PosterCard key={entry.id} entry={entry} compact={compact} />
           ))}
-          {!hasFilters ? <AddPosterTile onClick={onOpenImport} label="添加作品" /> : null}
         </div>
       )}
     </>

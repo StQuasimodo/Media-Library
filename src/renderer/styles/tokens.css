@@ -48,8 +48,9 @@
 
   /* Type */
   --font-sans: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei",
-    system-ui, -apple-system, sans-serif;
-  --font-display: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    "PingFang SC", "Noto Sans CJK SC", system-ui, -apple-system, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei",
+    "PingFang SC", "Noto Sans CJK SC", system-ui, -apple-system, sans-serif;
   --font-mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
 
   --text-xs: 11px;

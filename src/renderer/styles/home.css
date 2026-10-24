@@ -91,8 +91,8 @@
 .home .hero-eyebrow-sep { background: rgba(233, 236, 242, .3); }
 .home .hero-title {
   max-width: 780px;
-  font-family: 'Noto Serif CJK SC', 'Songti SC', 'STSong', 'SimSun', serif;
-  font-size: clamp(42px, 4.7vw, 80px);
+  font-family: var(--font-display);
+  font-size: clamp(40px, 4.4vw, 74px);
   font-weight: 500;
   line-height: 1.18;
   letter-spacing: -.025em;
@@ -103,7 +103,7 @@
   font-family: var(--font-sans);
   font-style: normal;
   font-size: 11px;
-  letter-spacing: .18em;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: rgba(233, 236, 242, .6);
 }
@@ -140,7 +140,7 @@
 .home-curation { padding: 64px var(--cinema-gutter) 80px; background: var(--bg-space); scroll-margin-top: 88px; }
 .home-curation .track-section { margin-top: 64px; }
 .home-curation .track-section:first-child { margin-top: 0; }
-.home-curation .section-title { font-family: 'Noto Serif CJK SC', 'Songti SC', 'SimSun', serif; font-size: 26px; font-weight: 500; }
+.home-curation .section-title { font-family: var(--font-display); font-size: 26px; font-weight: 500; }
 .home-curation .section-head { margin-bottom: 24px; }
 .home-curation .track-item.is-collection { flex-basis: 340px; }
 .home-curation .collection-card { background: transparent; }
@@ -149,7 +149,7 @@
 .home-curation .collection-name { font-size: 18px; font-weight: 500; }
 .home-curation .collection-count { margin-top: 16px; font-size: 10px; letter-spacing: .1em; }
 .home .hero-stage.is-empty .hero-stage-inner { padding-bottom: 88px; }
-.home .hero-empty-title { max-width: 900px; font-family: 'Noto Serif CJK SC', 'Songti SC', 'STSong', 'SimSun', serif; font-size: clamp(40px, 4.7vw, 76px); font-weight: 400; line-height: 1.4; }
+.home .hero-empty-title { max-width: 900px; font-family: var(--font-display); font-size: clamp(38px, 4.4vw, 68px); font-weight: 500; line-height: 1.4; }
 .home .hero-copy-empty { margin: auto 0; }
 .home .hero-stage.is-empty { background: linear-gradient(125deg, #24272b, #14171b 60%, #101216); }
 .home-curation .home-empty { margin: 0; }

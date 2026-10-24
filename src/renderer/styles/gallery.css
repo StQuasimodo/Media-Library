@@ -2,7 +2,6 @@
 .app-shell {
   --cinema-gutter: clamp(32px, 5vw, 88px);
   --content-pad: var(--cinema-gutter);
-  --font-editorial: 'Noto Serif CJK SC', 'Songti SC', 'STSong', 'SimSun', serif;
   display: block;
 }
 .main { position: relative; height: 100%; background: var(--bg-space); }
@@ -36,8 +35,9 @@
   flex: none;
   color: #f3f1ed;
   font-family: var(--font-display);
-  font-size: 24px;
-  letter-spacing: -.04em;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -.035em;
 }
 .cinema-brand-sub {
   font-family: var(--font-sans);
@@ -84,8 +84,8 @@
 
 .gallery-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; margin: 12px 0 40px; }
 .gallery-heading-copy { min-width: 0; }
-.gallery-eyebrow { color: var(--text-tertiary); font-size: 10px; letter-spacing: .18em; margin-bottom: 14px; }
-.gallery-heading h1 { font-family: var(--font-editorial); font-size: clamp(34px,3.4vw,52px); font-weight: 400; line-height: 1.25; }
+.gallery-eyebrow { color: var(--text-tertiary); font-size: 10px; letter-spacing: .12em; margin-bottom: 14px; }
+.gallery-heading h1 { font-family: var(--font-display); font-size: clamp(32px,3vw,46px); font-weight: 500; line-height: 1.3; letter-spacing: -.025em; }
 .gallery-description { margin-top: 14px; color: var(--text-secondary); font-size: 13px; line-height: 1.8; }
 .gallery-heading-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; flex: none; padding-bottom: 4px; }
 .gallery-heading .btn-secondary { border-color: var(--line-soft); background: transparent; font-size: 12px; }
@@ -111,12 +111,12 @@
 .collection-cover-image img { width: 100%; }
 .collection-cover-placeholder {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 16px;
-  padding: 28px; background: linear-gradient(135deg,#292b2c,#181b1f); font-family: var(--font-editorial);
-  font-size: 28px; font-weight: 400; line-height: 1.5; color: #cac8c2;
+  padding: 28px; background: linear-gradient(135deg,#292b2c,#181b1f); font-family: var(--font-display);
+  font-size: 26px; font-weight: 500; line-height: 1.5; color: #cac8c2;
 }
 .collection-cover-empty-label { font-family: var(--font-sans); font-size: 10px; letter-spacing: .14em; color: var(--text-tertiary); }
 .collection-body { padding: 20px 0 8px; gap: 9px; }
-.collection-name { font-family: var(--font-editorial); font-size: 23px; font-weight: 400; }
+.collection-name { font-family: var(--font-display); font-size: 21px; font-weight: 500; letter-spacing: -.015em; }
 .collection-count { margin-top: 10px; font-size: 10px; }
 @media (hover: none) { .collection-actions { opacity: 1; } }
 
@@ -131,11 +131,11 @@
 .stage-back { position: absolute; top: 116px; left: var(--content-pad); z-index: 1; display: inline-flex; align-items: center; gap: 6px; color: rgba(233,236,242,.66); font-size: 11px; }
 .film-poster { width: clamp(144px,14vw,220px); border-radius: 5px; }
 .film-eyebrow { color: rgba(233,236,242,.63); }
-.film-title { font-family: var(--font-editorial); font-size: clamp(40px,4.4vw,76px); font-weight: 400; line-height: 1.18; }
-.film-original { font-family: var(--font-sans); font-size: 11px; font-style: normal; letter-spacing: .18em; text-transform: uppercase; margin-top: 16px; }
+.film-title { font-family: var(--font-display); font-size: clamp(38px,4.1vw,68px); font-weight: 500; line-height: 1.2; letter-spacing: -.025em; }
+.film-original { font-family: var(--font-sans); font-size: 11px; font-style: normal; letter-spacing: .1em; text-transform: uppercase; margin-top: 16px; }
 .film-meta { font-size: 12px; margin-top: 20px; }
 .film-meta .hero-rating { color: #e5e3dd; }
-.film-dedication { margin: 24px 0 0; max-width: 42ch; font-family: var(--font-editorial); font-size: 16px; line-height: 1.85; color: rgba(243,241,236,.82); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.film-dedication { margin: 24px 0 0; max-width: 42ch; font-family: var(--font-display); font-size: 16px; line-height: 1.85; color: rgba(243,241,236,.82); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .cinema-primary { background: #eeeae2; color: #15171b; border: 1px solid #eeeae2; border-radius: 999px; height: 44px; padding: 0 24px; font-size: 12px; }
 .cinema-primary:hover:not(:disabled) { background: white; border-color: white; }
 .film-actions { gap: 12px; margin-top: 28px; }
@@ -148,26 +148,26 @@
 .film-tools-menu .btn { justify-content: flex-start; width: 100%; gap: 10px; padding: 0 10px; height: 38px; font-size: 12px; }
 .film-body { grid-template-columns: minmax(0,1fr) 300px; gap: clamp(40px,7vw,100px); max-width: 1240px; margin: 56px auto 0; }
 .film-section { padding-top: 22px; margin-bottom: 44px; }
-.personal-section .record-reason { font-family: var(--font-editorial); font-size: 23px; line-height: 1.85; font-weight: 400; }
+.personal-section .record-reason { font-family: var(--font-display); font-size: 19px; line-height: 1.85; font-weight: 400; }
 .prose { max-width: 65ch; line-height: 1.9; }
 .film-aside { align-self: start; border-left: 1px solid var(--line-soft); padding-left: 28px; }
-.rating-big { font-family: var(--font-editorial); font-size: 48px; }
+.rating-big { font-family: var(--font-display); font-size: 48px; font-weight: 300; font-variant-numeric: tabular-nums; }
 #resources { scroll-margin-top: 112px; }
 .collection-stage { margin: 0 calc(-1 * var(--content-pad)); min-height: clamp(500px,64svh,720px); }
 .collection-stage-inner { min-height: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; padding: 180px var(--content-pad) 64px; }
-.collection-stage-title { font-family: var(--font-editorial); font-size: clamp(40px,4.3vw,72px); font-weight: 400; }
-.collection-stage-description { font-family: var(--font-editorial); font-size: 18px; line-height: 1.9; margin-top: 12px; margin-bottom: 28px; }
+.collection-stage-title { font-family: var(--font-display); font-size: clamp(38px,4vw,64px); font-weight: 500; letter-spacing: -.025em; }
+.collection-stage-description { font-family: var(--font-display); font-size: 16px; line-height: 1.9; margin-top: 12px; margin-bottom: 28px; }
 .collection-back { position: absolute; top: 116px; left: var(--content-pad); margin: 0; font-size: 11px; }
 .collection-stage .btn { background: transparent; border-radius: 999px; font-size: 12px; }
 .collection-films-head { margin-top: 48px; margin-bottom: 28px; }
-.collection-films-head .section-title { font-family: var(--font-editorial); font-size: 26px; font-weight: 400; }
+.collection-films-head .section-title { font-family: var(--font-display); font-size: 24px; font-weight: 500; }
 
 .watchlist-list { gap: 0; border-top: 1px solid var(--line-soft); }
 .watchlist-list .row-card { grid-template-columns: 36px 72px minmax(0,1fr) auto; gap: 24px; padding: 24px 0; background: transparent; border-radius: 0; border-bottom: 1px solid var(--line-soft); }
 .watchlist-number { font-family: var(--font-display); font-size: 20px; color: var(--text-tertiary); }
 .row-poster { position: relative; display: block; }
 .watchlist-list .row-poster { width: 72px; border-radius: 4px; }
-.watchlist-list .row-title { font-family: var(--font-editorial); font-size: 23px; font-weight: 400; }
+.watchlist-list .row-title { font-family: var(--font-display); font-size: 21px; font-weight: 500; letter-spacing: -.015em; }
 .watchlist-list .row-sub { font-size: 11px; margin-top: 8px; }
 .watchlist-list .row-actions .btn { background: transparent; border-color: transparent; font-size: 12px; }
 .watchlist-list .poster-fallback { padding: 8px; }
@@ -175,7 +175,7 @@
 .watchlist-list .poster-fallback-title { font-size: 10px; }
 .settings-layout { grid-template-columns: 180px minmax(0,1fr); gap: 64px; max-width: 1220px; }
 .settings-layout .section-card { background: transparent; padding: 28px 0; border-top: 1px solid var(--line-soft); border-radius: 0; }
-.settings-layout .section-card-title { font-family: var(--font-editorial); font-size: 22px; font-weight: 400; }
+.settings-layout .section-card-title { font-family: var(--font-display); font-size: 20px; font-weight: 500; }
 .settings-nav a { background: transparent; border-radius: 0; padding-left: 0; font-size: 12px; }
 @media (max-width: 1120px) {
   .film-body { grid-template-columns: minmax(0,1fr); }

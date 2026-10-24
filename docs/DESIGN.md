@@ -55,9 +55,9 @@
 
 **字体**
 
-- 界面：`Segoe UI Variable Text → Segoe UI → Microsoft YaHei UI → system-ui`
-- 展示（仅 Latin）：`Iowan Old Style → Palatino Linotype → Georgia`
-- 用法：中文标题用无衬线重字重；**原名、宣传语、短评**用衬线斜体/衬线块，形成杂志式的两层声音。
+- 界面：`Segoe UI Variable Text → Segoe UI → Microsoft YaHei UI / Microsoft YaHei → PingFang SC → Noto Sans CJK SC → system-ui`
+- 展示：`Segoe UI Variable Display`，其余回退与界面字体一致；不再混用古典衬线字体
+- 用法：片名和页题使用无衬线500字重、紧凑字距；正文和收藏理由400字重，原名保持小号正体。通过字号、行高与留白体现杂志感，避免把宋体铺满界面。
 - 等宽仅用于：快捷键、分享链接、文件路径。
 
 **明确不做**（模板化特征）
@@ -84,7 +84,7 @@
 
 - 首页不显示固定侧栏，导航覆盖在背景上；滚动后导航底色变实。内容两侧留白使用clamp(32px,5vw,88px)。
 - 背景首屏至少680px，正常高度铺满100svh。高度≤800px时收小轨道并隐藏简介，保留片名和主要操作。
-- 标题优先中文衬线字体，使用系统已有字体；Windows与Linux字体回退会有差别，仍需Windows视觉验收。
+- 标题优先现代无衬线字体，使用系统已有字体；Windows采用Segoe UI和微软雅黑，Linux明确回退到Noto Sans CJK SC。系统字体与缩放仍需Windows视觉验收。
 - 首页主操作为米白色圆角按钮；键盘焦点沿用冰蓝色。保留真实空状态，不补演示收藏。
 - 影视库、专题、想看和设置采用实色顶栏与杂志式页题；电影及专题详情延伸至导航背后，滚动后顶栏底色变实。全应用移除固定侧栏。
 - 列表页保持1560px可读宽度，网格海报2:3，既有筛选与操作不变。

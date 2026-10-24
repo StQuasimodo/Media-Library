@@ -4,15 +4,17 @@
 
 它**不是**播放器或下载器。应用支持通过已授权的夸克官方工具，只读你选定的云端目录清单；不接收账号密码或 Cookie，不解析分享链接、不自动分享或下载视频。
 
-![当前开发版首页](artifacts/review-2026-10-24/home-redesign.png)
+![当前开发版首页](artifacts/review-2026-10-24/typography-home.png)
 
 首页已按“优先去掉管理后台骨架”的反馈重做：无侧栏、整窗电影背景、顶部悬浮导航、上方焦点轨道和下方电影信息。影视库、详情、专题、想看与设置也已统一顶部导航，移除固定侧栏；保留筛选、编辑及资源管理能力。
 
-[上一版首页](artifacts/review-2026-10-24/01-home.png) · [切换焦点](artifacts/review-2026-10-24/home-redesign-focus.png) · [首屏之后](artifacts/review-2026-10-24/home-redesign-curation.png) · [1024窗口](artifacts/review-2026-10-24/home-redesign-1024.png) · [空收藏](artifacts/review-2026-10-24/home-redesign-empty.png)
+[上一版首页](artifacts/review-2026-10-24/01-home.png) · [切换焦点](artifacts/review-2026-10-24/typography-focus.png) · [首屏之后](artifacts/review-2026-10-24/typography-curation.png) · [1024窗口](artifacts/review-2026-10-24/typography-home-1024.png) · [空收藏](artifacts/review-2026-10-24/typography-empty.png)
+
+本版字体统一为现代无衬线，减少宋体与古典英文字体混用；Windows优先使用系统Segoe UI / 微软雅黑，Linux回退到Noto Sans CJK SC，无需在线下载字体。
 
 当前开发版截图来自 Linux 无显示器模式下的真实 Electron 应用，使用独立测试数据；夸克清单来自测试工具，不代表真实账号已接通。
 
-[影视库](artifacts/review-2026-10-24/gallery-library.png) · [影视详情](artifacts/review-2026-10-24/gallery-film.png) · [专题](artifacts/review-2026-10-24/gallery-collections.png) · [想看](artifacts/review-2026-10-24/gallery-watchlist.png) · [专题详情](artifacts/review-2026-10-24/gallery-edition.png) · [夸克文件夹界面](artifacts/review-2026-10-24/09-quark-folder.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
+[影视库](artifacts/review-2026-10-24/typography-library.png) · [影视详情](artifacts/review-2026-10-24/typography-film.png) · [专题](artifacts/review-2026-10-24/typography-collections.png) · [想看](artifacts/review-2026-10-24/typography-watchlist.png) · [专题详情](artifacts/review-2026-10-24/typography-edition.png) · [夸克文件夹界面](artifacts/review-2026-10-24/09-quark-folder.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
 
 ---
 
@@ -47,15 +49,15 @@
 
 **详情页（电影主视觉优先）**
 
-- 顶部大幅背景图 + 海报 + 标题叠加在渐变上，首要操作为查看资源，编辑记录与加入专题为次要操作；刷新资料 / 编辑资料 / 移除收拢在「更多操作」中。
+- 顶部大幅背景图 + 海报 + 无衬线片名叠加在渐变上，首要操作为查看资源，编辑记录与加入专题为次要操作；刷新资料 / 编辑资料 / 移除收拢在「更多操作」中。
 - 下方以细分隔线组织简介、我的记录、夸克资源；右侧为评分、观看状态、专题与资料信息，不使用厚重卡片容器。
 
 **导航与材质**：全应用无固定侧栏；首页、电影和专题详情的顶部导航覆盖在背景上，滚动后底色变实；列表和设置采用实色顶栏。首页主操作用米白色，冰蓝主要用于键盘焦点。
 
 | | |
 |---|---|
-| ![首页](artifacts/review-2026-10-24/home-redesign.png) | ![切换聚焦](artifacts/review-2026-10-24/home-redesign-focus.png) |
-| ![详情页](artifacts/review-2026-10-24/gallery-film.png) | ![空状态](artifacts/screenshots/11-empty-home.png) |
+| ![首页](artifacts/review-2026-10-24/typography-home.png) | ![切换聚焦](artifacts/review-2026-10-24/typography-focus.png) |
+| ![详情页](artifacts/review-2026-10-24/typography-film.png) | ![空状态](artifacts/screenshots/11-empty-home.png) |
 
 ---
 

@@ -35,8 +35,8 @@ const html = readFileSync('dist/index.html', 'utf8');
 const assets = [...html.matchAll(/(?:src|href)="\.\/(assets\/[^"?#]+)"/g)].map(match => match[1]);
 assert.ok(assets.length >= 2, 'Expected production JS and CSS assets');
 // Keep this strict: missing assets make the installed UI blank. Include a
-// useful ASAR inventory in the failure so CI distinguishes a packaging omission
-// from an incorrect asset path instead of merely reporting "not found".
+// useful ASAR inventory in the failure. asar.extractFile uses OS-native path
+// separators; the POSIX paths from Vite's HTML must be converted on Windows.
 const packagedEntries = asar.listPackage(archive).map(path => path.split(String.fromCharCode(92)).join('/').replace(/^\/+/, ''));
 for (const asset of assets) {
   const target = `dist/${asset}`;
@@ -44,7 +44,7 @@ for (const asset of assets) {
     packagedEntries.includes(target),
     `Missing packaged Vite asset ${target}. ASAR dist entries: ${packagedEntries.filter(path => path.startsWith('dist/')).slice(0, 80).join(', ')}`,
   );
-  assert.deepEqual(asar.extractFile(archive, target), readFileSync(join('dist', asset)), `${target}: packaged asset differs`);
+  assert.deepEqual(asar.extractFile(archive, join('dist', asset)), readFileSync(join('dist', asset)), `${target}: packaged asset differs`);
 }
 
 const installer = `My-Cinema-${version}-Setup.exe`;

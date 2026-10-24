@@ -1,0 +1,44 @@
+appId: com.mycinema.desktop
+productName: My Cinema
+copyright: 仅供个人使用
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+  - "!**/*.map"
+  - "!**/*.ts"
+
+# better-sqlite3 ships an N-API prebuilt binary; it must live outside the asar
+# archive so Node can dlopen it at runtime.
+asarUnpack:
+  - "node_modules/better-sqlite3/**"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: My-Cinema-${version}-Setup.${ext}
+  executableName: My Cinema
+
+nsis:
+  oneClick: false
+  perMachine: false
+  # A per-user install never needs UAC; requesting elevation only adds a
+  # failure path (a silent install can hang waiting for a consent prompt).
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: My Cinema
+  # Uninstalling must never silently destroy the user's library.
+  deleteAppDataOnUninstall: false
+
+# No auto-update server: this is a personal, local-only application.
+publish: null

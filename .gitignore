@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-electron/
+release/
+.harness/
+
+# Local tooling caches (large, machine specific)
+.electron-cache/
+.eb-cache/
+.appdata/
+.tmp/
+.tmp-*/
+.edge-profile/
+.tools/
+
+# Launcher working directories next to the artifacts
+release/
+mc-temp/
+portable/
+
+# End-to-end / screenshot fixtures
+.e2e-assets/
+.e2e-profile/
+artifacts/*.log
+artifacts/probe.html
+artifacts/edge-probe.png
+
+# Never commit user data or secrets
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+credentials.json
+library.db*
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

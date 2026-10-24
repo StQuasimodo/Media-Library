@@ -1,0 +1,50 @@
+{
+  "name": "my-cinema",
+  "productName": "My Cinema",
+  "version": "1.0.0",
+  "private": true,
+  "description": "My Cinema — a private, magazine-styled film and series collection for Windows.",
+  "author": {
+    "name": "My Cinema"
+  },
+  "license": "UNLICENSED",
+  "main": "dist-electron/main.cjs",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "node scripts/build.mjs && node scripts/package.mjs",
+    "package:dir": "node scripts/build.mjs && node scripts/package.mjs --dir",
+    "package:portable": "node scripts/build.mjs && node scripts/package.mjs",
+    "start:prod": "electron .",
+    "ui:shots": "node scripts/run-ui-harness.mjs",
+    "doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-environment.ps1",
+    "install:app": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install.ps1",
+    "run:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-portable.ps1",
+    "electron:fetch": "node scripts/fetch-electron.mjs",
+    "icons": "python scripts/make-icon.py",
+    "e2e:assets": "python scripts/make-e2e-assets.py"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "45.0.0",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router-dom": "7.18.4",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^4.0.0"
+  }
+}

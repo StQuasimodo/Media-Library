@@ -1,0 +1,23 @@
+{
+  "mode": "empty",
+  "seeded": {
+    "firstFilmId": "",
+    "collectionId": "",
+    "noImageFilmId": "",
+    "count": 0
+  },
+  "stats": {
+    "totalFilms": 0,
+    "watchedFilms": 0,
+    "watchingFilms": 0,
+    "wantFilms": 0,
+    "collectionCount": 0,
+    "resourceCount": 0
+  },
+  "home": {
+    "featured": null,
+    "recent": 0,
+    "collections": 0
+  },
+  "detail": null
+}

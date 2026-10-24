@@ -1,0 +1,19 @@
+# Normalise line endings so Windows/macOS/Linux clones produce identical diffs.
+* text=auto eol=lf
+
+# Keep these binary even though some sniffers call them text.
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.exe binary
+
+# Batch files must keep CRLF to run reliably under cmd.exe.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# PowerShell scripts are UTF-8 with BOM (Windows PowerShell 5.1 needs it).
+*.ps1 text eol=crlf working-tree-encoding=UTF-8
+
+# Generated minified assets, if ever committed, are not worth diffing.
+dist/** linguist-generated=true

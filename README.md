@@ -4,17 +4,19 @@
 
 它**不是**播放器或下载器。应用支持通过已授权的夸克官方工具，只读你选定的云端目录清单；不接收账号密码或 Cookie，不解析分享链接、不自动分享或下载视频。
 
-![当前开发版首页](artifacts/review-2026-10-24/weight-home.png)
+![当前开发版首页](artifacts/review-2026-10-24/current/01-home.png)
 
 首页已按“优先去掉管理后台骨架”的反馈重做：无侧栏、整窗电影背景、顶部悬浮导航、上方焦点轨道和下方电影信息。影视库、详情、专题、想看与设置也已统一顶部导航，移除固定侧栏；保留筛选、编辑及资源管理能力。
 
-[上一版首页](artifacts/review-2026-10-24/01-home.png) · [切换焦点](artifacts/review-2026-10-24/typography-focus.png) · [首屏之后](artifacts/review-2026-10-24/typography-curation.png) · [1024窗口](artifacts/review-2026-10-24/typography-home-1024.png) · [空收藏](artifacts/review-2026-10-24/typography-empty.png)
+[切换焦点](artifacts/review-2026-10-24/current/02-home-focus.png) · [首屏之后](artifacts/review-2026-10-24/current/11-home-curation.png) · [1024窗口](artifacts/review-2026-10-24/current/home-1024.png) · [空收藏](artifacts/review-2026-10-24/current/10-home-empty.png)
 
 片名与界面采用现代无衬线，顶部My Cinema单独使用装饰性斜体衬线字标；Windows优先使用系统Segoe UI / 微软雅黑，Linux回退到Noto Sans CJK SC，无需在线下载字体。
 
+README 中的界面图片统一来自最近一次加粗调整后的同一轮截图（`artifacts/review-2026-10-24/current/`）；旧版截图保留在原目录供历史对比。
+
 当前开发版截图来自 Linux 无显示器模式下的真实 Electron 应用，使用独立测试数据；夸克清单来自测试工具，不代表真实账号已接通。
 
-[影视库](artifacts/review-2026-10-24/weight-library.png) · [影视详情](artifacts/review-2026-10-24/weight-film.png) · [专题](artifacts/review-2026-10-24/typography-collections.png) · [想看](artifacts/review-2026-10-24/typography-watchlist.png) · [专题详情](artifacts/review-2026-10-24/typography-edition.png) · [夸克文件夹界面](artifacts/review-2026-10-24/09-quark-folder.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
+[影视库](artifacts/review-2026-10-24/current/03-library.png) · [影视详情](artifacts/review-2026-10-24/current/04-film.png) · [专题](artifacts/review-2026-10-24/current/05-collections.png) · [想看](artifacts/review-2026-10-24/current/12-watchlist.png) · [专题详情](artifacts/review-2026-10-24/current/06-collection.png) · [夸克文件夹界面](artifacts/review-2026-10-24/current/09-quark-folder.png) · [设置](artifacts/review-2026-10-24/current/13-settings.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
 
 ---
 
@@ -56,8 +58,8 @@
 
 | | |
 |---|---|
-| ![首页](artifacts/review-2026-10-24/typography-home.png) | ![切换聚焦](artifacts/review-2026-10-24/typography-focus.png) |
-| ![详情页](artifacts/review-2026-10-24/weight-film.png) | ![空状态](artifacts/screenshots/11-empty-home.png) |
+| ![首页](artifacts/review-2026-10-24/current/01-home.png) | ![切换聚焦](artifacts/review-2026-10-24/current/02-home-focus.png) |
+| ![详情页](artifacts/review-2026-10-24/current/04-film.png) | ![空状态](artifacts/review-2026-10-24/current/10-home-empty.png) |
 
 ---
 

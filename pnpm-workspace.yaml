@@ -1,0 +1,8 @@
+# pnpm 11 requires explicit decisions for dependency lifecycle scripts.
+nodeLinker: hoisted
+allowBuilds:
+  better-sqlite3: true
+  electron: true
+  esbuild: true
+  # Squirrel packaging is unused; Windows releases use NSIS.
+  electron-winstaller: false

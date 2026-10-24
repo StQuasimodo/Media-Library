@@ -60,6 +60,7 @@ jobs:
         with:
           name: windows-desktop-evidence
           if-no-files-found: ignore
+          include-hidden-files: true
           path: |
             .harness/desktop-smoke-*/report.json
             .harness/desktop-smoke-*/*.png

@@ -6,7 +6,8 @@ import { context } from 'esbuild';
 import { createServer } from 'vite';
 
 const require = createRequire(import.meta.url);
-const electronBinary = require('electron');
+// Tests can inject a Node-based launcher without depending on Electron's platform-specific path.txt.
+const electronBinary = process.env.MY_CINEMA_DEV_ELECTRON_BINARY || require('electron');
 const root = process.cwd();
 const outDir = join(root, 'dist-electron');
 

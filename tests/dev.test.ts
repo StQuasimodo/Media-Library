@@ -1,8 +1,7 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { basename, join } from 'node:path';
 import { expect, it } from 'vitest';
 
 it('开发监听更新实际入口，重启主进程与preload，退出时关闭启动器', async () => {
@@ -10,10 +9,11 @@ it('开发监听更新实际入口，重启主进程与preload，退出时关闭
   mkdirSync(join(repo, '.harness'), { recursive: true });
   const fixture = mkdtempSync(join(repo, '.harness', 'dev-test-'));
   const fakeDir = join(fixture, 'fake-electron');
-  const require = createRequire(import.meta.url);
-  const pathFile = join(dirname(require.resolve('electron/package.json')), 'path.txt');
-  const executable = join(fakeDir, existsSync(pathFile) ? readFileSync(pathFile, 'utf8').trim() : 'electron');
-  mkdirSync(dirname(executable), { recursive: true });
+  // Spawn a real Node binary as the fake launcher. On Windows this must retain
+  // the .exe suffix: relying on Electron's path.txt can produce an extensionless
+  // path that exists but cannot be spawned by CreateProcess (ENOENT).
+  const executable = join(fakeDir, basename(process.execPath));
+  mkdirSync(fakeDir, { recursive: true });
   // Node runs the fixture package entry; no desktop or Electron binary is used.
   if (process.platform === 'win32') copyFileSync(process.execPath, executable);
   else symlinkSync(process.execPath, executable);
@@ -35,7 +35,7 @@ it('开发监听更新实际入口，重启主进程与preload，退出时关闭
   writeFileSync(preloadPath, 'export const version=1;');
   let output = '';
   const child = spawn(process.execPath, [join(repo, 'scripts/dev.mjs')], {
-    cwd: fixture, env: { ...process.env, ELECTRON_OVERRIDE_DIST_PATH: fakeDir },
+    cwd: fixture, env: { ...process.env, MY_CINEMA_DEV_ELECTRON_BINARY: executable },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   child.stdout.on('data', (chunk) => { output += chunk; });

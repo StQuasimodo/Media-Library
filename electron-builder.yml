@@ -6,9 +6,17 @@ directories:
   output: release
   buildResources: build
 
+# Map each generated directory explicitly into the ASAR. A bare glob can
+# unexpectedly omit nested Vite assets on clean Windows CI runners.
 files:
-  - dist/**/*
-  - dist-electron/**/*
+  - from: dist
+    to: dist
+    filter:
+      - "**/*"
+  - from: dist-electron
+    to: dist-electron
+    filter:
+      - "**/*"
   - package.json
   - "!**/*.map"
   - "!**/*.ts"

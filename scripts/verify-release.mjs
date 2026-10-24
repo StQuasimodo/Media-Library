@@ -37,7 +37,7 @@ assert.ok(assets.length >= 2, 'Expected production JS and CSS assets');
 // Keep this strict: missing assets make the installed UI blank. Include a
 // useful ASAR inventory in the failure so CI distinguishes a packaging omission
 // from an incorrect asset path instead of merely reporting "not found".
-const packagedEntries = asar.listPackage(archive).map(path => path.replaceAll('\\\\', '/').replace(/^\\//, ''));
+const packagedEntries = asar.listPackage(archive).map(path => path.split(String.fromCharCode(92)).join('/').replace(/^\/+/, ''));
 for (const asset of assets) {
   const target = `dist/${asset}`;
   assert.ok(

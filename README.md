@@ -4,13 +4,13 @@
 
 它**不是**播放器或下载器。应用支持通过已授权的夸克官方工具，只读你选定的云端目录清单；不接收账号密码或 Cookie，不解析分享链接、不自动分享或下载视频。
 
-![当前开发版首页](artifacts/review-2026-10-24/typography-home.png)
+![当前开发版首页](artifacts/review-2026-10-24/brand-home.png)
 
 首页已按“优先去掉管理后台骨架”的反馈重做：无侧栏、整窗电影背景、顶部悬浮导航、上方焦点轨道和下方电影信息。影视库、详情、专题、想看与设置也已统一顶部导航，移除固定侧栏；保留筛选、编辑及资源管理能力。
 
 [上一版首页](artifacts/review-2026-10-24/01-home.png) · [切换焦点](artifacts/review-2026-10-24/typography-focus.png) · [首屏之后](artifacts/review-2026-10-24/typography-curation.png) · [1024窗口](artifacts/review-2026-10-24/typography-home-1024.png) · [空收藏](artifacts/review-2026-10-24/typography-empty.png)
 
-本版字体统一为现代无衬线，减少宋体与古典英文字体混用；Windows优先使用系统Segoe UI / 微软雅黑，Linux回退到Noto Sans CJK SC，无需在线下载字体。
+片名与界面采用现代无衬线，顶部My Cinema单独使用装饰性斜体衬线字标；Windows优先使用系统Segoe UI / 微软雅黑，Linux回退到Noto Sans CJK SC，无需在线下载字体。
 
 当前开发版截图来自 Linux 无显示器模式下的真实 Electron 应用，使用独立测试数据；夸克清单来自测试工具，不代表真实账号已接通。
 

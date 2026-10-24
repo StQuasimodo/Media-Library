@@ -39,6 +39,14 @@
   font-weight: 500;
   letter-spacing: -.035em;
 }
+.cinema-brand > span:first-child {
+  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, 'URW Palladio L', 'C059', serif;
+  font-size: 28px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.1;
+  letter-spacing: -.055em;
+}
 .cinema-brand-sub {
   font-family: var(--font-sans);
   font-size: 10px;

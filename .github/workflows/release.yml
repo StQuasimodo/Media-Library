@@ -27,6 +27,8 @@ jobs:
         run: |
           npm install --global pnpm@11.25.0
           pnpm install --frozen-lockfile
+      - name: Install checksum-verified Electron runtime
+        run: node node_modules/electron/install.js
       - name: Run tests
         run: pnpm test
       - name: Build production application

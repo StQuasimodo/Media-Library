@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { CollectionEntry } from '@shared/types';
 import { Icon } from './icons';
-import { formatRating, imageUrl, statusLabel } from '../lib/format';
+import { PosterImage } from './PosterImage';
+import { formatRating, statusLabel } from '../lib/format';
 import { prefersReducedMotion } from '../lib/motion';
 
 /**
@@ -72,7 +73,6 @@ export function FocusRail({
   return (
     <div className="focus-rail" role="group" aria-label="精选影视，使用左右方向键切换">
       {entries.map((entry, index) => {
-        const poster = imageUrl(entry.film.posterPath);
         const active = index === activeIndex;
         return (
           <button
@@ -91,14 +91,7 @@ export function FocusRail({
             onClick={() => onOpen(entry)}
           >
             <span className="rail-art">
-              {poster ? (
-                <img src={poster} alt="" loading={index < 6 ? 'eager' : 'lazy'} />
-              ) : (
-                <span className="poster-fallback">
-                  <span className="poster-fallback-year">{entry.film.year ?? '—'}</span>
-                  <span className="poster-fallback-title serif">{entry.film.title}</span>
-                </span>
-              )}
+              <PosterImage film={entry.film} loading={index < 6 ? 'eager' : 'lazy'} />
               <span className={`rail-status status-${entry.watchStatus}`}>
                 <span className="chip-dot" />
                 {statusLabel(entry.watchStatus)}

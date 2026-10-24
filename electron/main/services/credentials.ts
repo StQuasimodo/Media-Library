@@ -40,16 +40,16 @@ export class CredentialStore {
   setKey(key: string | null): void {
     const trimmed = key?.trim() ?? '';
     if (!trimmed) {
-      this.cache = null;
       this.writeFile({ version: 1 });
+      this.cache = null;
       return;
     }
     if (!this.box.isAvailable()) {
       throw new Error('系统凭据存储不可用，无法安全保存 API Key。');
     }
     const encrypted = this.box.encrypt(trimmed).toString('base64');
-    this.cache = trimmed;
     this.writeFile({ version: 1, tmdbApiKey: encrypted });
+    this.cache = trimmed;
   }
 
   private load(): string | null {

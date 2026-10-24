@@ -11,6 +11,7 @@ import { LibraryService } from './services/library';
 import { Logger } from './services/logger';
 import { MetadataService } from './services/metadataService';
 import { TmdbProvider } from './services/metadata/tmdb';
+import { QuarkLibrary } from './services/quark/library';
 
 export interface CoreContext {
   db: SqlDatabase;
@@ -42,11 +43,13 @@ export class AppRuntime {
   private core: CoreContext | null = null;
   private startupFailure: DatabaseError | null = null;
   readonly backup: BackupService;
+  readonly quark: QuarkLibrary;
 
   constructor(
     readonly paths: AppPaths,
     private readonly options: RuntimeOptions,
   ) {
+    this.quark = new QuarkLibrary(paths.userData);
     this.logger = new Logger(paths.logFile, { console: options.loggerConsole ?? false });
     this.credentials = new CredentialStore(paths.credentialsFile, options.secretBox);
     this.images = new ImageCache({ root: paths.imagesDir, fetchImpl: options.fetchImpl });
@@ -67,6 +70,7 @@ export class AppRuntime {
   start(): void {
     try {
       this.build();
+      void this.quark.readOnStartup();
       this.logger.info(`Library opened at ${this.paths.dbFile} (schema ${SCHEMA_VERSION})`);
     } catch (error) {
       this.startupFailure =
@@ -156,6 +160,7 @@ export class AppRuntime {
   }
 
   shutdown(): void {
+    this.quark.cancel();
     this.close();
   }
 }

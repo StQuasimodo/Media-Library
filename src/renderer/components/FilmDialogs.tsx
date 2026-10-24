@@ -444,7 +444,7 @@ export function ResourceDialog({
       open={open}
       wide
       title={resource ? '编辑夸克资源' : '添加夸克资源'}
-      subtitle="只保存你提供的链接与备注，应用不会访问或解析网盘内容"
+      subtitle="此处保存你提供的分享链接与备注，不解析分享链接"
       onClose={onClose}
       footer={
         <>

@@ -6,6 +6,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import type { BackupResult, ExportResult, RestoreResult } from '../../../src/shared/types';
 import { AppError } from '../errors';
@@ -49,7 +50,7 @@ export class BackupService {
 
   createBackup(prefix = 'my-cinema'): BackupResult {
     mkdirSync(this.options.backupDir, { recursive: true });
-    const path = join(this.options.backupDir, `${prefix}-${stamp()}.db`);
+    const path = join(this.options.backupDir, `${prefix}-${stamp()}-${randomUUID()}.db`);
     this.snapshotInto(path);
     const bytes = statSync(path).size;
     this.options.logger.info(`Backup created: ${path} (${bytes} bytes)`);
@@ -201,8 +202,8 @@ export class BackupService {
       settings: repo.getSettings(),
     };
 
-    const path = join(directory, `my-cinema-export-${stamp()}.json`);
-    writeFileSync(path, JSON.stringify(payload, null, 2), 'utf8');
+    const path = join(directory, `my-cinema-export-${stamp()}-${randomUUID()}.json`);
+    writeFileSync(path, JSON.stringify(payload, null, 2), { encoding: 'utf8', flag: 'wx' });
     const bytes = statSync(path).size;
     this.options.logger.info(`JSON export written: ${path} (${bytes} bytes)`);
     return { path, bytes, includesSensitiveData };
@@ -214,13 +215,10 @@ export class BackupService {
     try {
       db.exec(`VACUUM INTO '${escaped}'`);
     } catch (error) {
-      this.options.logger.warn(
-        `VACUUM INTO failed, falling back to file copy: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-      db.pragma('wal_checkpoint(TRUNCATE)');
-      copyFileSync(this.options.dbFile, path);
+      // A busy WAL checkpoint + raw file copy can omit committed changes.
+      // Keep SQLite's consistent snapshot guarantee and fail visibly instead.
+      rmSync(path, { force: true });
+      throw error;
     }
   }
 }

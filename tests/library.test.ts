@@ -11,6 +11,35 @@ afterEach(() => {
   app.dispose();
 });
 
+describe('首页想看列表', () => {
+  it('较早收藏的想看作品不受最近12部配额影响，重启后仍可显示', () => {
+    const older = app.library.createManualFilm({ title: '较早的想看作品' });
+    app.library.updateEntry(older.entry.id, { collectedAt: '2000-01-01T00:00:00.000Z' });
+    for (let i = 0; i < 12; i++) {
+      const item = app.library.createManualFilm({ title: `新近已看作品 ${i}` });
+      app.library.updateEntry(item.entry.id, { watchStatus: 'watched' });
+    }
+    app.restart();
+    const home = app.library.getHome();
+    expect(home.recent).toHaveLength(12);
+    expect(home.recent.some((entry) => entry.id === older.entry.id)).toBe(false);
+    expect(home.wantCount).toBe(1);
+    expect(home.wantEntries.map((entry) => entry.id)).toEqual([older.entry.id]);
+  });
+
+  it('只展示最新6部想看作品，同时保留真实总数', () => {
+    for (let i = 0; i < 8; i++) {
+      const item = app.library.createManualFilm({ title: `想看 ${i}` });
+      app.library.updateEntry(item.entry.id, { collectedAt: `2020-01-0${i + 1}T00:00:00.000Z` });
+    }
+    const home = app.library.getHome();
+    expect(home.wantCount).toBe(8);
+    expect(home.wantEntries.map((entry) => entry.film.title)).toEqual([
+      '想看 7', '想看 6', '想看 5', '想看 4', '想看 3', '想看 2',
+    ]);
+  });
+});
+
 describe('收藏条目的增删改', () => {
   it('导入作品后可以读取完整详情', async () => {
     const result = await app.library.importCandidate(candidate());

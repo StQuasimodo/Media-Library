@@ -7,6 +7,7 @@ import { useToast } from '../lib/toast';
 import { useAsyncData } from '../lib/useAsync';
 import { ErrorState, LoadingRow, Segmented } from '../components/primitives';
 import { HeroBackdrop } from '../components/HeroBackdrop';
+import { PosterImage } from '../components/PosterImage';
 import { Icon } from '../components/icons';
 import {
   AVAILABILITY_LABEL,
@@ -152,14 +153,7 @@ export function FilmDetailPage() {
 
         <div className="film-stage-inner">
           <div className="film-poster">
-            {poster ? (
-              <img src={poster} alt={`${film.title} 海报`} />
-            ) : (
-              <div className="poster-fallback">
-                <span className="poster-fallback-year">{film.year ?? '—'}</span>
-                <span className="poster-fallback-title serif">{film.title}</span>
-              </div>
-            )}
+            <PosterImage film={film} alt={`${film.title} 海报`} loading="eager" />
           </div>
 
           <div className="film-copy">
@@ -193,7 +187,7 @@ export function FilmDetailPage() {
             <div className="film-actions">
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-secondary"
                 onClick={() => setEditEntryOpen(true)}
               >
                 <Icon name="star" size={15} />
@@ -248,20 +242,7 @@ export function FilmDetailPage() {
 
       <div className="film-body">
         <div>
-          <section className="film-section">
-            <div className="film-section-head">
-              <Icon name="film" size={12} />
-              简介
-            </div>
-            {film.overview ? (
-              <p className="prose">{film.overview}</p>
-            ) : (
-              <p className="prose is-empty">TMDB 没有提供简介，你可以在「编辑影视资料」中补充。</p>
-            )}
-            {film.tagline ? <p className="quote-block">{film.tagline}</p> : null}
-          </section>
-
-          <section className="film-section">
+          <section className="film-section personal-section">
             <div className="film-section-head">
               <Icon name="star" size={12} />
               我的记录
@@ -274,7 +255,7 @@ export function FilmDetailPage() {
               <div>
                 <div className="record-block-title">收藏理由</div>
                 {entry.favoriteReason ? (
-                  <p className="prose">{entry.favoriteReason}</p>
+                  <p className="prose record-reason">{entry.favoriteReason}</p>
                 ) : (
                   <p className="prose is-empty">还没有写下收藏理由。</p>
                 )}
@@ -290,6 +271,19 @@ export function FilmDetailPage() {
                 )}
               </div>
             </div>
+          </section>
+
+          <section className="film-section">
+            <div className="film-section-head">
+              <Icon name="film" size={12} />
+              简介
+            </div>
+            {film.overview ? (
+              <p className="prose">{film.overview}</p>
+            ) : (
+              <p className="prose is-empty">TMDB 没有提供简介，你可以在「编辑影视资料」中补充。</p>
+            )}
+            {film.tagline ? <p className="quote-block">{film.tagline}</p> : null}
           </section>
 
           <section className="film-section" ref={resourcesRef} id="resources">
@@ -312,7 +306,7 @@ export function FilmDetailPage() {
 
             {resources.length === 0 ? (
               <p className="prose is-empty">
-                还没有记录网盘资源。可以添加分享链接、提取码和画质备注；应用只保存这些信息，不会访问网盘。
+                还没有关联的分享资源。这里可以记录分享链接、提取码和画质备注；读取云端文件夹请到「设置 → 夸克文件夹」。
               </p>
             ) : (
               resources.map((resource) => (

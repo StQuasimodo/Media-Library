@@ -286,6 +286,14 @@ window.__MYCINEMA_IMAGE_BASE__ = '/images/';
     return payload.data;
   };
   window.cinema = {
+    quark: {
+      status: async () => ({toolPath:null,folder:null,recursive:true,autoRead:true,busy:false,error:null,notices:[],inventory:null}),
+      chooseTool: async () => { throw new Error('请在桌面应用中选择夸克工具'); },
+      browse: async () => { throw new Error('请在桌面应用中读取夸克目录'); },
+      selectFolder: async () => { throw new Error('请在桌面应用中选择夸克目录'); },
+      scan: async () => { throw new Error('请在桌面应用中读取夸克目录'); },
+      cancel: async () => {},
+    },
     app: {
       info: () => unwrap('app:info', []),
       openExternal: async () => {},

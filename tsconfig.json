@@ -24,6 +24,6 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src", "electron", "tests", "vite.config.ts"],
+  "include": ["src", "electron", "tests", "vite.config.ts", "scripts/desktop-smoke.ts"],
   "exclude": ["node_modules", "dist", "dist-electron", "release"]
 }

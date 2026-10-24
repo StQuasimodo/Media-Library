@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AppInfo, BackupValidation, CinemaApi } from '../../src/shared/api';
+import type { QuarkBrowse, QuarkStatus } from '../../src/shared/quark';
 import type {
   AppSettings,
   BackupResult,
@@ -50,6 +51,14 @@ async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
 }
 
 const api: CinemaApi = {
+  quark: {
+    status: () => invoke<QuarkStatus>('quark:status'),
+    chooseTool: () => invoke<QuarkStatus | null>('quark:chooseTool'),
+    browse: (id) => invoke<QuarkBrowse>('quark:browse', id),
+    selectFolder: (id, recursive, autoRead) => invoke<QuarkStatus>('quark:selectFolder', id, recursive, autoRead),
+    scan: () => invoke<QuarkStatus>('quark:scan'),
+    cancel: () => invoke<void>('quark:cancel'),
+  },
   app: {
     info: () => invoke<AppInfo>('app:info'),
     openExternal: (url) => invoke<void>('app:openExternal', url),

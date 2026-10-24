@@ -74,6 +74,7 @@ export class LibraryService {
     return {
       featured,
       recent,
+      wantEntries: entries.filter((entry) => entry.watchStatus === 'want').slice(0, 6),
       collections,
       wantCount: stats.wantFilms,
       stats,

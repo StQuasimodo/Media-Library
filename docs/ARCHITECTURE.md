@@ -35,6 +35,7 @@ SQLite (better-sqlite3)  +  图片缓存目录  +  日志
 | 应用 | `app:info` · `app:openExternal` · `app:openFolder` · `app:relaunch` |
 | 收藏库 | `library:home` · `library:stats` · `library:list` · `library:years` · `library:detail` · `library:createManual` · `library:updateFilm` · `library:updateEntry` · `library:removeFilm` · `library:importCandidate` |
 | 专题 | `collections:list` · `collections:detail` · `collections:create` · `collections:update` · `collections:remove` · `collections:addFilm` · `collections:removeFilm` · `collections:reorder` |
+| 夸克只读目录 | `quark:status` · `quark:chooseTool` · `quark:browse` · `quark:selectFolder` · `quark:scan` · `quark:cancel` |
 | 夸克资源 | `resources:list` · `resources:create` · `resources:update` · `resources:remove` · `resources:open` · `resources:copy` |
 | 元数据 | `metadata:search` · `metadata:candidate` · `metadata:refresh` · `metadata:verifyKey` · `metadata:saveKey` · `metadata:clearKey` |
 | 设置 | `settings:get` · `settings:update` |
@@ -141,3 +142,11 @@ tests/            library · persistence · metadata · security
 3. 数据库结构变更走新迁移；涉及删除列时先做「重建表 + 复制数据」并在事务内完成。
 4. 增加图片类型时同时更新 `ImageCache` 的 MIME 映射、相对路径正则与协议处理。
 5. 恢复备份会重建整个 `AppRuntime` 核心，新增的有状态服务必须挂在 `runtime.core` 上，否则恢复后会持有旧连接。
+
+## 夸克目录读取（2026-10-24）
+
+`services/quark/provider.ts` 只调用已选工具的 `browse --parent-fid ... --all`，以参数数组启动子进程，不通过shell。解析完整Artifact，限制结果文件在本次工作目录的browse目录内，并校验返回条目范围。
+
+`services/quark/library.ts` 保存选定源与可重建清单，负责递归、去重、取消和上限；`filename.ts` 生成保守的识别线索。服务不下载视频、不调用云端写命令，不读取官方工具凭据文件。
+
+源配置位于userData/quark-source.json，清单位于quark-inventory.json，查询工作目录会清理。它们不修改SQLite schema，不进入个人收藏数据；数据库备份不包含这份可重建清单。凭据仍由官方工具独立管理。后续实际入库需要稳定的云端文件身份及关联设计，不能把临时下载地址或文件名当成主键。

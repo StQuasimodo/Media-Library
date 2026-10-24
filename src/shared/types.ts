@@ -133,6 +133,8 @@ export interface HomePayload {
   /** Most recently collected title with a backdrop, used for the hero band. */
   featured: CollectionEntry | null;
   recent: CollectionEntry[];
+  /** Latest want-to-watch entries from the whole library, independently of recent. */
+  wantEntries: CollectionEntry[];
   collections: FilmCollection[];
   wantCount: number;
   stats: LibraryStats;

@@ -2,14 +2,14 @@ import {
   useEffect,
   useId,
   useRef,
-  useState,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import type { CollectionEntry, Film } from '@shared/types';
+import type { CollectionEntry } from '@shared/types';
 import { Icon, type IconName } from './icons';
-import { imageUrl, formatRating, statusLabel } from '../lib/format';
+import { PosterImage } from './PosterImage';
+import { formatRating, statusLabel } from '../lib/format';
 
 /* ------------------------------------------------------------------ */
 /* Modal                                                               */
@@ -359,15 +359,6 @@ export function LoadingRow({ label = '加载中…' }: { label?: string }) {
 /* Poster                                                              */
 /* ------------------------------------------------------------------ */
 
-function PosterArt({ film }: { film: Film }) {
-  return (
-    <div className="poster-fallback">
-      <span className="poster-fallback-year">{film.year ?? '—'}</span>
-      <span className="poster-fallback-title serif">{film.title}</span>
-    </div>
-  );
-}
-
 export function PosterCard({
   entry,
   compact = false,
@@ -377,11 +368,6 @@ export function PosterCard({
   compact?: boolean;
   showStatus?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const src = imageUrl(entry.film.posterPath);
-  const showImage = src && !failed;
-
   return (
     <Link
       to={`/film/${entry.film.id}`}
@@ -389,18 +375,7 @@ export function PosterCard({
       aria-label={`${entry.film.title}${entry.film.year ? `（${entry.film.year}）` : ''}`}
     >
       <div className="poster-frame">
-        {showImage ? (
-          <img
-            src={src}
-            alt=""
-            loading="lazy"
-            className={loaded ? 'is-loaded' : ''}
-            onLoad={() => setLoaded(true)}
-            onError={() => setFailed(true)}
-          />
-        ) : (
-          <PosterArt film={entry.film} />
-        )}
+        <PosterImage film={entry.film} />
         <span className="poster-badge">
           {entry.film.mediaType === 'tv' ? '剧集' : '电影'}
         </span>

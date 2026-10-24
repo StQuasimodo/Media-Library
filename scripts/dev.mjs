@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
-import { build, context } from 'esbuild';
+import { context } from 'esbuild';
 import { createServer } from 'vite';
 
 const require = createRequire(import.meta.url);
@@ -20,21 +21,25 @@ const shared = {
 };
 
 let child = null;
-let restarting = false;
+let stopping = false;
 
-async function buildOnce() {
-  await Promise.all([
-    build({ ...shared, entryPoints: [join(root, 'electron/main/index.ts')], outfile: join(outDir, 'main.cjs') }),
-    build({ ...shared, entryPoints: [join(root, 'electron/preload/index.ts')], outfile: join(outDir, 'preload.cjs') }),
-  ]);
+async function stopElectron() {
+  if (child) {
+    const previous = child;
+    child = null;
+    previous.removeAllListeners('exit');
+    if (previous.exitCode === null && previous.signalCode === null) {
+      const exited = once(previous, 'exit');
+      previous.kill();
+      await exited;
+    }
+  }
 }
 
-function startElectron(devServerUrl) {
-  if (child) {
-    child.removeAllListeners('exit');
-    child.kill();
-    child = null;
-  }
+async function startElectron(devServerUrl) {
+  // Wait for the old single-instance lock to be released before relaunching.
+  await stopElectron();
+  if (stopping) return;
   const env = { ...process.env, VITE_DEV_SERVER_URL: devServerUrl };
   // Some shells export this; it would run Electron as plain Node.
   delete env.ELECTRON_RUN_AS_NODE;
@@ -44,37 +49,44 @@ function startElectron(devServerUrl) {
     env,
   });
   child.on('exit', (code) => {
-    if (restarting) return;
+    if (stopping) return;
     // Quitting the app window ends the dev session.
-    process.exit(code ?? 0);
+    void shutdown(code ?? 0);
+  });
+  child.on('error', (error) => {
+    console.error('[dev] Electron 启动失败', error);
+    void shutdown(1);
   });
 }
 
-await buildOnce();
-
+const existingSigtermListeners = new Set(process.listeners('SIGTERM'));
 const server = await createServer({ root, configFile: join(root, 'vite.config.ts'), mode: 'development' });
+// Vite's standalone SIGTERM handler exits the process before Electron is stopped.
+// This wrapper owns shutdown; preserve handlers that existed before Vite.
+for (const listener of process.listeners('SIGTERM')) {
+  if (!existingSigtermListeners.has(listener)) process.off('SIGTERM', listener);
+}
 await server.listen();
 const devServerUrl = server.resolvedUrls?.local?.[0] ?? 'http://localhost:5273/';
 server.printUrls();
 
-startElectron(devServerUrl);
-
-// Rebuild + relaunch the main process whenever its sources change.
+// Initial build and rebuilds must write the exact files Electron loads.
 const watcher = await context({
   ...shared,
-  entryPoints: [join(root, 'electron/main/index.ts'), join(root, 'electron/preload/index.ts')],
+  entryPoints: {
+    main: join(root, 'electron/main/index.ts'),
+    preload: join(root, 'electron/preload/index.ts'),
+  },
   outdir: outDir,
-  outbase: join(root, 'electron'),
+  outExtension: { '.js': '.cjs' },
   plugins: [
     {
       name: 'restart-electron',
       setup(pluginBuild) {
-        pluginBuild.onEnd((result) => {
-          if (result.errors.length > 0) return;
-          restarting = true;
+        pluginBuild.onEnd(async (result) => {
+          if (result.errors.length > 0 || stopping) return;
           console.log('[dev] 主进程已重新构建，正在重启应用…');
-          startElectron(devServerUrl);
-          restarting = false;
+          await startElectron(devServerUrl);
         });
       },
     },
@@ -82,16 +94,18 @@ const watcher = await context({
 });
 await watcher.watch();
 
-const shutdown = async () => {
+async function shutdown(code = 0) {
+  if (stopping) return;
+  stopping = true;
   try {
     await watcher.dispose();
     await server.close();
   } catch {
     // ignore
   }
-  if (child) child.kill();
-  process.exit(0);
-};
+  await stopElectron();
+  process.exit(code);
+}
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGINT', () => void shutdown());
+process.on('SIGTERM', () => void shutdown());

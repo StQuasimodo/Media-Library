@@ -7,6 +7,7 @@ import { useToast } from '../lib/toast';
 import { useAsyncData } from '../lib/useAsync';
 import { EmptyState, ErrorState, LoadingRow, Modal, PosterCard } from '../components/primitives';
 import { Icon } from '../components/icons';
+import { HeroBackdrop } from '../components/HeroBackdrop';
 import { imageUrl, statusLabel } from '../lib/format';
 
 export function CollectionDetailPage() {
@@ -35,6 +36,8 @@ export function CollectionDetailPage() {
   if (!detail.data) return null;
 
   const { collection, entries } = detail.data;
+  const artwork = entries.find((entry) => entry.film.backdropPath)?.film ??
+    entries.find((entry) => entry.film.posterPath)?.film;
   const memberIds = new Set(entries.map((entry) => entry.id));
   const candidates = (library.data ?? []).filter((entry) => !memberIds.has(entry.id));
   const filtered = pickerSearch.trim()
@@ -73,29 +76,24 @@ export function CollectionDetailPage() {
 
   return (
     <>
-      <div className="row gap-2" style={{ marginBottom: 12 }}>
-        <button type="button" className="link-button" onClick={() => navigate('/collections')}>
-          ← 所有专题
-        </button>
-      </div>
-
-      <div className="section-head" style={{ alignItems: 'flex-start' }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 className="section-title" style={{ fontSize: 26 }}>
-            {collection.name}
-          </h1>
-          <p className="section-sub" style={{ marginTop: 6, maxWidth: 720 }}>
-            {collection.description || '尚未填写专题描述'}
-          </p>
-          <div className="eyebrow" style={{ marginTop: 10 }}>
-            {entries.length} 部作品
-          </div>
+      <section className="collection-stage" aria-label="专题介绍">
+        <HeroBackdrop src={imageUrl(artwork?.backdropPath)} posterSrc={imageUrl(artwork?.posterPath)} />
+        <div className="film-stage-scrim" />
+        <div className="collection-stage-inner">
+          <button type="button" className="link-button collection-back" onClick={() => navigate('/collections')}>
+            <Icon name="chevronLeft" size={13} /> 所有专题
+          </button>
+          <div className="eyebrow">私人选辑 · {entries.length} 部作品</div>
+          <h1 className="collection-stage-title">{collection.name}</h1>
+          {collection.description ? <p className="collection-stage-description">{collection.description}</p> : null}
+          <button type="button" className="btn btn-secondary" onClick={() => setPickerOpen(true)}>
+            <Icon name="plus" size={15} /> 添加作品
+          </button>
         </div>
-        <span className="spacer" />
-        <button type="button" className="btn btn-primary" onClick={() => setPickerOpen(true)}>
-          <Icon name="plus" size={15} />
-          添加作品
-        </button>
+      </section>
+      <div className="section-head collection-films-head">
+        <h2 className="section-title">专题片目</h2>
+        <span className="section-sub">{entries.length} 部作品</span>
       </div>
 
       {entries.length === 0 ? (
@@ -112,24 +110,16 @@ export function CollectionDetailPage() {
       ) : (
         <div className="poster-grid">
           {entries.map((entry) => (
-            <div key={entry.id} style={{ position: 'relative' }}>
+            <div key={entry.id} className="collection-film">
               <PosterCard entry={entry} />
               <button
                 type="button"
-                className="btn btn-icon"
+                className="btn btn-icon collection-remove"
                 title="从专题中移除"
                 aria-label={`从专题中移除 ${entry.film.title}`}
                 disabled={busyId === entry.id}
                 onClick={() => void remove(entry)}
-                style={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  width: 26,
-                  height: 26,
-                  background: 'rgba(10,13,18,0.8)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                }}
+
               >
                 <Icon name="close" size={13} />
               </button>

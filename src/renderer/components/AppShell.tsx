@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAppState } from '../lib/appState';
@@ -15,9 +15,18 @@ export function AppShell({
 }) {
   const { version } = useAppState();
   const location = useLocation();
+  const pageRef = useRef<HTMLElement | null>(null);
   const stats = useAsyncData(() => api.library.stats(), [version]);
 
   const title = resolveTitle(location.pathname);
+  const immersive = location.pathname === '/' || location.pathname.startsWith('/film/') ||
+    location.pathname.startsWith('/collections/');
+
+  // Each destination opens at its beginning; query-only resource links keep
+  // their own targeted scroll behavior inside FilmDetailPage.
+  useLayoutEffect(() => {
+    pageRef.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [location.pathname]);
 
   // Window/taskbar title follows the current screen.
   useEffect(() => {
@@ -30,7 +39,7 @@ export function AppShell({
   };
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-immersive={immersive}>
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-mark">
@@ -65,14 +74,14 @@ export function AppShell({
             添加影视作品
           </button>
           <p className="sidebar-note">
-            数据只保存在本机。影视资料来自 TMDB，夸克资源由你手动维护。
+            收藏保存在本机。可在设置中读取选定的夸克文件夹。
           </p>
         </div>
       </aside>
 
       <div className="main">
         <header className="topbar">
-          <span className="topbar-title">{title}</span>
+          <span className={`topbar-title${immersive ? ' visually-hidden' : ''}`}>{title}</span>
           <div className="topbar-actions">
             <button
               type="button"
@@ -86,12 +95,12 @@ export function AppShell({
             </button>
           </div>
         </header>
-        <main className="page">
+        <main className="page" ref={pageRef}>
           {/* The home stage and the film stage run edge to edge of the content
               area; list pages stay on the readable measure. */}
           <div
             className="page-inner"
-            data-wide={location.pathname === '/' || location.pathname.startsWith('/film/')}
+            data-wide={immersive}
           >
             <Outlet />
           </div>

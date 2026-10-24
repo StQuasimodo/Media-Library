@@ -97,6 +97,36 @@ img {
   min-height: 0;
 }
 
+/* Browsing pages keep navigation available, with less visual weight. */
+.app-shell[data-immersive='true'] {
+  --sidebar-width: 184px;
+}
+
+.app-shell[data-immersive='true'] .sidebar {
+  background: #14171d;
+  border-right-color: transparent;
+}
+
+.app-shell[data-immersive='true'] .sidebar-footer {
+  border-top-color: transparent;
+}
+
+.app-shell[data-immersive='true'] .sidebar-note {
+  display: none;
+}
+
+.app-shell[data-immersive='true'] .search-trigger {
+  min-width: 220px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.app-shell[data-immersive='true'] .search-trigger:hover,
+.app-shell[data-immersive='true'] .search-trigger:focus-visible {
+  background: var(--bg-input);
+  border-color: var(--line);
+}
+
 .brand {
   display: flex;
   align-items: center;

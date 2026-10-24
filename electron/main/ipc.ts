@@ -191,6 +191,22 @@ export function registerIpc(runtime: AppRuntime): void {
     runtime.library.listResources(assertString(filmId, '作品 ID')),
   );
 
+  handle('quark:status', () => runtime.quark.status());
+  handle('quark:chooseTool', async () => {
+    const result = await dialog.showOpenDialog({
+      title: '选择已安装并授权的夸克官方工具', properties: ['openFile'],
+      filters: [{ name: '夸克官方工具 quark-drive.cjs', extensions: ['cjs'] }],
+    });
+    return result.canceled || !result.filePaths[0] ? null : runtime.quark.setTool(result.filePaths[0]);
+  });
+  handle('quark:browse', (folderId: unknown) => runtime.quark.browse(assertString(folderId, '文件夹')));
+  handle('quark:selectFolder', (folderId: unknown, recursive: unknown, autoRead: unknown) => {
+    if (typeof recursive !== 'boolean' || typeof autoRead !== 'boolean') throw new AppError('VALIDATION', '读取设置无效。');
+    return runtime.quark.selectFolder(assertString(folderId, '文件夹'), recursive, autoRead);
+  });
+  handle('quark:scan', () => runtime.quark.scan());
+  handle('quark:cancel', () => runtime.quark.cancel());
+
   handle('resources:create', (input: unknown) =>
     runtime.library.createResource((input ?? {}) as ResourceInput),
   );

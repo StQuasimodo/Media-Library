@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { candidate, pngFetch, TestApp } from './helpers';
 import { DatabaseError } from '../electron/main/data/database';
 
@@ -46,17 +46,14 @@ describe('本地持久化', () => {
     const result = await app.library.importCandidate(candidate());
     expect(result.film.posterPath).not.toBeNull();
 
-    // Simulate a cleared cache directory by pointing the cache at a fresh root.
-    const clearedCache = new TestApp({ fetchImpl: pngFetch() });
-    try {
-      clearedCache.restart();
-      expect(app.images.read(result.film.posterPath)).not.toBeNull();
-      const detail = app.library.getFilmDetail(result.film.id);
-      expect(detail.film.title).toBe('花样年华');
-      expect(detail.film.posterPath).not.toBeNull();
-    } finally {
-      clearedCache.dispose();
-    }
+    const poster = app.images.resolveRelative(result.film.posterPath);
+    expect(poster).not.toBeNull();
+    rmSync(poster!);
+    app.restart();
+    expect(app.images.read(result.film.posterPath)).toBeNull();
+    const detail = app.library.getFilmDetail(result.film.id);
+    expect(detail.film.title).toBe('花样年华');
+    expect(detail.film.posterPath).toBe(result.film.posterPath);
   });
 });
 
@@ -182,5 +179,39 @@ describe('数据库损坏与版本保护', () => {
     expect((caught as DatabaseError).failure).toBe('CORRUPT');
     // The file is left untouched for manual recovery.
     expect(readFileSync(file, 'utf8')).toContain('garbage');
+  });
+});
+
+describe('备份与导出可靠性', () => {
+  async function service() {
+    const { BackupService } = await import('../electron/main/services/backup');
+    return new BackupService({
+      dbFile: app.dbFile, backupDir: join(app.dir, 'backups'), schemaVersion: 2,
+      appVersion: '1.0.0', logger: app.logger, getDb: () => app.db, getRepo: () => app.repo,
+      closeDb: () => app.db.close(), openDb: () => app.restart(),
+    });
+  }
+  it('同一秒创建的备份和导出使用独立文件，不会覆盖较早快照', async () => {
+    const backup = await service();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const first = backup.createBackup();
+      const firstExport = backup.exportJson(join(app.dir, 'exports'));
+      app.library.createManualFilm({ title: '第二份快照中的作品' });
+      const second = backup.createBackup();
+      const secondExport = backup.exportJson(join(app.dir, 'exports'));
+      expect(first.path).not.toBe(second.path);
+      expect(firstExport.path).not.toBe(secondExport.path);
+      expect(JSON.parse(readFileSync(firstExport.path, 'utf8')).counts.films).toBe(0);
+      expect(JSON.parse(readFileSync(secondExport.path, 'utf8')).counts.films).toBe(1);
+      backup.restore(first.path);
+      expect(app.repo.listAllFilms()).toHaveLength(0);
+    } finally { vi.useRealTimers(); }
+  });
+  it('SQLite一致性快照失败时报告失败，不降级到可能遗漏WAL内容的文件复制', async () => {
+    const backup = await service();
+    const exec = vi.spyOn(app.db, 'exec').mockImplementation(() => { throw new Error('snapshot unavailable'); });
+    try { expect(() => backup.createBackup()).toThrow('snapshot unavailable'); }
+    finally { exec.mockRestore(); }
   });
 });

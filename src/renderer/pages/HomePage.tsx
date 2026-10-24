@@ -8,7 +8,7 @@ import { CollectionCard } from '../components/CollectionCard';
 import { FocusRail } from '../components/FocusRail';
 import { HeroBackdrop } from '../components/HeroBackdrop';
 import { Track } from '../components/Track';
-import { ErrorState, PosterCard, SkeletonGrid } from '../components/primitives';
+import { ErrorState, SkeletonGrid } from '../components/primitives';
 import { Icon } from '../components/icons';
 import { formatRating, formatRuntime, imageUrl, statusLabel } from '../lib/format';
 
@@ -53,7 +53,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
   const { stats, collections } = data;
   const isEmpty = stats.totalFilms === 0;
   const openEntry = (entry: CollectionEntry) => navigate(`/film/${entry.film.id}`);
-  const wantEntries = railEntries.filter((entry) => entry.watchStatus === 'want').slice(0, 6);
+  const wantEntries = data.wantEntries;
   const hasArtwork = Boolean(
     focused && (focused.film.backdropPath || focused.film.posterPath),
   );
@@ -126,19 +126,15 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="link-button hero-resource-link"
                   onClick={() => navigate(`/film/${focused.film.id}?panel=resources`)}
                 >
                   <Icon name="database" size={15} />
-                  管理资源
+                  夸克资源
                 </button>
               </div>
 
-              <div className="hero-note">
-                共 {stats.totalFilms} 部收藏
-                {stats.collectionCount > 0 ? ` · ${stats.collectionCount} 个专题` : ''}
-                {stats.resourceCount > 0 ? ` · ${stats.resourceCount} 条夸克资源` : ''}
-              </div>
+
             </div>
           ) : (
             <div className="hero-copy hero-copy-empty">
@@ -149,7 +145,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
               <h1 className="hero-empty-title serif">为你的电影，留一个安静的位置。</h1>
               <p className="hero-overview">
                 My Cinema 只保存在这台电脑上。从 TMDB 导入第一部作品开始：资料、海报和背景图会缓存到本地，
-                夸克网盘资源由你手动记录。
+                也可以在设置中连接夸克文件夹，读取云端资源清单。
               </p>
               <div className="hero-actions">
                 <button type="button" className="btn btn-primary" onClick={onOpenImport}>
@@ -178,6 +174,12 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
             onActivate={setActiveIndex}
             onOpen={openEntry}
           />
+          <div className="focus-rail-footer">
+            <span>最近收藏 · 共 {stats.totalFilms} 部</span>
+            <button type="button" className="link-button" onClick={() => navigate('/library')}>
+              全部收藏 <Icon name="chevronRight" size={13} />
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -194,22 +196,6 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
         </div>
       ) : (
         <>
-          <Track
-            title="最近收藏"
-            meta={`${stats.totalFilms} 部`}
-            action={
-              <button type="button" className="link-button" onClick={() => navigate('/library')}>
-                全部收藏
-              </button>
-            }
-          >
-            {railEntries.map((entry) => (
-              <div className="track-item" key={entry.id}>
-                <PosterCard entry={entry} />
-              </div>
-            ))}
-          </Track>
-
           <Track
             title="专题"
             meta={collections.length > 0 ? `${collections.length} 个` : undefined}

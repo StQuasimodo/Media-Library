@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import type { AppSettings, LibrarySort, MetadataLanguage, MotionPreference, PosterDensity } from '@shared/types';
 import type { BackupValidation } from '@shared/api';
 import { api, describeError } from '../lib/api';
@@ -6,9 +7,18 @@ import { useAppState } from '../lib/appState';
 import { useToast } from '../lib/toast';
 import { ConfirmDialog, Field } from '../components/primitives';
 import { Icon } from '../components/icons';
+import { QuarkFolderPanel } from '../components/QuarkFolderPanel';
 import { formatBytes, formatDateTime } from '../lib/format';
+import { prefersReducedMotion } from '../lib/motion';
 
 export function SettingsPage() {
+  const location = useLocation();
+  useEffect(() => {
+    const section = location.hash.slice(1);
+    if (['metadata', 'quark', 'appearance', 'data', 'about'].includes(section)) {
+      document.getElementById(section)?.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
+    }
+  }, [location.hash]);
   const { info, settings, applySettings, invalidate, refreshInfo } = useAppState();
   const toast = useToast();
 
@@ -142,10 +152,11 @@ export function SettingsPage() {
   return (
     <div className="settings-layout">
       <nav className="settings-nav" aria-label="设置分类">
-        <a href="#metadata">影视元数据</a>
-        <a href="#appearance">外观与行为</a>
-        <a href="#data">数据与备份</a>
-        <a href="#about">关于</a>
+        <Link to="/settings#metadata">影视元数据</Link>
+        <Link to="/settings#quark">夸克文件夹</Link>
+        <Link to="/settings#appearance">外观与行为</Link>
+        <Link to="/settings#data">数据与备份</Link>
+        <Link to="/settings#about">关于</Link>
       </nav>
 
       <div>
@@ -239,6 +250,8 @@ export function SettingsPage() {
             </div>
           </div>
         </section>
+
+        <QuarkFolderPanel />
 
         <section className="section-card" id="appearance">
           <div className="section-card-head">

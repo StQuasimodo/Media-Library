@@ -30,9 +30,9 @@
 |---|---|
 | 版本 / 数据库 | 1.0.0 / schema v2 |
 | 自动化测试 | 最近一次业务测试：8 个文件、82 项通过 |
-| 构建与界面 | 最近一次构建通过；Linux 真实 Electron 无显示器诊断模式检查通过 |
+| 构建与界面 | Windows Release 构建、82项测试、真实 Electron 与包内容验证通过；Linux 诊断检查也已通过 |
 | 当前截图 | [界面预览](GALLERY.md)，与最近一次字体调整一致 |
-| Windows 发行产物 | 本轮未重新打包；尺寸与此前交付结果见[历史记录](HANDOFF-HISTORY.md) |
+| Windows 发行产物 | [v1.0.0 已发布](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.0.0)；此前 DSH 产物见[历史记录](HANDOFF-HISTORY.md) |
 | 待验收 | Windows 安装后的完整桌面、字体与缩放；真实 TMDB 在线链路；夸克真实账号目录读取 |
 
 详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

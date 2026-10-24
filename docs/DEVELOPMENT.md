@@ -53,3 +53,18 @@ pnpm package
 ## 架构与验证
 
 Electron 45 主进程负责 SQLite、网络和本机文件，React 19 / TypeScript / Vite 7 渲染界面。使用原生 CSS，不依赖 UI 框架。分层、目录与安全模型见[架构说明](ARCHITECTURE.md)，测试和实际验收状态见[验证与交付](VERIFICATION.md)。历史安装包大小与哈希不能用于判定当前构建产物。
+
+
+## 发布 GitHub Release
+
+仓库提供手动触发的 [Windows release 工作流](../.github/workflows/release.yml)，在 Windows runner 上依次执行冻结锁文件安装、测试、构建、真实 Electron 检查、NSIS 与免安装 ZIP 打包。`pnpm-workspace.yaml` 明确允许所需依赖的构建脚本。
+
+产物通过 `scripts/verify-release.mjs` 核对版本、Windows x64 程序与 SQLite 原生模块、主进程/preload/渲染资源后，生成 SHA-256 校验文件并发布。版本取自 `package.json`，发布说明位于 [RELEASE-NOTES.md](RELEASE-NOTES.md)。已有同名版本时会停止，不覆盖已发布资产；下次发布应更新版本与说明。
+
+具备仓库权限时可在 GitHub Actions 页面点击 Run workflow，或运行：
+
+```bash
+gh workflow run release.yml --ref main
+```
+
+安装包未签名；发布成功不代表已在个人电脑上完成安装、缩放和真实账号验收。

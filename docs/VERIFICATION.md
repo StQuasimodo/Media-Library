@@ -1,5 +1,11 @@
 # 验证与交付
 
+## Windows Release（2026-10-25）
+
+[v1.0.0 已发布](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.0.0)，构建来源为 `48c306f63ad6f8ea441355b564d812b5110964de`。[Windows 流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40114969102)的日志确认：82项测试通过，完整构建、真实Electron/preload/SQLite检查与包内容验证通过；安装包与免安装ZIP上传完成。GitHub资产的SHA-256与发布的校验文件一致。
+
+这证明Windows runner上的运行和打包链路，不代替个人电脑上的安装、字体/缩放与真实TMDB/夸克账号验收。安装包未签名。目前也没有应用内关联夸克账号的授权入口，目录服务仅用fixture工具做过集成验证。
+
 ## 1. 命令
 
 ```powershell

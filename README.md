@@ -18,7 +18,7 @@
 
 ## 开始使用
 
-安装与首次配置见[使用指南](docs/USAGE.md)。从源码开发需要 Node.js 22+ 和 pnpm 11：
+[下载 Windows 安装包与免安装版](https://github.com/StQuasimodo/Media-Library/releases/latest)。安装与首次配置见[使用指南](docs/USAGE.md)。从源码开发需要 Node.js 22+ 和 pnpm 11：
 
 ```bash
 pnpm install

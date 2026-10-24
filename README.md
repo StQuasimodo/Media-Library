@@ -4,7 +4,7 @@
 
 它**不是**播放器或下载器。应用支持通过已授权的夸克官方工具，只读你选定的云端目录清单；不接收账号密码或 Cookie，不解析分享链接、不自动分享或下载视频。
 
-![当前开发版首页](artifacts/review-2026-10-24/brand-home.png)
+![当前开发版首页](artifacts/review-2026-10-24/weight-home.png)
 
 首页已按“优先去掉管理后台骨架”的反馈重做：无侧栏、整窗电影背景、顶部悬浮导航、上方焦点轨道和下方电影信息。影视库、详情、专题、想看与设置也已统一顶部导航，移除固定侧栏；保留筛选、编辑及资源管理能力。
 
@@ -14,7 +14,7 @@
 
 当前开发版截图来自 Linux 无显示器模式下的真实 Electron 应用，使用独立测试数据；夸克清单来自测试工具，不代表真实账号已接通。
 
-[影视库](artifacts/review-2026-10-24/typography-library.png) · [影视详情](artifacts/review-2026-10-24/typography-film.png) · [专题](artifacts/review-2026-10-24/typography-collections.png) · [想看](artifacts/review-2026-10-24/typography-watchlist.png) · [专题详情](artifacts/review-2026-10-24/typography-edition.png) · [夸克文件夹界面](artifacts/review-2026-10-24/09-quark-folder.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
+[影视库](artifacts/review-2026-10-24/weight-library.png) · [影视详情](artifacts/review-2026-10-24/weight-film.png) · [专题](artifacts/review-2026-10-24/typography-collections.png) · [想看](artifacts/review-2026-10-24/typography-watchlist.png) · [专题详情](artifacts/review-2026-10-24/typography-edition.png) · [夸克文件夹界面](artifacts/review-2026-10-24/09-quark-folder.png) · [本轮修复记录](docs/REPAIRS-2026-10-24.md)
 
 ---
 
@@ -57,7 +57,7 @@
 | | |
 |---|---|
 | ![首页](artifacts/review-2026-10-24/typography-home.png) | ![切换聚焦](artifacts/review-2026-10-24/typography-focus.png) |
-| ![详情页](artifacts/review-2026-10-24/typography-film.png) | ![空状态](artifacts/screenshots/11-empty-home.png) |
+| ![详情页](artifacts/review-2026-10-24/weight-film.png) | ![空状态](artifacts/screenshots/11-empty-home.png) |
 
 ---
 

@@ -57,7 +57,7 @@
 
 - 界面：`Segoe UI Variable Text → Segoe UI → Microsoft YaHei UI / Microsoft YaHei → PingFang SC → Noto Sans CJK SC → system-ui`
 - 展示：`Segoe UI Variable Display`，其余回退与界面字体一致；不再混用古典衬线字体
-- 用法：片名和页题使用无衬线500字重、紧凑字距；正文和收藏理由400字重，原名保持小号正体。通过字号、行高与留白体现杂志感，避免把宋体铺满界面。
+- 用法：片名、页题、海报标题、专题名称和主要操作使用无衬线600字重、紧凑字距；正文和收藏理由400字重，原名保持小号正体。通过字号、行高与留白体现杂志感，避免把宋体铺满界面。
 - 顶部 `My Cinema` 品牌字样单独使用28px斜体衬线字（Palatino Linotype / Book Antiqua，Linux回退C059），作为装饰性字标；中文副标、导航、片名和正文继续使用现代无衬线。
 - 等宽仅用于：快捷键、分享链接、文件路径。
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CollectionEntry } from '@shared/types';
 import { api } from '../lib/api';
@@ -10,20 +10,19 @@ import { HeroBackdrop } from '../components/HeroBackdrop';
 import { Track } from '../components/Track';
 import { ErrorState, SkeletonGrid } from '../components/primitives';
 import { Icon } from '../components/icons';
+import { prefersReducedMotion } from '../lib/motion';
 import { formatRating, formatRuntime, imageUrl, statusLabel } from '../lib/format';
 
 export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
   const { version } = useAppState();
   const navigate = useNavigate();
   const { data, error, loading, reload } = useAsyncData(() => api.library.home(), [version]);
-  const [activeIndex, setActiveIndex] = useState(0);
-
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const curationRef = useRef<HTMLDivElement | null>(null);
   const railEntries = data?.recent ?? [];
-
-  useEffect(() => {
-    if (activeIndex > railEntries.length - 1) setActiveIndex(0);
-  }, [railEntries.length, activeIndex]);
-
+  const selectedIndex = railEntries.findIndex((entry) => entry.id === activeId);
+  const featuredIndex = railEntries.findIndex((entry) => entry.id === data?.featured?.id);
+  const activeIndex = selectedIndex >= 0 ? selectedIndex : Math.max(0, featuredIndex);
   const focused: CollectionEntry | null = railEntries[activeIndex] ?? data?.featured ?? null;
 
   // Warm the neighbouring backdrops so moving along the rail stays instant.
@@ -40,14 +39,14 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
 
   if (loading && !data) {
     return (
-      <div className="stack gap-6" style={{ paddingTop: 8 }}>
+      <div className="stack gap-6 home-status">
         <div className="skeleton" style={{ height: 460, borderRadius: 18 }} />
         <SkeletonGrid count={6} />
       </div>
     );
   }
 
-  if (error && !data) return <ErrorState message={error} onRetry={reload} />;
+  if (error && !data) return <div className="home-status"><ErrorState message={error} onRetry={reload} /></div>;
   if (!data) return null;
 
   const { stats, collections } = data;
@@ -77,11 +76,21 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
         <div className="hero-stage-scrim" />
 
         <div className="hero-stage-inner">
+          {railEntries.length > 0 ? (
+            <div className="focus-rail-wrap">
+              <div className="cinema-rail-heading">
+                <span>最近收藏</span>
+                <span className="cinema-rail-position">{String(activeIndex + 1).padStart(2, '0')} / {String(railEntries.length).padStart(2, '0')}</span>
+                <button type="button" className="link-button" onClick={() => navigate('/library')}>全部收藏 <Icon name="chevronRight" size={12} /></button>
+              </div>
+              <FocusRail entries={railEntries} activeIndex={activeIndex}
+                onActivate={(index) => setActiveId(railEntries[index]?.id ?? null)} onOpen={openEntry} />
+            </div>
+          ) : null}
           {focused ? (
             <div className="hero-copy" key={focused.id}>
               <div className="hero-eyebrow">
-                <Icon name="star" size={12} />
-                {activeIndex === 0 ? '最近加入的收藏' : '收藏精选'}
+                {focused.film.mediaType === 'tv' ? '一部剧集' : '一部电影'}
                 <span className="hero-eyebrow-sep" />
                 {statusLabel(focused.watchStatus)}
               </div>
@@ -121,8 +130,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
                   className="btn btn-primary"
                   onClick={() => openEntry(focused)}
                 >
-                  <Icon name="film" size={15} />
-                  查看详情
+                  进入这部作品 <Icon name="chevronRight" size={14} />
                 </button>
                 <button
                   type="button"
@@ -142,10 +150,9 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
                 <Icon name="film" size={12} />
                 私人放映室
               </div>
-              <h1 className="hero-empty-title serif">为你的电影，留一个安静的位置。</h1>
+              <h1 className="hero-empty-title serif">为你的电影，<br />留一个安静的位置。</h1>
               <p className="hero-overview">
-                My Cinema 只保存在这台电脑上。从 TMDB 导入第一部作品开始：资料、海报和背景图会缓存到本地，
-                也可以在设置中连接夸克文件夹，读取云端资源清单。
+                从一部想留下的作品开始，慢慢收集属于自己的电影时刻。
               </p>
               <div className="hero-actions">
                 <button type="button" className="btn btn-primary" onClick={onOpenImport}>
@@ -164,25 +171,15 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
             </div>
           )}
         </div>
+        {!isEmpty ? <div className="cinema-stage-bottom">
+          <span>私人收藏 · {stats.totalFilms} 部作品</span>
+          <button type="button" className="link-button" onClick={() => curationRef.current?.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'instant' : 'smooth' })}>
+            专题与想看 <Icon name="chevronRight" size={12} />
+          </button>
+        </div> : null}
       </section>
 
-      {railEntries.length > 0 ? (
-        <div className="focus-rail-wrap">
-          <FocusRail
-            entries={railEntries}
-            activeIndex={activeIndex}
-            onActivate={setActiveIndex}
-            onOpen={openEntry}
-          />
-          <div className="focus-rail-footer">
-            <span>最近收藏 · 共 {stats.totalFilms} 部</span>
-            <button type="button" className="link-button" onClick={() => navigate('/library')}>
-              全部收藏 <Icon name="chevronRight" size={13} />
-            </button>
-          </div>
-        </div>
-      ) : null}
-
+      <div className="home-curation" ref={curationRef}>
       {isEmpty ? (
         <div className="home-empty">
           <p className="home-empty-lead">
@@ -201,7 +198,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
             meta={collections.length > 0 ? `${collections.length} 个` : undefined}
             action={
               <button type="button" className="link-button" onClick={() => navigate('/collections')}>
-                管理专题
+                全部专题
               </button>
             }
           >
@@ -275,6 +272,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
           ) : null}
         </>
       )}
+      </div>
     </div>
   );
 }

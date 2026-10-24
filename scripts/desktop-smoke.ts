@@ -102,6 +102,13 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     assert.equal(metrics.pageOverflow, false, `${name}: horizontal page overflow`);
     assert.equal(metrics.brokenImages, 0, `${name}: broken images`);
     assert.equal(metrics.topbarTop, 0, `${name}: navigation moved out of view`);
+    if (await js("!!document.querySelector('.home')")) {
+      assert.equal(await js("document.querySelector('.sidebar') === null"), true, 'home must use the cinema navigation');
+      if (await js("document.querySelector('.page').scrollTop === 0")) {
+        const actionBottom = await js("document.querySelector('.hero-actions .btn-primary').getBoundingClientRect().bottom");
+        assert.ok(actionBottom <= height, `${name}: primary action below the initial viewport`);
+      }
+    }
     geometry[name] = metrics;
     writeFileSync(join(output, name + '.png'), (await win.webContents.capturePage()).toPNG());
     checks.push(name);
@@ -123,8 +130,16 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Right' });
   await waitFor(`document.querySelector('.hero-title')?.textContent === ${JSON.stringify(data.films[0].film.title)}`);
   checks.push('keyboard rail changes hero');
+  assert.equal(await js("document.querySelector('.page').scrollTop"), 0, 'rail selection must not scroll the page vertically');
   await delay(550);
   await shot('02-home-focus');
+  await js("document.querySelector('.cinema-stage-bottom button').click()");
+  await waitFor("document.querySelector('.page').scrollTop > 0");
+  await delay(550);
+  assert.equal(await js("document.querySelector('.app-shell').dataset.scrolled"), 'true');
+  await shot('11-home-curation');
+  await js("document.querySelector('.page').scrollTo({top:0,behavior:'instant'})");
+  await waitFor("document.querySelector('.page').scrollTop === 0");
   for (const [width, height] of [[1024,680],[1280,800],[1920,1080]]) await shot(`home-${width}`, width, height);
   win.setContentSize(1440,900);
   await js("document.querySelector('.page').scrollTo({top:document.querySelector('.page').scrollHeight,behavior:'instant'})");
@@ -159,10 +174,11 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   assert.equal(await js("location.hash.startsWith('#/settings')"), true);
   assert.equal(await js("document.querySelector('.page').scrollTop > 0"), true, 'settings anchor must survive page scroll reset');
   if (quarkFixture) {
+    await waitFor("[...document.querySelectorAll('#quark button')].some(b=>b.textContent==='选择云端文件夹' && !b.disabled)");
     await js("[...document.querySelectorAll('#quark button')].find(b=>b.textContent==='选择云端文件夹').click()");
-    await waitFor("!!document.querySelector('.quark-folders button')");
+    await waitFor("!!document.querySelector('.quark-folders button:not(:disabled)')");
     await js("[...document.querySelectorAll('.quark-folders button')].find(b=>b.textContent.trim()==='影视').click()");
-    await waitFor("document.querySelector('.quark-breadcrumbs')?.textContent.includes('影视')");
+    await waitFor("document.querySelector('.quark-breadcrumbs')?.textContent.includes('影视') && !!document.querySelector('.modal-footer button:not(:disabled)')");
     await js("[...document.querySelectorAll('.modal-footer button')].find(b=>b.textContent==='读取此文件夹').click()");
     await waitFor("document.querySelectorAll('.quark-video').length === 2");
     assert.equal(await js("window.cinema.quark.status().then(s=>s.inventory.videos.length)"), 2);
@@ -171,6 +187,12 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   }
   await js("document.querySelector('#quark').scrollIntoView({block:'start',behavior:'instant'})");
   await shot('09-quark-folder');
+  // All mutations below are limited to the three seeded test entries.
+  const testFilmIds = [...data.films.map((item) => item.film.id), data.missing.film.id];
+  await js(`Promise.all(${JSON.stringify(testFilmIds)}.map(id => window.cinema.library.removeFilm(id)))`);
+  await route('/', "!!document.querySelector('.hero-empty-title')");
+  assert.equal(await js("document.querySelectorAll('.rail-item').length"), 0);
+  await shot('10-home-empty');
   assert.deepEqual(errors, []);
   writeFileSync(join(output, 'report.json'), JSON.stringify({ platform:process.platform, headless:process.argv.includes('--headless'), sandboxDisabled:process.argv.includes('--no-sandbox'), artworkDir, quarkFixture, checks, errors, geometry }, null, 2));
   console.log('[desktop-smoke] PASS', JSON.stringify({ output, checks }));

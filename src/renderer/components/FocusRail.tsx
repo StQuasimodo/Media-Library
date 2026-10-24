@@ -22,14 +22,15 @@ export function FocusRail({
   onOpen: (entry: CollectionEntry) => void;
 }) {
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const scroller = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const node = itemRefs.current[activeIndex];
-    if (!node) return;
-    node.scrollIntoView({
+    const track = scroller.current;
+    if (!node || !track) return;
+    track.scrollTo({
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-      inline: 'center',
-      block: 'nearest',
+      left: Math.max(0, node.offsetLeft - track.offsetLeft - (track.clientWidth - node.offsetWidth) / 2),
     });
   }, [activeIndex]);
 
@@ -37,7 +38,7 @@ export function FocusRail({
     const next = Math.max(0, Math.min(entries.length - 1, index + delta));
     if (next === index) return;
     onActivate(next);
-    itemRefs.current[next]?.focus();
+    itemRefs.current[next]?.focus({ preventScroll: true });
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -53,12 +54,12 @@ export function FocusRail({
       case 'Home':
         event.preventDefault();
         onActivate(0);
-        itemRefs.current[0]?.focus();
+        itemRefs.current[0]?.focus({ preventScroll: true });
         break;
       case 'End':
         event.preventDefault();
         onActivate(entries.length - 1);
-        itemRefs.current[entries.length - 1]?.focus();
+        itemRefs.current[entries.length - 1]?.focus({ preventScroll: true });
         break;
       case 'Enter':
       case ' ':
@@ -71,13 +72,14 @@ export function FocusRail({
   };
 
   return (
-    <div className="focus-rail" role="group" aria-label="精选影视，使用左右方向键切换">
+    <div className="focus-rail" ref={scroller} role="group" aria-label="精选影视，使用左右方向键切换">
       {entries.map((entry, index) => {
         const active = index === activeIndex;
         return (
           <button
             key={entry.id}
             type="button"
+            aria-label={`${entry.film.title}${entry.film.year ? `（${entry.film.year}）` : ''}`}
             aria-current={active ? 'true' : undefined}
             ref={(node) => {
               itemRefs.current[index] = node;

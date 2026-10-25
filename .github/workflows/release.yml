@@ -49,8 +49,6 @@ jobs:
         run: node scripts/package.mjs
       - name: Verify packaged files and write SHA-256 checksums
         run: node scripts/verify-release.mjs
-      - name: Verify actual installer shortcut choices
-        run: ./scripts/check-installer.ps1
       - name: Retain build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -62,6 +60,8 @@ jobs:
             release/INSTALL.cmd
             release/RUN-PORTABLE.cmd
             release/SHA256SUMS.txt
+      - name: Verify actual installer shortcut choices
+        run: ./scripts/check-installer.ps1
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

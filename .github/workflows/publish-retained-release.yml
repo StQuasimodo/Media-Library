@@ -33,9 +33,22 @@ jobs:
           path: release
           run-id: ${{ inputs.build_run_id }}
           github-token: ${{ github.token }}
+      - name: Verify actual installer choices before publishing retained files
+        run: |
+          $setups = @(Get-ChildItem release -Filter '*Setup.exe')
+          if ($setups.Count -ne 1) { throw 'Expected one retained installer' }
+          ./scripts/check-installer.ps1 -Installer $setups[0].FullName
       - name: Verify retained build identity and checksums, then publish original files
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_SOURCE_SHA: ${{ inputs.build_source }}
           RELEASE_BUILD_RUN_ID: ${{ inputs.build_run_id }}
         run: node scripts/publish-release.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: retained-installer-evidence
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: .harness/nsis-shortcut-*/report.json

@@ -7,6 +7,7 @@ $root = (Get-Location).Path
 $version = (Get-Content (Join-Path $root 'package.json') -Raw | ConvertFrom-Json).version
 if (-not $Installer) { $Installer = Join-Path $root "release/My-Cinema-$version-Setup.exe" }
 $Installer = (Resolve-Path $Installer).Path
+if ((Split-Path $Installer -Leaf) -match '^My-Cinema-(.+)-Setup\.exe$') { $version = $Matches[1] }
 $output = Join-Path $root ('.harness/nsis-shortcut-' + [Guid]::NewGuid().ToString('N'))
 $destination = Join-Path $output 'My Cinema'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
@@ -37,6 +38,21 @@ function Get-InstallerWindow {
 function Click-Control($control) {
   Assert-True ($null -ne $control) 'Required installer control not found.'
   $control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+}
+function Get-InstallerDiagnostics {
+  $result = [System.Collections.Generic.List[object]]::new()
+  $windows = [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+  foreach ($window in $windows) {
+    if ($window.Current.Name -notlike '*My Cinema*' -and -not $script:ownedPids.Contains($window.Current.ProcessId)) { continue }
+    $controls = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+    $items = [System.Collections.Generic.List[object]]::new()
+    foreach ($control in $controls) {
+      if ($items.Count -ge 100) { break }
+      $items.Add(@{ name=$control.Current.Name; id=$control.Current.AutomationId; enabled=$control.Current.IsEnabled; type=$control.Current.ControlType.ProgrammaticName })
+    }
+    $result.Add(@{ name=$window.Current.Name; controls=$items.ToArray() })
+  }
+  return $result.ToArray()
 }
 function Run-Silent([string]$flags) {
   $process = Start-Process -FilePath $Installer -ArgumentList "/S $flags /D=$destination" -PassThru
@@ -110,7 +126,10 @@ try {
   @{ version=$version; result='passed'; actualInstallerUi=$true; checks=$checks.ToArray() } | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $output 'report.json')
   Write-Host '[installer] PASS: GUI checkbox, preference persistence, opt-in and opt-out.'
 } catch {
-  @{ version=$version; result='failed'; checks=$checks.ToArray(); error=$_.Exception.Message } | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $output 'report.json')
+  @{ version=$version; result='failed'; checks=$checks.ToArray(); error=$_.Exception.Message;
+    installedExecutable=(Test-Path (Join-Path $destination 'My Cinema.exe')); desktopLink=(Test-Path $desktopLink);
+    startLink=(Test-Path $startLink); windows=@(Get-InstallerDiagnostics)
+  } | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'report.json')
   throw
 } finally {
   foreach ($id in $script:ownedPids) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }

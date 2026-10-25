@@ -57,10 +57,8 @@
       WinShell::SetLnkAUMI "$newDesktopLink" "${APP_ID}"
     ${Else}
       ; Explicit opt-out also clears shortcuts retained by an earlier installer.
-      WinShell::UninstShortcut "$newDesktopLink"
       Delete "$newDesktopLink"
       ${If} $oldDesktopLink != $newDesktopLink
-        WinShell::UninstShortcut "$oldDesktopLink"
         Delete "$oldDesktopLink"
       ${EndIf}
     ${EndIf}
@@ -70,6 +68,5 @@
 !endif
 
 !macro customUnInstall
-  WinShell::UninstShortcut "$oldDesktopLink"
   Delete "$oldDesktopLink"
 !macroend

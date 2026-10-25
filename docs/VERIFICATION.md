@@ -2,7 +2,9 @@
 
 ## 夸克应用内整合（2026-10-25）
 
-源码已加入「设置 → 夸克网盘」的官方网页登录、目录连接检查、逐层浏览和断开本机会话。新增 Windows 集成预览工作流，运行完整应用的真实 preload/IPC、匿名目录鉴权及官方窗口隔离检查，再打包；结果将在成功运行后补充。真实账号目录访问、实际会话重启、递归同步与 TMDB 自动入库未验证或未完成。
+源码已加入「设置 → 夸克网盘」的官方网页登录、目录连接检查、逐层浏览和断开本机会话。[Windows 集成预览流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40187475255)的90项测试、类型检查、完整构建与真实 Electron/preload/SQLite 检查已通过；集成官方登录窗口可打开，匿名目录返回需要登录，远端页面无业务桥接与 Node require。源码为 `0b3b0e1`。Linux 的真实 Electron 界面检查也已通过，使用独立夹具和显式 headless/no-sandbox 诊断参数；Windows 检查未使用这些诊断参数。真实账号目录访问、实际会话重启、递归同步与 TMDB 自动入库未验证或未完成。
+
+安装包、免安装 ZIP 与包内容校验均通过，[下载集成预览产物](https://github.com/StQuasimodo/Media-Library/actions/runs/40187475255/artifacts/12596621235)。[Windows 原始桌面报告](../artifacts/research-2026-10-25/windows-integrated-quark-desktop.json)、[交付范围记录](../artifacts/research-2026-10-25/integrated-preview.json)、[SHA-256](../artifacts/research-2026-10-25/integrated-preview-SHA256SUMS.txt)、[账号入口截图](../artifacts/review-2026-10-25/quark-integrated-windows.png)。安装包哈希为 `ba5f55e2035885e4ab11bea92f4a13498379d4d6ea79dc2c69058ee66b59c938`。这些预览产物没有覆盖稳定版 Release。
 
 ## Windows Release（2026-10-25）
 

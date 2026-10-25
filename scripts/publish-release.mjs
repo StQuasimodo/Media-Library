@@ -40,9 +40,17 @@ if (process.env.RELEASE_BUILD_RUN_ID) {
 }
 const temporary = mkdtempSync(join(tmpdir(), 'mycinema-release-'));
 try {
+  // Pin and verify the tag before release creation. Passing --target for an
+  // already-built historical commit can require permissions beyond the runner token.
+  const tag = `v${version}`;
+  const refs = JSON.parse(gh(['api', `repos/${repo}/git/matching-refs/tags/${tag}`]));
+  if (!refs.some(ref => ref.ref === `refs/tags/${tag}`)) execFileSync('git', ['push', 'origin', `${source}:refs/tags/${tag}`], { stdio: 'inherit' });
+  const ref = JSON.parse(gh(['api', `repos/${repo}/git/ref/tags/${tag}`]));
+  assert.equal(ref.object.type, 'commit');
+  assert.equal(ref.object.sha, source, 'Release tag must point to the original build.');
   const notes = join(temporary, 'notes.md');
   writeFileSync(notes, execFileSync('git', ['show', `${source}:docs/RELEASE-NOTES.md`]));
-  const args = ['release', 'create', `v${version}`, '--repo', repo, '--target', source,
+  const args = ['release', 'create', tag, '--repo', repo,
     '--title', `My Cinema v${version}`, '--notes-file', notes,
     ...(version.includes('-') ? ['--prerelease'] : []),
     ...[...assets, 'SHA256SUMS.txt'].map(name => join(directory, name))];

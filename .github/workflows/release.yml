@@ -61,10 +61,7 @@ jobs:
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          $version = (Get-Content package.json | ConvertFrom-Json).version
-          $channelArgs = if ($version.Contains('-')) { @('--prerelease') } else { @('--latest') }
-          gh release create "v$version" --repo "$env:GITHUB_REPOSITORY" --target "$env:GITHUB_SHA" --title "My Cinema v$version" --notes-file docs/RELEASE-NOTES.md @channelArgs "release/My-Cinema-$version-Setup.exe" "release/My-Cinema-$version-portable-win64.zip" release/INSTALL.cmd release/RUN-PORTABLE.cmd release/SHA256SUMS.txt
+        run: node scripts/publish-release.mjs
       - name: Retain desktop diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v4

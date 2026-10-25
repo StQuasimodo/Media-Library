@@ -5,7 +5,9 @@ const countNode = document.querySelector('#count');
 const trailNode = document.querySelector('#trail');
 let trail = [{ id: '0', name: '夸克网盘' }];
 const labels = { not_checked: '尚未检查', login_required: '尚未获得目录访问会话，请在官方网页登录', unavailable: '暂时无法验证连接', directory_access_verified: '目录接口已验证可访问；不等于影视已导入' };
-function renderState(data) { if (data) statusNode.textContent = labels[data.state] || '状态未知'; }
+function renderState(data) {
+  if (data) { statusNode.textContent = labels[data.state] || '状态未知'; errorNode.textContent = data.error || ''; }
+}
 async function run(action, id) {
   const buttons = [...document.querySelectorAll('button')]; buttons.forEach(button => { button.disabled = true; });
   errorNode.textContent = ''; statusNode.textContent = '正在处理…';

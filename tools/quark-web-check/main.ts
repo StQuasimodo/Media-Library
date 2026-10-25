@@ -59,15 +59,31 @@ async function openLogin() {
     autoHideMenuBar: true, webPreferences: { partition: 'persist:quark-web-check', sandbox: true, nodeIntegration: false, contextIsolation: true, devTools: false } });
   const win = login; protect(win);
   win.on('closed', () => { login = null; });
-  await win.loadURL('https://pan.quark.cn/list');
+  // A page can keep loading analytics/images after its login UI is usable.
+  // Wait for the trusted top-level DOM, with a bounded failure, not every asset.
+  await new Promise<void>((done, fail) => {
+    const finish = (error?: Error) => {
+      clearTimeout(timer); win.webContents.removeListener('dom-ready', ready); win.webContents.removeListener('did-fail-load', failed);
+      error ? fail(error) : done();
+    };
+    const ready = () => { if (trustedLoginUrl(win.webContents.getURL())) finish(); };
+    const failed = (_event: unknown, code: number, _description: string, _url: string, mainFrame: boolean) => {
+      if (mainFrame && code !== -3) finish(new CheckError('network', `官方登录页加载失败（${code}），请检查网络或系统证书。`));
+    };
+    const timer = setTimeout(() => finish(new CheckError('network', '官方登录页在25秒内未就绪，请在本机网络重试。')), 25_000);
+    win.webContents.on('dom-ready', ready); win.webContents.on('did-fail-load', failed);
+    void win.loadURL('https://pan.quark.cn/list').catch(() => { /* did-fail-load/timeout reports a sanitized failure */ });
+  });
 }
 async function selfTest() {
   const marker = { url: 'https://mycinema-session-check.invalid', name: 'persistence-probe', value: 'synthetic-not-authentication', secure: true, expirationDate: Math.floor(Date.now() / 1000) + 3600 };
   if (stage === 'write') { await store.cookies.set(marker); await store.cookies.flushStore(); store.flushStorageData(); }
   const persisted = (await store.cookies.get({ url: marker.url })).some(cookie => cookie.name === marker.name && cookie.value === marker.value);
   if (!persisted) throw new Error('Isolated cookie persistence check failed');
+  console.log('[quark-web-check] Isolated synthetic cookie ready.');
   const status = await check();
   if (status.state !== 'login_required') throw new Error(`Anonymous directory check was inconclusive: ${status.state}`);
+  console.log('[quark-web-check] Anonymous directory rejected as expected; opening official page.');
   await openLogin();
   if (!login || !trustedLoginUrl(login.webContents.getURL())) throw new Error('Official login page did not load at a trusted origin');
   let loginControlsVisible = false;
@@ -129,4 +145,4 @@ app.on('before-quit', event => {
   store.cookies.flushStore().finally(() => { store.flushStorageData(); app.quit(); });
 });
 app.on('window-all-closed', () => app.quit());
-if (stage) setTimeout(() => { console.error('[quark-web-check] Timed out'); app.exit(1); }, 55_000).unref();
+if (stage) setTimeout(() => { console.error('[quark-web-check] Timed out'); app.exit(1); }, 75_000).unref();

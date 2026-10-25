@@ -11,8 +11,9 @@ describe('网页登录验证的只读目录协议', () => {
   });
   it('访问限制和网络失败不直接解释为账号退出', () => {
     for (const status of [403, 429, 500]) {
-      try { parsePage(status, {}); throw new Error('Expected failure'); }
-      catch (error) { expect((error as CheckError).kind).not.toBe('login'); }
+      expect(() => parsePage(status, {})).toThrow(CheckError);
+      try { parsePage(status, {}); }
+      catch (error) { expect((error as CheckError).kind).toBe(status === 500 ? 'network' : 'blocked'); }
     }
   });
   it('只生成固定官方主机的目录GET地址，正确编码目录ID', () => {

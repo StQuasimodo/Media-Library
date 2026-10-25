@@ -1,0 +1,34 @@
+name: Quark Windows compatibility probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Fetch pinned official distribution with TLS and SHA-256 validation
+        run: |
+          New-Item -ItemType Directory -Force .harness | Out-Null
+          Invoke-WebRequest -Uri 'https://pdds.quark.cn/download/stfile/eekkigineefiegmgo/quarkclouddrive-1.0.25.zip' -OutFile .harness/official-quark.zip
+          $digest = (Get-FileHash .harness/official-quark.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($digest -ne '56c34e9a9313ae29d39475b4ff9da9e92fbfd59699bf5843e3382e54434fffb8') { throw 'Official distribution changed; stop and review before executing.' }
+          Expand-Archive .harness/official-quark.zip -DestinationPath .harness/official-quark
+      - name: Check version, help and Agent recognition without an account
+        run: node scripts/probe-quark-runtime.mjs .harness/official-quark/scripts/quark-drive.cjs
+      - name: Retain sanitized diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quark-windows-preflight
+          include-hidden-files: true
+          if-no-files-found: error
+          path: .harness/quark-probe-*/report.json

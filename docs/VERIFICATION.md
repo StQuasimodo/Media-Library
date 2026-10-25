@@ -1,5 +1,19 @@
 # 验证与交付
 
+## API Key 更新后状态排查（2026-10-25）
+
+用户报告更新后需要重新配置 API；尚未确认本机是状态为未配置，还是仅输入框为空，也未确认其他收藏/设置是否保留。代码检查发现旧 `CredentialStore` 将缺失、解密失败、系统存储暂不可用都变成 null，并缓存到进程退出；这是已修复的独立问题，不能据此认定它就是用户本机的原因。
+
+当前源码只缓存成功读取的密钥，区分 configured/missing/unavailable/unreadable，失败时保留原文件，可在设置中重试；导入界面的提示同步调整。已配置时明确说明密钥不回显、空输入框无需重填。数据目录、凭据版本1格式、safeStorage 和 SQLite schema 均未改变。
+
+本地94项测试、类型检查、构建与真实 Electron 检查通过。[Windows流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40188705823)的94项测试、真实 Electron 与加密跨进程验证也通过：使用稳定版 `48c306f` 的原始 CredentialStore 保存合成密钥，在另一个目录的新 Electron 外壳中读取并替换，再启动新进程复读。这里使用真实 Windows safeStorage 和隔离 profile；没有使用个人 API Key、登录 TMDB，也不等同于 NSIS 安装升级验收。此次未复现正常升级丢失密钥，用户本机旧配置是否可读取仍未确认。
+
+[下载含修复的 Windows 集成预览版](https://github.com/StQuasimodo/Media-Library/actions/runs/40188705823/artifacts/12597288041)（安装包与免安装 ZIP，源码 `a630553`）。打包、包内容校验和上传均成功；未覆盖稳定版 Release。
+
+证据：[范围记录](../artifacts/research-2026-10-25/credential-upgrade/summary.json)、[旧版写入](../artifacts/research-2026-10-25/credential-upgrade/report-write-old.json)、[新版读取并替换](../artifacts/research-2026-10-25/credential-upgrade/report-read-new.json)、[重启复读](../artifacts/research-2026-10-25/credential-upgrade/report-restart-new.json)、[真实桌面报告](../artifacts/research-2026-10-25/credential-upgrade/desktop-report.json)、[SHA-256](../artifacts/research-2026-10-25/credential-upgrade/SHA256SUMS.txt)。安装包 SHA-256 为 `c37a5209dcec4620d063c0b95277fc12edec0cd7e194a5b463b5f4961983ccc7`。
+
+在 Windows 安装依赖后可复跑：`node scripts/check-credential-upgrade.mjs`。这会构建隔离测试外壳，报告只含检查阶段与布尔结果，不上传凭据或 Local State。
+
 ## 夸克应用内整合（2026-10-25）
 
 源码已加入「设置 → 夸克网盘」的官方网页登录、目录连接检查、逐层浏览和断开本机会话。[Windows 集成预览流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40187475255)的90项测试、类型检查、完整构建与真实 Electron/preload/SQLite 检查已通过；集成官方登录窗口可打开，匿名目录返回需要登录，远端页面无业务桥接与 Node require。源码为 `0b3b0e1`。Linux 的真实 Electron 界面检查也已通过，使用独立夹具和显式 headless/no-sandbox 诊断参数；Windows 检查未使用这些诊断参数。真实账号目录访问、实际会话重启、递归同步与 TMDB 自动入库未验证或未完成。
@@ -16,7 +30,7 @@
 
 ```powershell
 pnpm typecheck              # tsc --noEmit
-pnpm test                   # vitest run（当前9文件 / 90用例；稳定版为82用例）
+pnpm test                   # vitest run（当前9文件 / 94用例；稳定版为82用例）
 pnpm build                  # 类型检查 + 主进程打包 + 渲染层构建
 pnpm package                # 安装包 + 免安装 zip（自动处理 TMP / PATH / 镜像）
 pnpm package:dir            # 只生成免安装目录 release/win-unpacked

@@ -1,0 +1,14 @@
+{
+  "source": "a630553385143c17f63a8327b174c35373820f64",
+  "legacyCredentialSource": "48c306f63ad6f8ea441355b564d812b5110964de",
+  "run": "https://github.com/StQuasimodo/Media-Library/actions/runs/40188705823",
+  "result": "success",
+  "unitTestsPassed": 94,
+  "artifactId": 12597288041,
+  "realWindowsEncryption": true,
+  "syntheticCredentialOnly": true,
+  "userReportedCauseConfirmed": false,
+  "actualTmdbOnlineVerified": false,
+  "installerUpgradeTested": false,
+  "stableReleaseReplaced": false
+}

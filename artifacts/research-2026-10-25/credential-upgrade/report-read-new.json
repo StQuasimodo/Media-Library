@@ -1,0 +1,9 @@
+{
+  "phase": "read-new",
+  "platform": "win32",
+  "packaged": true,
+  "appName": "My Cinema",
+  "realWindowsEncryption": true,
+  "syntheticCredentialOnly": true,
+  "result": "passed"
+}

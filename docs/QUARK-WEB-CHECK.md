@@ -6,7 +6,7 @@
 
 现在优先使用 My Cinema 自身的「设置 → 夸克网盘」，无需另外打开独立验证工具。
 
-1. [下载 Windows 集成预览版](https://github.com/StQuasimodo/Media-Library/actions/runs/40187475255/artifacts/12596621235)（需登录 GitHub）。解开产物后，运行 `My-Cinema-1.0.0-Setup.exe`，或解压其中的 `My-Cinema-1.0.0-portable-win64.zip` 后启动 `My Cinema.exe`。稳定版 v1.0.0 Release 尚不包含这个入口。
+1. [下载 Windows 集成预览版](https://github.com/StQuasimodo/Media-Library/actions/runs/40188705823/artifacts/12597288041)（需登录 GitHub）。解开产物后，运行 `My-Cinema-1.0.0-Setup.exe`，或解压其中的 `My-Cinema-1.0.0-portable-win64.zip` 后启动 `My Cinema.exe`。稳定版 v1.0.0 Release 尚不包含这个入口。
 2. 点击「关联夸克账号」，在官方网页中正常登录，随后回到设置点击「检查连接」。只有目录接口真实返回有效结果才显示「目录访问已验证」。
 3. 点击「浏览云端目录」，逐层进入自己的小影视目录，核对文件、子文件夹及完整总数；没有下载、播放、创建分享或改动网盘文件的操作。
 4. 关闭整个应用和登录窗口，重启后再点击「检查连接」和「浏览云端目录」，核验实际登录会话是否保留。
@@ -14,7 +14,7 @@
 
 原来的脚本接入收进「高级：官方工具目录桥接」。新旧方式不共用授权。当前应用内可浏览目录，尚未实现指定目录递归同步、TMDB 自动匹配或自动收藏关联；实际账号访问和重启持久化仍未验证。
 
-新服务使用 `persist:mycinema-quark-web` 专用 Session；与本地业务窗口、日常浏览器和独立实验工具隔离。仅本地应用顶层页面可调用新 IPC，远端窗口无 Node 与业务 preload。目录协议由正式服务与诊断工具共用，未改数据库结构。[集成版 Windows 流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40187475255)已全部通过：90项测试、类型检查、真实 Electron 集成检查、安装包/免安装版与包内容校验。证据见[验证说明](VERIFICATION.md)，账号入口截图如下。下面的独立工具结果保留为历史记录。
+新服务使用 `persist:mycinema-quark-web` 专用 Session；与本地业务窗口、日常浏览器和独立实验工具隔离。仅本地应用顶层页面可调用新 IPC，远端窗口无 Node 与业务 preload。目录协议由正式服务与诊断工具共用，未改数据库结构。[最新集成版 Windows 流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40188705823)已全部通过：94项测试、类型检查、真实 Electron 集成检查、Windows 加密凭据跨进程检查、安装包/免安装版与包内容校验。证据见[验证说明](VERIFICATION.md)，账号入口截图如下。下面的独立工具结果保留为历史记录。
 
 ![Windows 应用内夸克账号入口](../artifacts/review-2026-10-25/quark-integrated-windows.png)
 

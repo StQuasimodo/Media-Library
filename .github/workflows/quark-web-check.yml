@@ -1,0 +1,50 @@
+name: Quark web session validation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies and official Electron runtime
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          node node_modules/electron/install.js
+      - name: Test directory protocol and application regressions
+        run: |
+          pnpm exec tsc --noEmit -p tools/quark-web-check/tsconfig.json
+          pnpm test
+      - name: Check isolated official login page and persist synthetic test cookie
+        run: node scripts/quark-web-check.mjs --self-test=write
+      - name: Verify persistence after restarting Electron
+        run: node scripts/quark-web-check.mjs --self-test=read
+      - name: Build standalone portable validation tool
+        run: |
+          node scripts/quark-web-check.mjs --package
+          $probe = Start-Process -FilePath 'release/quark-web-check/My Cinema Quark Check.exe' -ArgumentList '--self-test=packaged-read' -Wait -PassThru -WorkingDirectory (Get-Location).Path
+          if ($probe.ExitCode -ne 0) { throw 'Packaged validation tool failed its own startup check.' }
+          Compress-Archive -Path 'release/quark-web-check/*' -DestinationPath 'release/My-Cinema-Quark-Web-Check-Windows.zip'
+          (Get-FileHash release/My-Cinema-Quark-Web-Check-Windows.zip -Algorithm SHA256).Hash | Set-Content release/QUARK-CHECK-SHA256.txt
+      - name: Upload portable tool
+        uses: actions/upload-artifact@v4
+        with:
+          name: My-Cinema-Quark-Web-Check-Windows
+          if-no-files-found: error
+          path: |
+            release/My-Cinema-Quark-Web-Check-Windows.zip
+            release/QUARK-CHECK-SHA256.txt
+      - name: Upload sanitized evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quark-web-check-evidence
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: .harness/quark-web-*.json

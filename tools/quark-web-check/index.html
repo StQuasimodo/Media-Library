@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>夸克连接验证</title>
+<style>body{margin:0;padding:40px;background:#101216;color:#e9ecf2;font:14px/1.8 'Segoe UI','Microsoft YaHei',sans-serif}h1{font-size:28px}p{color:#aab1bd;max-width:70ch}button{font:inherit;background:#1d222c;color:inherit;border:1px solid #353b47;border-radius:6px;padding:8px 16px;cursor:pointer;margin:4px}button:disabled{opacity:.45;cursor:wait}button:focus-visible{outline:2px solid #8ab4ff}#status{padding:16px 0;color:#8ab4ff}#error{color:#e6a49b}#files{padding:0;list-style:none}#files li{padding:8px 0;border-bottom:1px solid #282f3b;overflow-wrap:anywhere}.hint{font-size:12px;color:#9299a6}#trail{margin-top:24px}</style></head>
+<body><div class="hint">MY CINEMA · 独立验证工具</div><h1>夸克网页登录与目录验证</h1>
+<p>这是连接原型，不会修改正式版的收藏或数据库。网页登录使用独立会话，首次打开需要你在夸克官方网页完成登录。此工具只发送目录读取请求，不提供播放、下载、改名或分享功能。</p>
+<div><button id="login">1. 打开夸克官方登录页</button><button id="check">2. 检查目录访问</button><button id="list">3. 读取当前文件夹</button><button id="export">导出无凭据诊断结果</button></div>
+<div id="status" role="status">尚未检查</div><div id="error" role="alert"></div>
+<p class="hint">登录完成后回到本窗口点击“检查目录访问”。读取成功后，关闭工具并重新打开，再检查一次；这一步才能确认你的真实登录会话可在重启后使用。不要把授权码、Cookie 或 Token 发到聊天里。</p>
+<div id="trail"></div><div id="count"></div><ul id="files"></ul>
+<script src="ui.js"></script></body></html>

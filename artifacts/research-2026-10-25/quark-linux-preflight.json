@@ -1,0 +1,39 @@
+{
+  "platform": "linux",
+  "arch": "x64",
+  "node": "v24.19.0",
+  "runtimeSHA256": "b19755822486bd812c76e15de31e9213bccfa2cc6ed1e639c43201e5cf2e07b5",
+  "isolatedHome": true,
+  "inheritedAgentEnvironment": false,
+  "loginAttempted": false,
+  "checks": [
+    {
+      "command": "--version",
+      "exitCode": 0,
+      "signal": null,
+      "processError": null,
+      "resultCode": null,
+      "message": null,
+      "version": "1.0.25-876f30d"
+    },
+    {
+      "command": "--help",
+      "exitCode": 0,
+      "signal": null,
+      "processError": null,
+      "resultCode": null,
+      "message": null,
+      "version": null
+    },
+    {
+      "command": "resolve-agent",
+      "exitCode": 1,
+      "signal": null,
+      "processError": null,
+      "resultCode": -104,
+      "message": "无法识别当前 Agent 环境，禁止继续使用",
+      "version": null
+    }
+  ],
+  "outcome": "agent_environment_rejected"
+}

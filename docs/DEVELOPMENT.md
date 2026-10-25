@@ -70,3 +70,10 @@ gh workflow run release.yml --ref main
 ```
 
 安装包未签名；发布成功不代表已在个人电脑上完成安装、缩放和真实账号验收。
+
+
+## 1.2预览的验证入口
+
+`pnpm test:desktop --quark-sync-fixture` 在隔离profile里运行真实生产主进程、preload、界面、SQLite和元数据服务，只替换夸克/TMDB的HTTP响应，验证UI选目录到收藏/图片/资源规格、增量与失败保护。它与实际匿名网络探针 `--quark-web-probe` 分开运行，不能据此宣称真实账号成功。
+
+Windows发布流程还运行 `scripts/check-installer.ps1`，在干净runner上通过原生UI Automation取消桌面快捷方式，检查实际安装、重装保留选择以及显式开关。脚本拒绝在普通个人环境执行，不接触用户已有安装。`build/installer.nsh` 是最小NSIS扩展，不替换整个安装器模板。图标生成及来源见 [build/ICON.md](../build/ICON.md)。

@@ -98,10 +98,10 @@ export class LibraryRepository {
     return row ? rowToFilm(row) : null;
   }
 
-  getFilmByExternal(source: string, externalId: string): Film | null {
+  getFilmByExternal(source: string, externalId: string, mediaType: Film['mediaType']): Film | null {
     const row = this.db
-      .prepare('SELECT * FROM films WHERE metadata_source = ? AND external_id = ?')
-      .get<FilmRow>(source, externalId);
+      .prepare('SELECT * FROM films WHERE metadata_source = ? AND external_id = ? AND media_type = ?')
+      .get<FilmRow>(source, externalId, mediaType);
     return row ? rowToFilm(row) : null;
   }
 
@@ -159,6 +159,14 @@ export class LibraryRepository {
   listAllFilms(): Film[] {
     const rows = this.db.prepare('SELECT * FROM films ORDER BY created_at ASC').all<FilmRow>();
     return rows.map(rowToFilm);
+  }
+
+  listCloudResources(filmId?: string): import('../../../src/shared/quarkSync').QuarkCloudResource[] {
+    return this.db.prepare(`SELECT scope || ':' || file_id AS id, film_id AS filmId, file_id AS fileId, name, path, season, episode,
+      size_bytes AS size, technical_json AS technical,
+      present, seen_at AS lastSeenAt, scope = (SELECT scope FROM quark_sync_source WHERE id = 1) AS active
+      FROM quark_cloud_files ${filmId ? 'WHERE film_id = ?' : 'WHERE film_id IS NOT NULL'} ORDER BY path`)
+      .all<any>(...(filmId ? [filmId] : [])).map(row => ({ ...row,technical:JSON.parse(row.technical),present: Boolean(row.present),active: Boolean(row.active) }));
   }
 
   listAllEntries(): CollectionEntry[] {
@@ -607,7 +615,7 @@ export class LibraryRepository {
 
   countResources(): number {
     const row = this.db
-      .prepare('SELECT COUNT(*) AS count FROM media_resources')
+      .prepare('SELECT (SELECT COUNT(*) FROM media_resources) + (SELECT COUNT(*) FROM quark_cloud_files WHERE film_id IS NOT NULL) AS count')
       .get<{ count: number }>();
     return row?.count ?? 0;
   }

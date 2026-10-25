@@ -1,5 +1,5 @@
 /** Real Electron/preload/SQLite smoke test against an isolated disposable profile. */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu, clipboard } from 'electron';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
@@ -8,6 +8,7 @@ import { LibraryRepository } from '../electron/main/data/repository';
 import { LibraryService } from '../electron/main/services/library';
 import { ImageCache } from '../electron/main/services/imageCache';
 import { QuarkLibrary } from '../electron/main/services/quark/library';
+import { installQuarkSyncFixture } from './quark-sync-fixture';
 
 const root = process.cwd();
 const output = mkdtempSync(join(root, '.harness', 'desktop-smoke-'));
@@ -21,6 +22,8 @@ const checks: string[] = [];
 const errors: string[] = [];
 const geometry: Record<string, unknown> = {};
 const quarkFixture = process.argv.includes('--quark-fixture');
+const quarkSyncFixture = process.argv.includes('--quark-sync-fixture');
+let cloudFixture: ReturnType<typeof installQuarkSyncFixture> | null=null;
 
 async function seed() {
   if (quarkFixture) {
@@ -115,8 +118,11 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     checks.push(name);
   }
   await waitFor("!!document.querySelector('.focus-rail .rail-item')");
+  assert.equal(Menu.getApplicationMenu(),null,'production app must not expose native Edit/View menus');
+  assert.equal(win.isMenuBarVisible(),false,'native menu bar must be hidden');
+  checks.push('production native menu removed');
   assert.equal(await js('typeof window.cinema.library.home'), 'function');
-  assert.equal((await js('window.cinema.app.info()')).metadataCredentialState, 'missing');
+  assert.equal((await js('window.cinema.app.info()')).metadataCredentialState, quarkSyncFixture ? 'configured' : 'missing');
   assert.equal(await js('window.cinema.library.stats().then(stats => stats.totalFilms)'), 3);
   checks.push('real preload IPC and SQLite');
   assert.equal(await js("document.querySelectorAll('.home .poster-card').length"), 0, 'home must not duplicate the focus rail');
@@ -166,6 +172,24 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   await js("document.querySelector('.active-filters button').click()");
   await waitFor("document.querySelector('.result-count')?.textContent === '3 部'");
   checks.push('library search, year filter and clear through real UI');
+  if(process.platform==='win32') {
+    const previousClipboard=await clipboard.readText();
+    try {
+      await js(`(() => {const input=document.querySelector('[aria-label="搜索影视库"]');
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Matrix');
+        input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();})()`);
+      win.webContents.focus();
+      for(const key of ['A','C']) {
+        win.webContents.sendInputEvent({type:'keyDown',keyCode:key,modifiers:['control']});
+        win.webContents.sendInputEvent({type:'keyUp',keyCode:key,modifiers:['control']});
+      }
+      await delay(120);
+      assert.equal((await clipboard.readText())==='Matrix',true,'standard text copy must work without visible native menus');
+      checks.push('Windows clipboard shortcuts work with no native menu');
+      await js("document.querySelector('.active-filters button').click()");
+      await waitFor("document.querySelector('.result-count')?.textContent === '3 部'");
+    } finally {await clipboard.writeText(previousClipboard);}
+  }
   await shot('library-1024', 1024, 680);
   win.setContentSize(1440, 900);
   await route(`/film/${data.films[0].film.id}`, "!!document.querySelector('.film-title')");
@@ -255,14 +279,71 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   }
   await js("document.querySelector('#quark').scrollIntoView({block:'start',behavior:'instant'})");
   await shot('09-quark-folder');
-  // All mutations below are limited to the three seeded test entries.
-  const testFilmIds = [...data.films.map((item) => item.film.id), data.missing.film.id];
+  const extraFilmIds: string[]=[];
+  if (quarkSyncFixture) {
+    assert.ok(cloudFixture);
+    await js("[...document.querySelectorAll('#quark button')].find(b=>b.textContent==='检查连接').click()");
+    await waitFor("[...document.querySelectorAll('#quark button')].some(b=>b.textContent==='浏览云端目录' && !b.disabled)");
+    await js("[...document.querySelectorAll('#quark button')].find(b=>b.textContent==='浏览云端目录').click()");
+    await waitFor("[...document.querySelectorAll('#quark button')].some(b=>b.textContent==='文件夹 · 验证影视')");
+    await js("[...document.querySelectorAll('#quark button')].find(b=>b.textContent==='文件夹 · 验证影视').click()");
+    await waitFor("[...document.querySelectorAll('#quark button')].some(b=>b.textContent==='使用当前目录并开始匹配' && !b.disabled)");
+    await js("[...document.querySelectorAll('#quark button')].find(b=>b.textContent==='使用当前目录并开始匹配').click()");
+    await waitFor("document.querySelectorAll('.quark-match-group[data-match-state=review]').length===2");
+    let sync=await js('window.cinema.quarkSync.status()');
+    assert.equal(sync.videos,3);assert.equal(sync.groups.length,2);
+    await js("document.querySelector('.quark-sync-panel').scrollIntoView({block:'start',behavior:'instant'})");
+    await shot('15-quark-matches');
+    await js("[...document.querySelectorAll('#quark button')].find(b=>b.textContent==='确认 2 组高置信匹配').click()");
+    await waitFor("[...document.querySelectorAll('#quark [role=status]')].some(node=>node.textContent.includes('2 组已关联'))");
+    sync=await js('window.cinema.quarkSync.status()');
+    const tv=sync.groups.find((group: any)=>group.query.mediaType==='tv').film;
+    const movieGroup=sync.groups.find((group: any)=>group.query.mediaType==='all').film;
+    assert.notEqual(tv.id,movieGroup.id,'same TMDB numeric id in movie/tv namespaces must remain distinct');
+    assert.equal(movieGroup.id,data.films[1].film.id,'existing movie must be reused');
+    extraFilmIds.push(tv.id);
+    let tvDetail=await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`);
+    assert.equal(tvDetail.cloudResources.length,2);
+    assert.ok(tvDetail.film.posterPath,'cloud matching caches imported artwork');
+    const movieDetail=await js(`window.cinema.library.detail(${JSON.stringify(movieGroup.id)})`);
+    assert.equal(movieDetail.entry.personalRating,9);
+    assert.equal(movieDetail.cloudResources[0].size,2_000_000_000);
+    assert.equal(movieDetail.cloudResources[0].technical.resolution,'2160p');
+    assert.equal(movieDetail.cloudResources[0].technical.videoCodec,'H.265 / HEVC');
+    assert.deepEqual(movieDetail.cloudResources[0].technical.audioCodecs,['TrueHD','Atmos']);
+    assert.equal(tvDetail.cloudResources[0].technical.encoder,'x265');
+    assert.equal(tvDetail.cloudResources[0].technical.bitDepth,10);
+    const searches=cloudFixture.searches();
+    cloudFixture.incremental();
+    await js('window.cinema.quarkSync.scan()');
+    await waitFor("window.cinema.quarkSync.status().then(s=>!s.busy)");
+    tvDetail=await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`);
+    assert.equal(tvDetail.cloudResources.length,3);assert.equal(cloudFixture.searches(),searches,'incremental episodes reuse a confirmed match');
+    cloudFixture.removeSecond();await js('window.cinema.quarkSync.scan()');
+    await waitFor("window.cinema.quarkSync.status().then(s=>!s.busy)");
+    tvDetail=await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`);
+    assert.equal(tvDetail.cloudResources.find((file:any)=>file.fileId==='sync-e2').present,false);
+    const completed=(await js('window.cinema.quarkSync.status()')).source.lastScanAt;
+    cloudFixture.setFailure(true);await js('window.cinema.quarkSync.scan()');
+    await waitFor("window.cinema.quarkSync.status().then(s=>!s.busy)");
+    assert.equal((await js('window.cinema.quarkSync.status()')).source.lastScanAt,completed,'failed recursive read must not replace a complete inventory');
+    cloudFixture.setFailure(false);
+    await route(`/film/${tv.id}`,"document.querySelectorAll('.cloud-resource').length===3");
+    await js("document.querySelector('#resources').scrollIntoView({block:'start',behavior:'instant'})");
+    assert.equal(await js("document.querySelector('.cloud-resources').textContent.includes('H.265 / HEVC')"),true);
+    await shot('16-quark-cloud-resources');
+    await js('window.cinema.quarkWeb.disconnect()');
+    assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`)).cloudResources.every((file:any)=>!file.active),true);
+    checks.push('controlled Quark/TMDB: select folder through UI, recurse, match, confirm, real import/cache/SQLite, typed IDs, increment, missing files, failed scan and session isolation (not live account)');
+  }
+  // Mutations stay within this disposable profile's explicitly seeded or imported test entries.
+  const testFilmIds = [...data.films.map((item) => item.film.id), data.missing.film.id, ...extraFilmIds];
   await js(`Promise.all(${JSON.stringify(testFilmIds)}.map(id => window.cinema.library.removeFilm(id)))`);
   await route('/', "!!document.querySelector('.hero-empty-title')");
   assert.equal(await js("document.querySelectorAll('.rail-item').length"), 0);
   await shot('10-home-empty');
   assert.deepEqual(errors, []);
-  writeFileSync(join(output, 'report.json'), JSON.stringify({ platform:process.platform, headless:process.argv.includes('--headless'), sandboxDisabled:process.argv.includes('--no-sandbox'), artworkDir, quarkFixture, checks, errors, geometry }, null, 2));
+  writeFileSync(join(output, 'report.json'), JSON.stringify({ platform:process.platform, headless:process.argv.includes('--headless'), sandboxDisabled:process.argv.includes('--no-sandbox'), artworkDir, quarkFixture, quarkSyncFixture, actualAccountVerified:false, checks, errors, geometry }, null, 2));
   console.log('[desktop-smoke] PASS', JSON.stringify({ output, checks }));
   app.quit();
 }
@@ -279,8 +360,12 @@ seed().then((data) => {
       void verify(win, data).catch((error) => { console.error('[desktop-smoke] FAILED', error, errors); app.exit(1); });
     });
   });
+  if(quarkSyncFixture) {
+    assert.equal(process.argv.includes('--quark-web-probe'),false,'controlled and live network probes must run in separate profiles');
+    void app.whenReady().then(()=>{cloudFixture=installQuarkSyncFixture(profile);}).catch(error=>{console.error('[sync-fixture] setup failed',error);app.exit(1);});
+  }
   // Load the real production entry after selecting the disposable userData.
   require(join(root, 'dist-electron', 'main.cjs'));
 }).catch((error) => { console.error(error); app.exit(1); });
 // Includes multi-size captures and functional checks across all seven pages.
-setTimeout(() => { console.error('[desktop-smoke] timeout'); app.exit(1); }, 120_000).unref();
+setTimeout(() => { console.error('[desktop-smoke] timeout'); app.exit(1); }, 180_000).unref();

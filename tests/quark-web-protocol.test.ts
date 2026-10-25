@@ -52,3 +52,8 @@ describe('网页登录验证的只读目录协议', () => {
     for (const url of ['https://quark.cn.example.com', 'https://quark.cn@evil.com', 'http://pan.quark.cn', 'file:///etc/passwd', 'javascript:alert(1)', 'https://pan.quark.cn:8443']) expect(trustedLoginUrl(url)).toBe(false);
   });
 });
+
+it('只保留安全整数的真实目录文件大小，不把缺失值当0',()=>{
+  const parsed=parsePage(200,page([{...item('valid'),size:42},{...item('empty'),size:0},{...item('unknown')},{...item('bad'),size:-1},{...item('folder',false),size:123}],5));
+  expect(parsed.items.map(file=>file.size)).toEqual([42,0,null,null,null]);
+});

@@ -29,6 +29,8 @@ jobs:
           pnpm build
       - name: Check actual application and integrated Quark login
         run: pnpm test:desktop --quark-fixture --quark-web-probe
+      - name: Check controlled Quark scan, matching, resource details and incremental updates
+        run: pnpm test:desktop --quark-sync-fixture
       - name: Preserve real Windows credentials through an application upgrade
         run: node scripts/check-credential-upgrade.mjs
       - name: Package preview installer and portable version
@@ -37,6 +39,8 @@ jobs:
         run: |
           node scripts/package.mjs
           node scripts/verify-release.mjs
+      - name: Verify actual installer shortcut choices
+        run: ./scripts/check-installer.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: My-Cinema-Integrated-Quark-Preview
@@ -57,3 +61,4 @@ jobs:
             .harness/desktop-smoke-*/report.json
             .harness/desktop-smoke-*/*.png
             .harness/credential-upgrade-*/report-*.json
+            .harness/nsis-shortcut-*/report.json

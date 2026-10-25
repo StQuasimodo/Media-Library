@@ -41,12 +41,16 @@ jobs:
         run: pnpm build
       - name: Check real Electron, preload and SQLite on Windows
         run: pnpm test:desktop --quark-fixture --quark-web-probe
+      - name: Check controlled Quark scan, matching, resource details and incremental updates
+        run: pnpm test:desktop --quark-sync-fixture
       - name: Verify real Windows credential compatibility with v1.0.0
         run: node scripts/check-credential-upgrade.mjs
       - name: Build NSIS installer and portable archive
         run: node scripts/package.mjs
       - name: Verify packaged files and write SHA-256 checksums
         run: node scripts/verify-release.mjs
+      - name: Verify actual installer shortcut choices
+        run: ./scripts/check-installer.ps1
       - name: Retain build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -73,3 +77,4 @@ jobs:
             .harness/desktop-smoke-*/report.json
             .harness/desktop-smoke-*/*.png
             .harness/credential-upgrade-*/report-*.json
+            .harness/nsis-shortcut-*/report.json

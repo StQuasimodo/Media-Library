@@ -128,7 +128,7 @@ export function SettingsPage() {
       setLastExport(`${result.path}（${formatBytes(result.bytes)}）`);
       toast.success(
         result.includesSensitiveData
-          ? '已导出 JSON，其中包含分享链接与提取码，请妥善保管'
+          ? '已导出 JSON，其中包含资源链接或云端路径等私人信息，请妥善保管'
           : '已导出 JSON',
       );
     } catch (cause) {
@@ -158,7 +158,7 @@ export function SettingsPage() {
     <div className="settings-layout">
       <nav className="settings-nav" aria-label="设置分类">
         <Link to="/settings#metadata">影视元数据</Link>
-        <Link to="/settings#quark">夸克文件夹</Link>
+        <Link to="/settings#quark">夸克网盘</Link>
         <Link to="/settings#appearance">外观与行为</Link>
         <Link to="/settings#data">数据与备份</Link>
         <Link to="/settings#about">关于</Link>

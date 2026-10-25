@@ -2,6 +2,7 @@ import { app, BrowserWindow, session, type Session } from 'electron';
 import { AppError } from '../../errors';
 import type { QuarkWebStatus } from '../../../../src/shared/quarkWeb';
 import { CheckError, directoryUrl, parsePage, readDirectory, trustedLoginUrl } from './webProtocol';
+import type { QuarkFolder } from '../../../../src/shared/quark';
 
 /** Dedicated Chromium partition; no CLI or access to another browser's profile. */
 export class QuarkWebSession {
@@ -11,7 +12,8 @@ export class QuarkWebSession {
   private state: QuarkWebStatus['state'] = 'not_checked';
   private error: string | null = null;
   private busy = false;
-  private known = new Set(['0']);
+  private known = new Map<string, QuarkFolder>([['0', {id:'0',name:'夸克网盘',path:'夸克网盘'}]]);
+  private resetKnown() { this.known = new Map([['0', {id:'0',name:'夸克网盘',path:'夸克网盘'}]]); }
   constructor() {
     this.store = session.fromPartition('persist:mycinema-quark-web');
     this.store.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
@@ -22,20 +24,24 @@ export class QuarkWebSession {
       this.store.cookies.flushStore().finally(() => { this.store.flushStorageData(); app.quit(); }).catch(() => {});
     });
   }
-  status(): QuarkWebStatus { return { state: this.state, error: this.error, loginOpen: Boolean(this.login && !this.login.isDestroyed()) }; }
+  status(): QuarkWebStatus { return { state: this.state, error: this.error, loginOpen: this.windows.size > 0 }; }
+  knownFolder(id: string) { return this.known.get(id) ?? null; }
+  assertSyncReady() {
+    if (this.windows.size) throw new AppError('VALIDATION','请先关闭夸克网页登录窗口，再选择目录或执行匹配。');
+  }
   private async run<T>(action: () => Promise<T>): Promise<T> {
     if (this.busy) throw new AppError('VALIDATION', '请等待当前夸克操作完成。');
     this.busy = true;
     try { return await action(); }
     catch (error) {
       this.error = error instanceof CheckError ? error.message : '夸克连接操作失败，请重试。';
-      if (error instanceof CheckError && error.kind === 'login') { this.state = 'login_required'; this.known = new Set(['0']); }
+      if (error instanceof CheckError && error.kind === 'login') { this.state = 'login_required'; this.resetKnown(); }
       throw new AppError('NETWORK', this.error);
     } finally { this.busy = false; }
   }
-  private async request(url: string) {
+  private async request(url: string, signal?: AbortSignal) {
     try {
-      const response = await this.store.fetch(url, { method: 'GET', credentials: 'include', redirect: 'error', headers: { Referer: 'https://pan.quark.cn/' }, signal: AbortSignal.timeout(15_000) });
+      const response = await this.store.fetch(url, { method: 'GET', credentials: 'include', redirect: 'error', headers: { Referer: 'https://pan.quark.cn/' }, signal: signal ? AbortSignal.any([signal,AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000) });
       const text = await response.text();
       if (text.length > 4 * 1024 * 1024) throw new CheckError('protocol', '目录响应过大。');
       let body: unknown; try { body = JSON.parse(text); } catch { body = null; }
@@ -53,7 +59,7 @@ export class QuarkWebSession {
       } catch (error) {
         this.state = error instanceof CheckError && error.kind === 'login' ? 'login_required' : 'unavailable';
         this.error = error instanceof CheckError ? error.message : '无法确认连接状态。';
-        if (this.state === 'login_required') this.known = new Set(['0']);
+        if (this.state === 'login_required') this.resetKnown();
       }
       return this.status();
     });
@@ -63,13 +69,27 @@ export class QuarkWebSession {
       if (!this.known.has(id)) throw new CheckError('protocol', '请从文件夹列表中选择目录。');
       const items = await readDirectory(id, url => this.request(url));
       await this.store.cookies.flushStore();
-      for (const item of items) if (item.directory) this.known.add(item.id);
+      for (const item of items) if (item.directory) this.known.set(item.id,{id:item.id,name:item.name,path:`${this.known.get(id)!.path}/${item.name}`});
       this.state = 'verified'; this.error = null;
       return { items, total: items.length };
     });
   }
+  async readForSync(id: string, signal: AbortSignal) {
+    this.assertSyncReady();
+    return this.run(async () => {
+      const items=await readDirectory(id,url=>this.request(url,signal));
+      if(signal.aborted) throw new CheckError('network','已取消目录读取。');
+      this.state='verified'; this.error=null;
+      return items;
+    });
+  }
+  async finishLogin() {
+    for (const win of this.windows) if (!win.isDestroyed()) win.close();
+    this.resetKnown();
+    return this.check();
+  }
   private protect(win: BrowserWindow) {
-    this.windows.add(win); win.on('closed', () => this.windows.delete(win));
+    this.windows.add(win); win.on('closed', () => { this.windows.delete(win); if(!this.windows.size) this.resetKnown(); });
     win.webContents.on('will-navigate', (event, url) => { if (!trustedLoginUrl(url)) event.preventDefault(); });
     win.webContents.on('will-redirect', (event, url) => { if (!trustedLoginUrl(url)) event.preventDefault(); });
     win.webContents.on('will-attach-webview', event => event.preventDefault());
@@ -80,7 +100,7 @@ export class QuarkWebSession {
   }
   async connect() {
     return this.run(async () => {
-      this.known = new Set(['0']); this.state = 'not_checked'; this.error = null;
+      this.resetKnown(); this.state = 'not_checked'; this.error = null;
       if (this.login && !this.login.isDestroyed()) { this.login.show(); this.login.focus(); return this.status(); }
       const win = new BrowserWindow({ width: 1100, height: 800, title: '关联夸克账号 · 官方网页登录', autoHideMenuBar: true,
         webPreferences: { partition: 'persist:mycinema-quark-web', sandbox: true, contextIsolation: true, nodeIntegration: false, devTools: false } });
@@ -106,7 +126,7 @@ export class QuarkWebSession {
     return this.run(async () => {
       for (const win of this.windows) if (!win.isDestroyed()) win.close();
       await this.store.clearStorageData(); await this.store.cookies.flushStore();
-      this.known = new Set(['0']); this.state = 'login_required'; this.error = null;
+      this.resetKnown(); this.state = 'login_required'; this.error = null;
       return this.status();
     });
   }

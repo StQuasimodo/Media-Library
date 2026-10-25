@@ -1482,3 +1482,19 @@ a.tag:hover {
 .quark-breadcrumbs { margin-bottom: 16px; }
 .quark-folders { margin-top: 18px; }
 .quark-folders .btn { justify-content: flex-start; white-space: normal; height: auto; min-height: 36px; }
+
+/* Quark matching stays in settings; film pages show only the resulting resource. */
+.quark-sync-panel { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border, #353B47); }
+.quark-sync-options { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 14px 0; color: var(--text-secondary, #9299A6); font-size: 13px; }
+.quark-match-group { border-top: 1px solid var(--border, #353B47); padding: 20px 0; margin-top: 16px; }
+.quark-match-group details { margin: 8px 0 14px; }
+.quark-path { overflow-wrap: anywhere; }
+.quark-match-query { display: grid; grid-template-columns: minmax(120px, 2fr) 96px minmax(120px, 1fr) auto; align-items: end; gap: 10px; margin: 14px 0; }
+.quark-match-query label { min-width: 0; font-size: 12px; color: var(--text-secondary, #9299A6); }
+.quark-match-query .input, .quark-match-query .select { width: 100%; margin-top: 6px; }
+.quark-match-candidate { flex: 1; min-width: 160px; max-width: 100%; }
+.quark-existing-match { margin-top: 14px; display: grid; gap: 10px; }
+.quark-existing-match .input, .quark-existing-match .select { flex: 1; min-width: 160px; }
+@media(max-width: 1100px) { .quark-match-query { grid-template-columns: minmax(120px, 1fr) 90px; } }
+.quark-resource-tags { margin: 10px 0; }
+.quark-match-group strong { overflow-wrap: anywhere; }

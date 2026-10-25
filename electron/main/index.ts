@@ -62,7 +62,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 async function bootstrap(): Promise<void> {
-  app.setAppUserModelId('com.mycinema.app');
+  app.setAppUserModelId('com.mycinema.desktop');
 
   const paths = resolveAppPaths(app.getPath('userData'));
   runtime = new AppRuntime(paths, {
@@ -94,7 +94,7 @@ async function bootstrap(): Promise<void> {
 
   registerImageProtocol();
   registerIpc(runtime);
-  Menu.setApplicationMenu(buildMenu({ isDev }));
+  Menu.setApplicationMenu(isDev ? buildMenu({ isDev }) : null);
   createWindow();
 
   app.on('window-all-closed', () => {
@@ -139,7 +139,7 @@ function createWindow(): void {
   const workAreas = screen.getAllDisplays().map((display) => display.workArea);
   const state = loadWindowState(runtime.paths.windowStateFile, workAreas);
 
-  const iconPath = join(__dirname, '..', 'build', 'icon.ico');
+  const iconPath = join(__dirname, '..', 'build', process.platform==='win32' ? 'icon.ico' : 'icon.png');
 
   mainWindow = new BrowserWindow({
     width: state.width,
@@ -152,7 +152,7 @@ function createWindow(): void {
     backgroundColor: '#101216',
     title: 'My Cinema',
     icon: existsSync(iconPath) ? iconPath : undefined,
-    autoHideMenuBar: false,
+    autoHideMenuBar: !isDev,
     webPreferences: {
       preload: join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -162,6 +162,7 @@ function createWindow(): void {
       devTools: true,
     },
   });
+  if (!isDev) mainWindow.setMenuBarVisibility(false);
 
   mainWindow.once('ready-to-show', () => {
     if (!mainWindow) return;

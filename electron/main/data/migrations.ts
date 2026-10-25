@@ -134,6 +134,40 @@ export const migrations: Migration[] = [
       insert.run('motionPreference', 'system', timestamp);
     },
   },
+  {
+    version: 3,
+    name: 'quark_cloud_matching_and_typed_tmdb_identity',
+    up: db => {
+      db.exec(`
+        DROP INDEX films_external_unique;
+        CREATE UNIQUE INDEX films_external_unique ON films(metadata_source, media_type, external_id)
+          WHERE external_id IS NOT NULL;
+        CREATE TABLE quark_sync_source (
+          id INTEGER PRIMARY KEY CHECK(id = 1), scope TEXT NOT NULL,
+          folder_json TEXT, auto_read INTEGER NOT NULL DEFAULT 1,
+          auto_import INTEGER NOT NULL DEFAULT 0, last_scan_at TEXT
+        );
+        CREATE TABLE quark_cloud_files (
+          scope TEXT NOT NULL, file_id TEXT NOT NULL, root_id TEXT NOT NULL,
+          parent_id TEXT NOT NULL, name TEXT NOT NULL, path TEXT NOT NULL,
+          size_bytes INTEGER, technical_json TEXT NOT NULL DEFAULT '{}',
+          title TEXT NOT NULL, year INTEGER, season INTEGER, episode INTEGER,
+          media_type TEXT NOT NULL, group_key TEXT NOT NULL,
+          film_id TEXT REFERENCES films(id) ON DELETE SET NULL,
+          present INTEGER NOT NULL DEFAULT 1, seen_at TEXT NOT NULL,
+          PRIMARY KEY(scope, file_id)
+        );
+        CREATE INDEX quark_cloud_film_idx ON quark_cloud_files(film_id);
+        CREATE INDEX quark_cloud_group_idx ON quark_cloud_files(scope, root_id, group_key);
+        CREATE TABLE quark_match_choices (
+          scope TEXT NOT NULL, root_id TEXT NOT NULL, group_key TEXT NOT NULL,
+          film_id TEXT REFERENCES films(id) ON DELETE CASCADE,
+          ignored INTEGER NOT NULL DEFAULT 0, query_json TEXT,
+          PRIMARY KEY(scope, root_id, group_key)
+        );
+      `);
+    },
+  },
 ];
 
 export const SCHEMA_VERSION = migrations[migrations.length - 1].version;

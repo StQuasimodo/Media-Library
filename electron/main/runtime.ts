@@ -12,6 +12,7 @@ import { Logger } from './services/logger';
 import { MetadataService } from './services/metadataService';
 import { TmdbProvider } from './services/metadata/tmdb';
 import { QuarkLibrary } from './services/quark/library';
+import { QuarkSync } from './services/quark/sync';
 
 export interface CoreContext {
   db: SqlDatabase;
@@ -44,12 +45,14 @@ export class AppRuntime {
   private startupFailure: DatabaseError | null = null;
   readonly backup: BackupService;
   readonly quark: QuarkLibrary;
+  readonly quarkSync: QuarkSync;
 
   constructor(
     readonly paths: AppPaths,
     private readonly options: RuntimeOptions,
   ) {
     this.quark = new QuarkLibrary(paths.userData);
+    this.quarkSync = new QuarkSync(() => ({db:this.db,repo:this.repo,library:this.library,metadata:this.metadata}));
     this.logger = new Logger(paths.logFile, { console: options.loggerConsole ?? false });
     this.credentials = new CredentialStore(paths.credentialsFile, options.secretBox);
     this.images = new ImageCache({ root: paths.imagesDir, fetchImpl: options.fetchImpl });
@@ -162,6 +165,7 @@ export class AppRuntime {
 
   shutdown(): void {
     this.quark.cancel();
+    this.quarkSync.cancel();
     this.close();
   }
 }

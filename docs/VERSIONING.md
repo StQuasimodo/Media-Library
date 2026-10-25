@@ -4,7 +4,7 @@
 
 ## 版本编号
 
-`package.json` 的 `version` 是应用版本的唯一来源。安装包、免安装 ZIP、应用「关于」与 GitHub Tag 必须一致，Tag 使用 `v<version>`。本轮从 `1.0.0` 更新为 `1.1.0`，数据库仍为 schema v2。
+`package.json` 的 `version` 是应用版本的唯一来源。安装包、免安装 ZIP、应用「关于」与 GitHub Tag 必须一致，Tag 使用 `v<version>`。`1.1.0` 正式版使用 schema v2；`1.2.0-beta.1` 新增云端资源关联，使用 schema v3，升级前自动保存一致快照。
 
 | 变更 | 编号 | 示例 |
 |---|---|---|

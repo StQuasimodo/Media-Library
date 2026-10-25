@@ -25,6 +25,7 @@ import type {
 } from './types';
 import type { QuarkWebStatus, QuarkWebDirectory } from './quarkWeb';
 import type { QuarkBrowse, QuarkStatus } from './quark';
+import type { QuarkMatchQuery, QuarkSyncStatus } from './quarkSync';
 
 export interface AppInfo {
   appVersion: string;
@@ -48,9 +49,22 @@ export type ApiEnvelope<T> = { ok: true; data: T } | { ok: false; error: Seriali
 
 /** The complete IPC surface. Nothing else is reachable from the renderer. */
 export interface CinemaApi {
+  quarkSync: {
+    status(): Promise<QuarkSyncStatus>;
+    configure(folderId: string, autoRead: boolean, autoImport: boolean): Promise<QuarkSyncStatus>;
+    scan(): Promise<QuarkSyncStatus>;
+    match(): Promise<QuarkSyncStatus>;
+    search(key: string, query: QuarkMatchQuery): Promise<QuarkSyncStatus>;
+    confirm(key: string, externalId: string, mediaType: MediaType): Promise<QuarkSyncStatus>;
+    confirmHigh(): Promise<QuarkSyncStatus>;
+    linkExisting(key: string, filmId: string): Promise<QuarkSyncStatus>;
+    ignore(key: string, ignored: boolean): Promise<QuarkSyncStatus>;
+    cancel(): Promise<void>;
+  };
   quarkWeb: {
     status(): Promise<QuarkWebStatus>;
     connect(): Promise<QuarkWebStatus>;
+    finishLogin(): Promise<QuarkWebStatus>;
     check(): Promise<QuarkWebStatus>;
     list(id: string): Promise<QuarkWebDirectory>;
     disconnect(): Promise<QuarkWebStatus>;

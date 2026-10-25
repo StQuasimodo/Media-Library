@@ -15,6 +15,7 @@ await build({
 const require = createRequire(import.meta.url);
 const flags = process.argv.includes('--headless') ? ['--ozone-platform=headless', '--disable-gpu'] : [];
 if (process.argv.includes('--no-sandbox')) flags.push('--no-sandbox');
+if (process.argv.includes('--quark-sync-fixture') && process.platform==='linux') flags.push('--password-store=basic');
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 const child = spawn(require('electron'), [...flags, outfile, ...process.argv.slice(2)], {

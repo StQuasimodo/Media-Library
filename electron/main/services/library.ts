@@ -113,6 +113,7 @@ export class LibraryService {
         .listCollections()
         .filter((collection) => entry.collectionIds.includes(collection.id)),
       resources: this.repo.listResources(film.id),
+      cloudResources: this.repo.listCloudResources(film.id),
     };
   }
 
@@ -203,7 +204,9 @@ export class LibraryService {
   async importCandidate(
     candidate: MetadataCandidate,
     entryPatch: EntryPatch = {},
+    beforeCommit: () => void = () => {},
   ): Promise<ImportResult> {
+    beforeCommit();
     if (!candidate.externalId || !/^\d+$/.test(candidate.externalId)) {
       throw new AppError('VALIDATION', '影视资料标识无效。');
     }
@@ -213,7 +216,7 @@ export class LibraryService {
     const title = validateTitle(candidate.title);
     if (!title.ok) throw new AppError('VALIDATION', title.message);
 
-    const existing = this.repo.getFilmByExternal('tmdb', candidate.externalId);
+    const existing = this.repo.getFilmByExternal('tmdb', candidate.externalId, candidate.mediaType);
     if (existing) {
       const entry = this.repo.getEntryByFilmId(existing.id);
       if (entry) {
@@ -271,12 +274,19 @@ export class LibraryService {
     };
 
     const entry = this.buildEntry(film.id, entryPatch);
-    this.repo.inTransaction(() => {
+    beforeCommit();
+    return this.repo.inTransaction(() => {
+      // Another import may have finished while images were being downloaded.
+      const concurrent = this.repo.getFilmByExternal('tmdb', candidate.externalId, candidate.mediaType);
+      if (concurrent) {
+        const existingEntry = this.repo.getEntryByFilmId(concurrent.id);
+        if (!existingEntry) throw new AppError('INTERNAL', '作品缺少收藏记录，请重试。');
+        return { film: concurrent, entry: existingEntry, duplicate: true, imageWarning };
+      }
       this.repo.insertFilm(film);
       this.repo.insertEntry(entry);
+      return { film, entry: this.repo.getEntry(entry.id) ?? entry, duplicate: false, imageWarning };
     });
-    const storedEntry = this.repo.getEntry(entry.id) ?? entry;
-    return { film, entry: storedEntry, duplicate: false, imageWarning };
   }
 
   updateFilm(filmId: string, patch: FilmPatch): Film {

@@ -102,6 +102,7 @@ export interface FilmDetail {
   entry: CollectionEntry;
   collections: FilmCollection[];
   resources: MediaResource[];
+  cloudResources: import('./quarkSync').QuarkCloudResource[];
 }
 
 export interface AppSettings {

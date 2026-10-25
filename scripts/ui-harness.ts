@@ -286,8 +286,12 @@ window.__MYCINEMA_IMAGE_BASE__ = '/images/';
     return payload.data;
   };
   window.cinema = {
+    quarkSync: {
+      status: async () => ({source:{folder:null,autoRead:true,autoImport:false,lastScanAt:null},busy:false,phase:'idle',progress:'',error:null,groups:[],videos:0}),
+    },
     quarkWeb: {
       status: async () => ({state:"not_checked",error:null,loginOpen:false}),
+      finishLogin: async () => { throw new Error('请在桌面应用中登录'); },
       connect: async () => { throw new Error("请在桌面应用中登录"); },
       check: async () => ({state:"unavailable",error:"请在桌面应用中检查",loginOpen:false}),
       list: async () => { throw new Error("请在桌面应用中浏览"); },

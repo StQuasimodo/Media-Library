@@ -157,7 +157,8 @@ export class BackupService {
     const entries = repo.listAllEntries();
     const collections = repo.listCollections();
     const resources = repo.listAllResources();
-    const includesSensitiveData = resources.some(
+    const cloudResources = repo.listCloudResources();
+    const includesSensitiveData = cloudResources.length > 0 || resources.some(
       (resource) => Boolean(resource.accessCode) || Boolean(resource.shareUrl),
     );
 
@@ -173,6 +174,7 @@ export class BackupService {
         entries: entries.length,
         collections: collections.length,
         resources: resources.length,
+        cloudResources: cloudResources.length,
       },
       films,
       collectionEntries: entries.map((entry) => ({
@@ -199,6 +201,7 @@ export class BackupService {
       })),
       collectionFilms: repo.listMemberships(),
       mediaResources: resources,
+      quarkCloudResources: cloudResources,
       settings: repo.getSettings(),
     };
 

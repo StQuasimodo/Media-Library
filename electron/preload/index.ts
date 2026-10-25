@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { AppInfo, BackupValidation, CinemaApi } from '../../src/shared/api';
 import type { QuarkWebStatus, QuarkWebDirectory } from '../../src/shared/quarkWeb';
 import type { QuarkBrowse, QuarkStatus } from '../../src/shared/quark';
+import type { QuarkSyncStatus } from '../../src/shared/quarkSync';
 import type {
   AppSettings,
   BackupResult,
@@ -52,9 +53,22 @@ async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
 }
 
 const api: CinemaApi = {
+  quarkSync: {
+    status: () => invoke<QuarkSyncStatus>('quark-sync:status'),
+    configure: (id,autoRead,autoImport) => invoke<QuarkSyncStatus>('quark-sync:configure',id,autoRead,autoImport),
+    scan: () => invoke<QuarkSyncStatus>('quark-sync:scan'),
+    match: () => invoke<QuarkSyncStatus>('quark-sync:match'),
+    search: (key,query) => invoke<QuarkSyncStatus>('quark-sync:search',key,query),
+    confirm: (key,id,type) => invoke<QuarkSyncStatus>('quark-sync:confirm',key,id,type),
+    confirmHigh: () => invoke<QuarkSyncStatus>('quark-sync:confirmHigh'),
+    linkExisting: (key,id) => invoke<QuarkSyncStatus>('quark-sync:linkExisting',key,id),
+    ignore: (key,ignored) => invoke<QuarkSyncStatus>('quark-sync:ignore',key,ignored),
+    cancel: () => invoke<void>('quark-sync:cancel'),
+  },
   quarkWeb: {
     status: () => invoke<QuarkWebStatus>('quark-web:status'),
     connect: () => invoke<QuarkWebStatus>('quark-web:connect'),
+    finishLogin: () => invoke<QuarkWebStatus>('quark-web:finishLogin'),
     check: () => invoke<QuarkWebStatus>('quark-web:check'),
     list: id => invoke<QuarkWebDirectory>('quark-web:list', id),
     disconnect: () => invoke<QuarkWebStatus>('quark-web:disconnect'),

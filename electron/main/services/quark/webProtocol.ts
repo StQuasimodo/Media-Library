@@ -1,5 +1,5 @@
 /** Independent read-only adapter; no OpenList code or dependency is bundled. */
-export interface Item { id: string; name: string; directory: boolean; video: boolean }
+export interface Item { id: string; name: string; directory: boolean; video: boolean; size: number | null }
 export class CheckError extends Error {
   constructor(readonly kind: 'login' | 'blocked' | 'network' | 'protocol', message: string) { super(message); }
 }
@@ -19,7 +19,8 @@ export function parsePage(httpStatus: number, body: unknown): { items: Item[]; t
   }
   const items = data.data.list.map((item: any): Item => {
     if (!item || typeof item.fid !== 'string' || !item.fid || typeof item.file_name !== 'string' || typeof item.file !== 'boolean') throw new CheckError('protocol', '目录条目格式不完整。');
-    return { id: item.fid, name: item.file_name, directory: !item.file, video: item.file && item.category === 1 };
+    return { id: item.fid, name: item.file_name, directory: !item.file, video: item.file && item.category === 1,
+      size: item.file && Number.isSafeInteger(item.size) && item.size>=0 ? item.size : null };
   });
   return { items, total: data.metadata._total };
 }

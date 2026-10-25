@@ -10,6 +10,8 @@ files:
   - dist/**/*
   - dist-electron/**/*
   - package.json
+  - build/icon.ico
+  - build/icon.png
   - "!**/*.map"
   - "!**/*.ts"
 
@@ -34,7 +36,9 @@ nsis:
   # failure path (a silent install can hang waiting for a consent prompt).
   allowElevation: false
   allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
+  # The custom options page owns this choice and persists an explicit opt-out.
+  createDesktopShortcut: false
+  include: build/installer.nsh
   createStartMenuShortcut: true
   shortcutName: My Cinema
   # Uninstalling must never silently destroy the user's library.

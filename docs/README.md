@@ -8,6 +8,7 @@
 | [VERSIONING.md](VERSIONING.md) | 应用版本、预览编号、Tag 与发布检查规则 | 打包或向用户分发前 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
 | [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |
+| [QUARK-MATCHING.md](QUARK-MATCHING.md) | 自动目录匹配、资源规格识别、增量关联、升级与验收边界 | 使用1.2预览版自动整理网盘影视 |
 | [QUARK-FOLDERS.md](QUARK-FOLDERS.md) | 官方工具授权、目录读取配置与待验收边界 | 连接指定夸克文件夹 |
 | [QUARK-AUTH-RESEARCH.md](QUARK-AUTH-RESEARCH.md) | 授权命令、Agent 与 Windows 限制、应用内账号连接方案 | 开发夸克账号连接之前 |
 | [QUARK-VALIDATION.md](QUARK-VALIDATION.md) | 独立运行诊断、真实授权、目录完整性与收藏关联的验收步骤 | 验证夸克连接是否真的可用 |
@@ -28,11 +29,11 @@
 - 新增 IPC 通道、数据库迁移或目录变化时更新 ARCHITECTURE.md 的对应表格。
 - 每次交付前把真实执行结果（测试数量、构建产物、截图）写进 VERIFICATION.md，不写「预计」「应该」。
 
-## 当前状态（2026-10-25）
+## 当前状态（2026-10-26）
 
 | 项目 | 状态 |
 |---|---|
-| 版本 / 数据库 | 1.1.0 / schema v2 |
+| 版本 / 数据库 | 源码1.2.0-beta.1 / schema v3；正式版1.1.0 / schema v2 |
 | 自动化测试 | v1.1.0：9个文件、94项通过（含凭据状态与恢复回归） |
 | 构建与界面 | v1.1.0 构建、包校验、真实 Electron、网页登录隔离与 Windows 加密跨版本检查通过 |
 | 当前截图 | [界面预览](GALLERY.md)，与最近一次字体调整一致 |

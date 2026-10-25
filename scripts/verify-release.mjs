@@ -30,6 +30,12 @@ assert.equal(packedManifest.main, 'dist-electron/main.cjs');
 for (const path of ['dist/index.html', 'dist-electron/main.cjs', 'dist-electron/preload.cjs']) {
   assert.deepEqual(asar.extractFile(archive, path), readFileSync(path), `${path}: packaged content differs from this build`);
 }
+for (const name of ['icon.ico','icon.png']) {
+  assert.deepEqual(asar.extractFile(archive, join('build',name)), readFileSync(join('build',name)), `Packaged ${name} differs from approved icon`);
+}
+const iconBytes=readFileSync('build/icon.ico');
+assert.equal(iconBytes.readUInt16LE(2),1,'Expected ICO format');
+assert.equal(iconBytes.readUInt16LE(4),7,'Expected seven desktop icon sizes');
 // Check every Vite asset referenced by the packaged entry, not just index.html.
 const html = readFileSync('dist/index.html', 'utf8');
 const assets = [...html.matchAll(/(?:src|href)="\.\/(assets\/[^"?#]+)"/g)].map(match => match[1]);

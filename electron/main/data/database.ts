@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { SqlDatabase } from './driver';
 import { migrations, SCHEMA_VERSION } from './migrations';
 
@@ -71,6 +72,14 @@ export function openLibraryDatabase(file: string): OpenResult {
   }
 
   try {
+    const bookkeeping = db.prepare("SELECT name FROM sqlite_master WHERE name='schema_migrations' AND type='table'").get();
+    const current = bookkeeping ? db.prepare('SELECT MAX(version) AS version FROM schema_migrations').get<{version:number}>()?.version ?? 0 : 0;
+    if (current > 0 && current < SCHEMA_VERSION) {
+      const backupDir=join(dirname(file),'backups');
+      mkdirSync(backupDir,{recursive:true});
+      const snapshot=join(backupDir,`pre-migration-v${current}-${randomUUID()}.db`);
+      db.exec(`VACUUM INTO '${snapshot.replace(/'/g,"''")}'`);
+    }
     const applied = migrate(db);
     return { db, schemaVersion: SCHEMA_VERSION, applied };
   } catch (error) {

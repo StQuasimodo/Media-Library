@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { MediaResource, WatchStatus } from '@shared/types';
+import { resourceInfoLabels } from '@shared/quarkResource';
 import { api, describeError } from '../lib/api';
 import { useAppState } from '../lib/appState';
 import { useToast } from '../lib/toast';
@@ -15,6 +16,7 @@ import {
   WATCH_STATUS_OPTIONS,
   formatDate,
   formatDateTime,
+  formatBytes,
   formatRating,
   formatRuntime,
   imageUrl,
@@ -43,6 +45,7 @@ export function FilmDetailPage() {
   const [editFilmOpen, setEditFilmOpen] = useState(false);
   const [editEntryOpen, setEditEntryOpen] = useState(false);
   const [resourceOpen, setResourceOpen] = useState(false);
+  const [cloudLimit,setCloudLimit]=useState(100);
   const [editingResource, setEditingResource] = useState<MediaResource | null>(null);
   const [deletingResource, setDeletingResource] = useState<MediaResource | null>(null);
   const [removeFilmOpen, setRemoveFilmOpen] = useState(false);
@@ -67,7 +70,7 @@ export function FilmDetailPage() {
   if (detail.error) return <div className="cinema-status"><ErrorState message={detail.error} onRetry={detail.reload} /></div>;
   if (!detail.data) return null;
 
-  const { film, entry, resources } = detail.data;
+  const { film, entry, resources, cloudResources } = detail.data;
   const backdrop = imageUrl(film.backdropPath);
   const poster = imageUrl(film.posterPath);
 
@@ -314,9 +317,25 @@ export function FilmDetailPage() {
               </button>
             </div>
 
+            {cloudResources.length ? <div className="cloud-resources">
+              <p className="prose">已关联 {cloudResources.length} 个云端文件。画质、编码、音轨等来自文件名与目录标记，未读取视频流；文件大小来自目录接口。</p>
+              <div className="quark-video-list">{cloudResources.slice(0,cloudLimit).map(resource=><div className="resource-row cloud-resource" key={resource.id}>
+                <div className="resource-head"><span className="resource-name">{resource.name}</span>
+                  <button type="button" className="link-button" onClick={()=>void copyText(resource.path,'云端路径')}>复制路径</button></div>
+                <div className="row gap-2 wrap">
+                  <span className="tag">{!resource.active ? '历史连接' : resource.present ? '上次读取时存在' : '当前目录未找到'}</span>
+                  {resource.season!==null ? <span className="tag">第 {resource.season} 季</span> : null}
+                  {resource.episode!==null ? <span className="tag">第 {resource.episode} 集</span> : null}
+                  <span className="setting-help">读取于 {formatDateTime(resource.lastSeenAt)}</span>
+                  {resource.size!==null ? <span className="tag">{formatBytes(resource.size)}</span> : null}
+                </div><div className="row gap-2 wrap quark-resource-tags" aria-label="文件名识别的资源信息">{resourceInfoLabels(resource.technical).map(value=><span className="tag" key={value}>{value}</span>)}</div><p className="setting-help quark-path">{resource.path}</p>
+              </div>)}</div>
+              {cloudLimit<cloudResources.length ? <button type="button" className="link-button" onClick={()=>setCloudLimit(cloudLimit+100)}>显示更多文件</button> : null}
+              <Link className="link-button" to="/settings#quark">管理目录与匹配</Link>
+            </div> : null}
             {resources.length === 0 ? (
               <p className="prose is-empty">
-                还没有关联的分享资源。这里可以记录分享链接、提取码和画质备注；读取云端文件夹请到「设置 → 夸克文件夹」。
+                {cloudResources.length ? '如需保存分享链接、提取码或画质备注，可另行添加分享资源。' : '尚未关联云端文件或分享资源。可在「设置 → 夸克网盘」选择目录并匹配，或手动添加分享链接。'}
               </p>
             ) : (
               resources.map((resource) => (

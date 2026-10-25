@@ -1,4 +1,4 @@
-import { app, clipboard, dialog, ipcMain, shell } from 'electron';
+import { app, clipboard, dialog, ipcMain, shell, type IpcMainInvokeEvent } from 'electron';
 import type { AppSettings, EntryPatch, FilmPatch, LibraryQuery, MediaType, MetadataCandidate, MetadataSearchOptions, ResourceInput } from '../../src/shared/types';
 import { AppError, toSerializedError } from './errors';
 import type { AppRuntime } from './runtime';
@@ -6,10 +6,20 @@ import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
 import { QuarkWebSession } from './services/quark/webSession';
 import { validateHttpUrl } from '../../src/shared/validation';
+import type { QuarkMatchQuery } from '../../src/shared/quarkSync';
 
 type Handler = (...args: never[]) => unknown;
 
 const MAX_CLIPBOARD_TEXT = 4096;
+function trustedQuarkPage(event: IpcMainInvokeEvent) {
+  try {
+    const url=new URL(event.senderFrame?.url ?? '');
+    const dev=process.env.VITE_DEV_SERVER_URL;
+    return event.senderFrame===event.sender.mainFrame && (dev
+      ? url.origin===new URL(dev).origin && url.pathname==='/'
+      : url.protocol==='file:' && resolve(fileURLToPath(url))===resolve(join(__dirname,'..','dist','index.html')));
+  } catch { return false; }
+}
 
 /**
  * Registers the full IPC surface. Every handler is wrapped so failures cross the
@@ -199,23 +209,39 @@ export function registerIpc(runtime: AppRuntime): void {
   );
 
   const webQuark = new QuarkWebSession();
-  for (const action of ['status', 'connect', 'check', 'list', 'disconnect'] as const) {
+  runtime.quarkSync.bindReader({read:(id,signal)=>webQuark.readForSync(id,signal),folder:id=>webQuark.knownFolder(id),ready:()=>webQuark.assertSyncReady()});
+  void runtime.quarkSync.readOnStartup();
+  for (const action of ['status', 'connect', 'finishLogin', 'check', 'list', 'disconnect'] as const) {
     ipcMain.handle(`quark-web:${action}`, async (event, id: unknown) => {
-      let trusted = false;
+      if (!trustedQuarkPage(event)) return { ok: false, error: { code: 'VALIDATION', message: '页面无权访问夸克连接。' } };
       try {
-        const url = new URL(event.senderFrame?.url ?? '');
-        const dev = process.env.VITE_DEV_SERVER_URL;
-        trusted = event.senderFrame === event.sender.mainFrame && (dev
-          ? url.origin === new URL(dev).origin && url.pathname === '/'
-          : url.protocol === 'file:' && resolve(fileURLToPath(url)) === resolve(join(__dirname, '..', 'dist', 'index.html')));
-      } catch { /* reject unknown senders */ }
-      if (!trusted) return { ok: false, error: { code: 'VALIDATION', message: '页面无权访问夸克连接。' } };
-      try {
+        if(action!=='status') runtime.quarkSync.assertIdle();
+        if(action==='connect' && !webQuark.status().loginOpen) runtime.quarkSync.resetConnection();
         const data = action === 'list' ? await webQuark.list(assertString(id, '文件夹')) : await webQuark[action]();
+        if(action==='disconnect') runtime.quarkSync.resetConnection();
         return { ok: true, data };
       } catch (error) { return { ok: false, error: toSerializedError(error) }; }
     });
   }
+  const syncHandlers: Record<string,(...args: any[])=>unknown> = {
+    status:()=>runtime.quarkSync.status(),
+    configure:(id,autoRead,autoImport)=>runtime.quarkSync.configure(assertString(id,'文件夹'),autoRead,autoImport),
+    scan:()=>runtime.quarkSync.start(), match:()=>runtime.quarkSync.startMatching(),
+    search:(key,query)=>runtime.quarkSync.search(assertString(key,'资源分组'),query as QuarkMatchQuery),
+    confirm:(key,id,type)=>runtime.quarkSync.confirm(assertString(key,'资源分组'),assertString(id,'影视资料'),type as MediaType),
+    confirmHigh:()=>runtime.quarkSync.confirmHigh(),
+    linkExisting:(key,id)=>runtime.quarkSync.linkExisting(assertString(key,'资源分组'),assertString(id,'收藏作品')),
+    ignore:(key,ignored)=>{
+      if(typeof ignored!=='boolean') throw new AppError('VALIDATION','忽略设置无效。');
+      return runtime.quarkSync.ignore(assertString(key,'资源分组'),ignored);
+    },
+    cancel:()=>runtime.quarkSync.cancel(),
+  };
+  for(const [action,handler] of Object.entries(syncHandlers)) ipcMain.handle(`quark-sync:${action}`,async(event,...args)=>{
+    if(!trustedQuarkPage(event)) return {ok:false,error:{code:'VALIDATION',message:'页面无权访问夸克目录匹配。'}};
+    try { return {ok:true,data:await handler(...args)}; }
+    catch(error) { return {ok:false,error:toSerializedError(error)}; }
+  });
 
   handle('quark:status', () => runtime.quark.status());
   handle('quark:chooseTool', async () => {
@@ -251,12 +277,12 @@ export function registerIpc(runtime: AppRuntime): void {
     await shell.openExternal(validated.value.toString());
   });
 
-  handle('resources:copy', (text: unknown) => {
+  handle('resources:copy', async (text: unknown) => {
     if (typeof text !== 'string') throw new AppError('VALIDATION', '复制内容无效。');
     if (text.length > MAX_CLIPBOARD_TEXT) {
       throw new AppError('VALIDATION', '复制内容过长。');
     }
-    clipboard.writeText(text);
+    await clipboard.writeText(text);
   });
 
   /* ------------------------------------------------------------ */
@@ -338,9 +364,12 @@ export function registerIpc(runtime: AppRuntime): void {
     return result.filePaths[0];
   });
 
-  handle('data:restore', (path: unknown) =>
-    runtime.backup.restore(assertString(path, '备份路径')),
-  );
+  handle('data:restore', (path: unknown) => {
+    runtime.quarkSync.assertIdle();
+    const result=runtime.backup.restore(assertString(path,'备份路径'));
+    runtime.quarkSync.resetConnection();
+    return result;
+  });
 
   handle('data:exportJson', async () => {
     const result = await dialog.showOpenDialog({

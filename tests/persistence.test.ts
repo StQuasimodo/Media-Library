@@ -2,6 +2,7 @@ import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { candidate, pngFetch, TestApp } from './helpers';
+import { SCHEMA_VERSION } from '../electron/main/data/migrations';
 import { DatabaseError } from '../electron/main/data/database';
 
 let app: TestApp;
@@ -68,7 +69,7 @@ describe('备份与恢复', () => {
     const service = new BackupService({
       dbFile: app.dbFile,
       backupDir: join(app.dir, 'backups'),
-      schemaVersion: 2,
+      schemaVersion: SCHEMA_VERSION,
       appVersion: '1.0.0',
       logger: app.logger,
       getDb: () => app.db,
@@ -88,7 +89,7 @@ describe('备份与恢复', () => {
 
     const validation = service.validateBackup(created.path);
     expect(validation.ok).toBe(true);
-    expect(validation.schemaVersion).toBe(2);
+    expect(validation.schemaVersion).toBe(SCHEMA_VERSION);
 
     const restored = service.restore(created.path);
     expect(restored.restored).toBe(true);
@@ -109,7 +110,7 @@ describe('备份与恢复', () => {
     const service = new BackupService({
       dbFile: app.dbFile,
       backupDir: join(app.dir, 'backups'),
-      schemaVersion: 2,
+      schemaVersion: SCHEMA_VERSION,
       appVersion: '1.0.0',
       logger: app.logger,
       getDb: () => app.db,
@@ -139,7 +140,7 @@ describe('备份与恢复', () => {
     const service = new BackupService({
       dbFile: app.dbFile,
       backupDir: join(app.dir, 'backups'),
-      schemaVersion: 2,
+      schemaVersion: SCHEMA_VERSION,
       appVersion: '1.0.0',
       logger: app.logger,
       getDb: () => app.db,
@@ -152,7 +153,7 @@ describe('备份与恢复', () => {
     expect(exported.includesSensitiveData).toBe(true);
     const payload = JSON.parse(readFileSync(exported.path, 'utf8')) as Record<string, unknown>;
     expect(payload.format).toBe('my-cinema-export');
-    expect(payload.schemaVersion).toBe(2);
+    expect(payload.schemaVersion).toBe(SCHEMA_VERSION);
     expect(Array.isArray(payload.films)).toBe(true);
     expect(Array.isArray(payload.mediaResources)).toBe(true);
     expect(Array.isArray(payload.collectionFilms)).toBe(true);
@@ -186,7 +187,7 @@ describe('备份与导出可靠性', () => {
   async function service() {
     const { BackupService } = await import('../electron/main/services/backup');
     return new BackupService({
-      dbFile: app.dbFile, backupDir: join(app.dir, 'backups'), schemaVersion: 2,
+      dbFile: app.dbFile, backupDir: join(app.dir, 'backups'), schemaVersion: SCHEMA_VERSION,
       appVersion: '1.0.0', logger: app.logger, getDb: () => app.db, getRepo: () => app.repo,
       closeDb: () => app.db.close(), openDb: () => app.restart(),
     });

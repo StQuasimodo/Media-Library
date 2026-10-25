@@ -35,7 +35,7 @@ SQLite (better-sqlite3)  +  图片缓存目录  +  日志
 | 应用 | `app:info` · `app:openExternal` · `app:openFolder` · `app:relaunch` |
 | 收藏库 | `library:home` · `library:stats` · `library:list` · `library:years` · `library:detail` · `library:createManual` · `library:updateFilm` · `library:updateEntry` · `library:removeFilm` · `library:importCandidate` |
 | 专题 | `collections:list` · `collections:detail` · `collections:create` · `collections:update` · `collections:remove` · `collections:addFilm` · `collections:removeFilm` · `collections:reorder` |
-| 夸克网页登录 | `quark-web:status` · `quark-web:connect` · `quark-web:check` · `quark-web:list` · `quark-web:disconnect` |
+| 夸克网页登录 | `quark-web:status` · `quark-web:connect` · `quark-web:finishLogin` · `quark-web:check` · `quark-web:list` · `quark-web:disconnect` |
 | 夸克只读目录 | `quark:status` · `quark:chooseTool` · `quark:browse` · `quark:selectFolder` · `quark:scan` · `quark:cancel` |
 | 夸克资源 | `resources:list` · `resources:create` · `resources:update` · `resources:remove` · `resources:open` · `resources:copy` |
 | 元数据 | `metadata:search` · `metadata:candidate` · `metadata:refresh` · `metadata:verifyKey` · `metadata:saveKey` · `metadata:clearKey` |
@@ -165,3 +165,18 @@ tests/            library · persistence · metadata · security
 凭据文件继续使用原有版本1格式与 Electron safeStorage，不迁移目录、不改数据库。`CredentialStore.getState()` 区分 configured/missing/unavailable/unreadable；仅缓存成功读取的密钥，暂时不可用、解密失败或文件缺失可在同一进程重试，不覆盖旧文件。`app:info` 和 `settings:get` 返回无密钥的状态字段，设置与导入界面不再把解密失败描述为未配置。输入框不会回显已保存密钥。
 
 Windows 预览流程还运行 `scripts/check-credential-upgrade.mjs`：用稳定版原始 CredentialStore 与真实 safeStorage 写入合成测试值，再从另一个安装目录的新 Electron 外壳读取、替换，最后新进程重读。测试使用隔离 profile，不登录 TMDB、不接触个人配置；这不是安装器升级验收，也无法诊断用户本机是否丢失 Local State 或改换 Windows 账户。
+
+
+## 目录匹配与资源规格（1.2预览 / schema v3）
+
+`QuarkSync` 接受专用网页会话的只读目录适配器，主进程管理任务、取消与进度，设置页通过 `quark-sync:status/configure/scan/match/search/confirm/confirmHigh/linkExisting/ignore/cancel` 调用。新通道与夸克网页登录一样限制为本地应用顶层frame，远端无业务preload。测试fixture只在桌面测试脚本中替换HTTP边界，不进入正式主进程。
+
+数据库增量新增 `quark_sync_source`、`quark_cloud_files`、`quark_match_choices`。源配置保存目录与自动选项；文件以连接批次scope+真实FID为主键，记录路径、季集、大小、规格、作品ID和上次完整读取状态；确认/忽略决策持久化。scope是本地随机连接标识，不是夸克账号UID或访问令牌。重新登录/断开/恢复会隔离范围，网页登录窗口打开时拒绝同步，避免切换账号过程与关联写入交错。
+
+所有目录成功后才原子替换清单；未找到仅标记，不删除收藏。匹配按片名/年份/类型归组，先复用已确认关联，再查询未知组；同组原关联矛盾时强制人工确认。高置信仅指返回候选中的名称/原名、年份一致且唯一，用户可选择自动导入，默认关闭。手动映射支持已有收藏；元数据和图片沿用现有服务，不覆盖个人字段。
+
+v3同时修正TMDB唯一索引为 `(metadata_source,media_type,external_id)`，避免电影与电视剧数值ID冲突；并在异步图片缓存结束后重新检查重复与取消，防止并发重复和取消后提交。旧v2数据升级前用 `VACUUM INTO` 自动保存一致快照，迁移保留原表和个人字段。旧版不支持打开v3；回退应保留新库后使用v2快照。
+
+规格解析独立于TMDB：文件名优先，按字段回退最近父目录，保留未知；大小取真实目录响应的安全整数。`resourceInfo.ts`提取分辨率、片源、编码器/编码、位深、HDR、音频/声道、语言/字幕、版本、帧率与显式码率，明确不探测视频流。规格与关联进入SQLite备份及JSON归档，后者标记私人资源信息。
+
+正式窗口不设原生应用菜单；开发模式保留开发菜单。NSIS自定义选项页独立控制桌面快捷方式，注册表保存偏好，禁用builder无条件创建；开始菜单保留。应用图标由用户指定原图转换，PNG/ICO随应用打包，Windows AppUserModelID与builder保持一致。实际Windows UI、键盘和安装器验证以交付记录为准。

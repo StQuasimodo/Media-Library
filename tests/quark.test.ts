@@ -178,3 +178,15 @@ it.each([
 ])('识别中文季集：%s', (filename, parents, expected) => {
   expect(inferVideoName(filename as string, parents as string[])).toMatchObject(expected);
 });
+
+it.each([
+  ['Dark.S01E03.mkv',['电视剧','Dark.2017','Season 1'],{title:'Dark',year:2017,season:1,episode:3}],
+  ['01.mkv',['电视剧','Dark.2017','Season 2'],{title:'Dark',year:2017,season:2,episode:1}],
+  ['第03集.mkv',['电视剧','庆余年第二季'],{title:'庆余年',season:2,episode:3}],
+])('从作品与季目录继承准确线索：%s',(filename,parents,expected)=>{
+  expect(inferVideoName(filename as string,parents as string[])).toMatchObject(expected);
+});
+
+it('分离新的编码、HDR和语言标记后仍可从作品目录继承年份',()=>{
+  expect(inferVideoName('The.Matrix.AV1.HDR10.10bit.1080p.mkv',['The.Matrix.1999'])).toMatchObject({title:'The Matrix',year:1999});
+});

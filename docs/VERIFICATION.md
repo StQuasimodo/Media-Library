@@ -1,5 +1,21 @@
 # 验证与交付
 
+## v1.2.0-beta.1 测试版交付（2026-10-26）
+
+[Release与下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.1)已发布为预览版，Latest仍为1.1.0。构建与Tag固定在 `a944fe63fcd1b68d634f1a42743821e9d8d71efa`，后续仅修复安装器自动化驱动和补充交付记录，未替换已构建文件。
+
+[Windows原构建](https://github.com/StQuasimodo/Media-Library/actions/runs/40214555684)的12文件/127项测试、类型检查、完整构建、真实Electron与preload/SQLite、网页登录隔离、真实Windows加密跨版本读取、安装包和图标内容检查均通过。独立的受控目录/TMDB链路通过UI完成选目录、递归、候选确认、导入、缓存、重复保护、电影/剧集ID隔离、增量关联、失踪文件与失败扫描保护。窗口无原生菜单，标准复制快捷键在Windows实际窗口通过。此处是接口边界受控验证，不是个人账号在线验证。
+
+原构建在安装器UI检查中超时：报告显示仍停留在选项页、未写入程序，UIAutomation的Invoke未推进原生按钮。改用实际按钮的Windows原生命令通知后，[保留产物验证与发布流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40215672824)成功，复用同一安装包完成以下检查：
+
+- 实际NSIS窗口的“创建桌面快捷方式”可以取消，安装结束不创建桌面入口，开始菜单入口保留。
+- 重装记住取消选择；显式启用可创建正确目标的快捷方式，再次禁用可移除。
+- 安装后的`app.asar`与已校验免安装包一致。
+
+再次下载保留产物并核对全部5个GitHub发布资产的大小、SHA-256和校验文件，全部一致。[交付范围与摘要](../artifacts/releases/v1.2.0-beta.1/summary.json)、[校验文件](../artifacts/releases/v1.2.0-beta.1/SHA256SUMS.txt)、[安装器报告](../artifacts/releases/v1.2.0-beta.1/installer-report.json)、[桌面报告](../artifacts/releases/v1.2.0-beta.1/desktop-report.json)、[自动匹配报告](../artifacts/releases/v1.2.0-beta.1/quark-sync-desktop-report.json)、[凭据复读](../artifacts/releases/v1.2.0-beta.1/report-restart-new.json)、[截图](GALLERY.md)。
+
+安装包122930398字节，SHA-256 `ddbf1024f7fb2aa6570ad003d679b09c7853b8528e44aecb0bc538fc41f95440`。schema v2升级到v3前自动保存一致快照，旧版不能直接打开v3库。真实夸克账号、真实Key在线匹配、个人电脑完整升级及字体/缩放仍待验收；加密检查使用合成值，不读取个人凭据。
+
 ## v1.1.0 正式交付（2026-10-25）
 
 [v1.1.0 Release](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.1.0)已发布并设为 Latest。构建源码为 `cadfcecc4c8630abe8895e609bdfea880826cb00`，数据库仍为 schema v2。Windows 的94项测试、类型检查、生产构建、真实 Electron/preload/SQLite、夸克官方窗口与匿名鉴权、v1.0.0→v1.1.0 真实加密凭据兼容检查和安装包内容校验均通过。凭据检查使用合成值，个人安装与真实 TMDB/夸克账号仍待验收。
@@ -40,7 +56,7 @@
 
 ```powershell
 pnpm typecheck              # tsc --noEmit
-pnpm test                   # vitest run（当前9文件 / 94用例；稳定版为82用例）
+pnpm test                   # vitest run（当前12文件 / 127用例；1.1.0为94用例）
 pnpm build                  # 类型检查 + 主进程打包 + 渲染层构建
 pnpm package                # 安装包 + 免安装 zip（自动处理 TMP / PATH / 镜像）
 pnpm package:dir            # 只生成免安装目录 release/win-unpacked

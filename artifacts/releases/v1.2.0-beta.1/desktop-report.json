@@ -1,0 +1,186 @@
+{
+  "platform": "win32",
+  "headless": false,
+  "sandboxDisabled": false,
+  "artworkDir": null,
+  "quarkFixture": true,
+  "quarkSyncFixture": false,
+  "actualAccountVerified": false,
+  "checks": [
+    "production native menu removed",
+    "real preload IPC and SQLite",
+    "01-home",
+    "keyboard rail changes hero",
+    "02-home-focus",
+    "11-home-curation",
+    "home-1024",
+    "home-1280",
+    "home-1920",
+    "route change resets page scroll",
+    "03-library",
+    "library search, year filter and clear through real UI",
+    "Windows clipboard shortcuts work with no native menu",
+    "library-1024",
+    "04-film",
+    "film more-actions edit dialog and resource navigation",
+    "film-1024",
+    "05-collections",
+    "edition edit controls do not navigate",
+    "06-collection",
+    "collection add/remove through real UI and IPC",
+    "08-collection-empty",
+    "07-film-no-art",
+    "12-watchlist",
+    "watchlist-1024",
+    "watchlist status update persists through real IPC",
+    "13-settings",
+    "14-quark-connection",
+    "integrated web login IPC, real anonymous endpoint and remote isolation",
+    "Quark read-only folder UI/IPC with fixture CLI (not live account)",
+    "09-quark-folder",
+    "10-home-empty"
+  ],
+  "errors": [],
+  "geometry": {
+    "01-home": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "02-home-focus": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "11-home-curation": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "home-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "home-1280": {
+      "width": 1280,
+      "height": 800,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "home-1920": {
+      "width": 1920,
+      "height": 1080,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "03-library": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "library-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "04-film": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "film-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "05-collections": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "06-collection": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "08-collection-empty": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "07-film-no-art": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "12-watchlist": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "watchlist-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "13-settings": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "14-quark-connection": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "09-quark-folder": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "10-home-empty": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    }
+  }
+}

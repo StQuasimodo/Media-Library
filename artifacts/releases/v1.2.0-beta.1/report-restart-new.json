@@ -1,0 +1,10 @@
+{
+  "phase": "restart-new",
+  "platform": "win32",
+  "packaged": true,
+  "appName": "My Cinema",
+  "appVersion": "1.2.0-beta.1",
+  "realWindowsEncryption": true,
+  "syntheticCredentialOnly": true,
+  "result": "passed"
+}

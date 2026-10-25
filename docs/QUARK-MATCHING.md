@@ -2,6 +2,8 @@
 
 [使用指南](USAGE.md) · [验证与交付](VERIFICATION.md)
 
+[下载1.2.0-beta.1测试版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.1)。稳定版1.1.0只有账号连接与目录浏览，不含本页的自动匹配功能。
+
 ## 首次使用
 
 1. 配置 TMDB API，在「设置 → 影视元数据」保存并验证。

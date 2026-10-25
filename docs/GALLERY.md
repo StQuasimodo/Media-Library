@@ -2,6 +2,17 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## 1.2自动匹配（Windows）
+
+以下来自1.2.0-beta.1构建源码的真实Windows Electron窗口，包含真实preload、SQLite与导入/缓存代码。目录和TMDB响应使用受控测试数据，不代表个人账号已验收。[原始报告](../artifacts/releases/v1.2.0-beta.1/quark-sync-desktop-report.json)。
+
+| 页面或场景 | 截图 |
+|---|---|
+| 目录归并、规格识别与TMDB候选确认 | [查看](../artifacts/review-2026-10-26/15-quark-matches.png) |
+| 作品关联文件、季集、画质编码与增量状态 | [查看](../artifacts/review-2026-10-26/16-quark-cloud-resources.png) |
+
+## 沉浸浏览与字体
+
 以下均来自最近一次字体加粗调整后的同一轮真实 Electron 检查（`desktop-smoke-iXIm7U`）。截图在 Linux 无显示器诊断模式下生成，使用独立测试数据与本地缓存图片；夸克为测试工具数据，不代表真实账号已接通，也不代替 Windows 字体与缩放验收。
 
 | 页面或场景 | 截图 |

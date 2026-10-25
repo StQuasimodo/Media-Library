@@ -44,9 +44,9 @@ pnpm package
 - **最简单的方式**：双击 `release\INSTALL.cmd`。
   它把临时目录放在安装包旁边（`release\mc-temp`），先写探针确认可写，再直接调用安装器；窗口会保留并打印退出码，不会一闪而过。
 - **完全跳过安装器**：双击 `release\RUN-PORTABLE.cmd`，解压到 `release\portable\` 并启动；或手动解压
-  `release\My-Cinema-1.0.0-portable-win64.zip`。与安装版共用同一份 userData。
+  `release\My-Cinema-1.1.0-portable-win64.zip`。与安装版共用同一份 userData。
 - 命令行等价物：`pnpm install:app` / `pnpm run:portable` / `pnpm doctor`。
-- 安装包本体：`release\My-Cinema-1.0.0-Setup.exe`（直接双击可能受系统临时目录影响），按用户安装、不请求管理员权限。
+- 安装包本体：`release\My-Cinema-1.1.0-Setup.exe`（直接双击可能受系统临时目录影响），按用户安装、不请求管理员权限。
 - 应用本身已把 Chromium 的临时文件放进 `%APPDATA%\My Cinema\tmp`，因此系统 TEMP 有问题时应用仍可运行，只有安装器 / 卸载程序（均为 NSIS）受影响。卸载请用「设置 → 应用」或控制面板。
 - 其它问题见 [故障排查](TROUBLESHOOTING.md)。
 
@@ -57,9 +57,11 @@ Electron 45 主进程负责 SQLite、网络和本机文件，React 19 / TypeScri
 
 ## 发布 GitHub Release
 
+发布前必须遵循[版本与发布规则](VERSIONING.md)：新增功能升 MINOR，修复升 PATCH；每次分发的新内容使用新版本，预览使用独立后缀，不覆盖旧资产。
+
 仓库提供手动触发的 [Windows release 工作流](../.github/workflows/release.yml)，在 Windows runner 上依次执行冻结锁文件安装、测试、构建、真实 Electron 检查、NSIS 与免安装 ZIP 打包。`pnpm-workspace.yaml` 明确允许所需依赖的构建脚本。
 
-产物通过 `scripts/verify-release.mjs` 核对版本、Windows x64 程序与 SQLite 原生模块、主进程/preload/渲染资源后，生成 SHA-256 校验文件并发布。版本取自 `package.json`，发布说明位于 [RELEASE-NOTES.md](RELEASE-NOTES.md)。已有同名版本时会停止，不覆盖已发布资产；下次发布应更新版本与说明。
+产物通过 `scripts/verify-release.mjs` 核对版本、Windows x64 程序与 SQLite 原生模块、主进程/preload/渲染资源后，生成 SHA-256 校验文件并发布。发布前检查会拒绝复用已有 Tag/Release，预览版自动标记 prerelease。版本取自 `package.json`，发布说明位于 [RELEASE-NOTES.md](RELEASE-NOTES.md)。已有同名版本时会停止，不覆盖已发布资产；下次发布应更新版本与说明。
 
 具备仓库权限时可在 GitHub Actions 页面点击 Run workflow，或运行：
 

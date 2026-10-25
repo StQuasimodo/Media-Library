@@ -20,9 +20,15 @@ jobs:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Require a new release version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-release-version.mjs
       - name: Install pinned package manager and dependencies
         run: |
           npm install --global pnpm@11.25.0
@@ -34,7 +40,9 @@ jobs:
       - name: Build production application
         run: pnpm build
       - name: Check real Electron, preload and SQLite on Windows
-        run: pnpm test:desktop --quark-fixture
+        run: pnpm test:desktop --quark-fixture --quark-web-probe
+      - name: Verify real Windows credential compatibility with v1.0.0
+        run: node scripts/check-credential-upgrade.mjs
       - name: Build NSIS installer and portable archive
         run: node scripts/package.mjs
       - name: Verify packaged files and write SHA-256 checksums
@@ -55,7 +63,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          gh release create "v$version" --repo "$env:GITHUB_REPOSITORY" --target "$env:GITHUB_SHA" --title "My Cinema v$version" --notes-file docs/RELEASE-NOTES.md "release/My-Cinema-$version-Setup.exe" "release/My-Cinema-$version-portable-win64.zip" release/INSTALL.cmd release/RUN-PORTABLE.cmd release/SHA256SUMS.txt
+          $channelArgs = if ($version.Contains('-')) { @('--prerelease') } else { @('--latest') }
+          gh release create "v$version" --repo "$env:GITHUB_REPOSITORY" --target "$env:GITHUB_SHA" --title "My Cinema v$version" --notes-file docs/RELEASE-NOTES.md @channelArgs "release/My-Cinema-$version-Setup.exe" "release/My-Cinema-$version-portable-win64.zip" release/INSTALL.cmd release/RUN-PORTABLE.cmd release/SHA256SUMS.txt
       - name: Retain desktop diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -66,3 +75,4 @@ jobs:
           path: |
             .harness/desktop-smoke-*/report.json
             .harness/desktop-smoke-*/*.png
+            .harness/credential-upgrade-*/report-*.json

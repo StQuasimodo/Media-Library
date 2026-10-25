@@ -9,6 +9,7 @@ import { build } from 'esbuild';
 assert.equal(process.platform, 'win32', 'This regression requires actual Windows DPAPI.');
 const root = process.cwd();
 const require = createRequire(import.meta.url);
+const { version: currentVersion } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 mkdirSync(join(root, '.harness'), { recursive: true });
 const output = mkdtempSync(join(root, '.harness', 'credential-upgrade-'));
 const profile = join(output, 'profile');
@@ -16,14 +17,14 @@ const legacySource = join(output, 'legacy-credentials.ts');
 // Exact service used to publish v1.0.0; uses the original version-1 credential file.
 writeFileSync(legacySource, execFileSync('git', ['show', '48c306f63ad6f8ea441355b564d812b5110964de:electron/main/services/credentials.ts']));
 
-async function shell(name, implementation) {
+async function shell(name, implementation, version) {
   const destination = join(output, name);
   cpSync(dirname(require('electron')), destination, { recursive: true });
   const binary = join(destination, 'My Cinema.exe');
   renameSync(join(destination, 'electron.exe'), binary);
   const appDir = join(destination, 'resources', 'app');
   mkdirSync(appDir, { recursive: true });
-  writeFileSync(join(appDir, 'package.json'), JSON.stringify({ name: 'my-cinema', productName: 'My Cinema', version: '1.0.0', main: 'main.cjs' }));
+  writeFileSync(join(appDir, 'package.json'), JSON.stringify({ name: 'my-cinema', productName: 'My Cinema', version, main: 'main.cjs' }));
   await build({ stdin: { contents: `
     import { app, safeStorage } from 'electron';
     import assert from 'node:assert/strict';
@@ -39,6 +40,7 @@ async function shell(name, implementation) {
     app.setPath('temp', join(profile, 'tmp'));
     app.whenReady().then(() => {
       assert.equal(originalName, 'My Cinema');
+      assert.equal(app.getVersion(), ${JSON.stringify(version)});
       assert.equal(originalDirectoryName, 'My Cinema');
       assert.equal(safeStorage.isEncryptionAvailable(), true);
       const store = new CredentialStore(join(profile, 'credentials.json'), {
@@ -55,7 +57,7 @@ async function shell(name, implementation) {
       const ciphertext = JSON.parse(readFileSync(join(profile, 'credentials.json'), 'utf8')).tmdbApiKey;
       assert.equal(Buffer.from(ciphertext, 'base64').includes(Buffer.from('mycinema-upgrade-test-only')), false);
       writeFileSync(process.env.MY_CINEMA_CHECK_REPORT, JSON.stringify({
-        phase, platform: process.platform, packaged: app.isPackaged, appName: app.getName(),
+        phase, platform: process.platform, packaged: app.isPackaged, appName: app.getName(), appVersion: app.getVersion(),
         realWindowsEncryption: true, syntheticCredentialOnly: true, result: 'passed'
       }, null, 2));
       app.quit();
@@ -65,8 +67,8 @@ async function shell(name, implementation) {
     bundle: true, platform: 'node', format: 'cjs', target: 'node22', external: ['electron'] });
   return binary;
 }
-const oldBinary = await shell('old-install', legacySource);
-const newBinary = await shell('updated-install', join(root, 'electron/main/services/credentials.ts'));
+const oldBinary = await shell('old-install', legacySource, '1.0.0');
+const newBinary = await shell('updated-install', join(root, 'electron/main/services/credentials.ts'), currentVersion);
 for (const [phase, binary] of [['write-old', oldBinary], ['read-new', newBinary], ['restart-new', newBinary]]) {
   const report = join(output, `report-${phase}.json`);
   const env = { ...process.env, MY_CINEMA_CHECK_PROFILE: profile, MY_CINEMA_CHECK_PHASE: phase, MY_CINEMA_CHECK_REPORT: report };

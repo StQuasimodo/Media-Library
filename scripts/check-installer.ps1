@@ -17,6 +17,15 @@ $startLink = Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs/My 
 if ((Test-Path $desktopLink) -or (Test-Path $startLink)) { throw 'Existing My Cinema shortcuts found; use a clean disposable runner.' }
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
+Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class CinemaInstallerButtons {
+  [DllImport("user32.dll")] public static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+  [DllImport("user32.dll")] public static extern int GetDlgCtrlID(IntPtr hwnd);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam);
+}
+'@
 $script:ownedPids = [System.Collections.Generic.HashSet[int]]::new()
 $checks = [System.Collections.Generic.List[string]]::new()
 function Assert-True([bool]$condition, [string]$message) { if (-not $condition) { throw $message } }
@@ -37,7 +46,14 @@ function Get-InstallerWindow {
 }
 function Click-Control($control) {
   Assert-True ($null -ne $control) 'Required installer control not found.'
-  $control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+  Assert-True $control.Current.IsEnabled 'Installer control is disabled.'
+  $handle = [IntPtr]$control.Current.NativeWindowHandle
+  $parent = [CinemaInstallerButtons]::GetAncestor($handle, 2)
+  $id = [CinemaInstallerButtons]::GetDlgCtrlID($handle)
+  Assert-True ($id -eq 1) 'Expected the actual Next/Install/Finish button.'
+  # The Win32 UIA Invoke proxy can silently lose this notification on an
+  # nsDialogs custom page. Send the same BN_CLICKED command to its real dialog.
+  Assert-True ([CinemaInstallerButtons]::PostMessage($parent, 0x0111, [IntPtr]$id, $handle)) 'Installer button command was not delivered.'
 }
 function Get-InstallerDiagnostics {
   $result = [System.Collections.Generic.List[object]]::new()
@@ -94,6 +110,11 @@ try {
     $window = Get-InstallerWindow
     if ($window) {
       $finish = Find-Control $window ([System.Windows.Automation.AutomationElement]::AutomationIdProperty) '1'
+      if ($finish -and $finish.Current.IsEnabled -and $finish.Current.Name -match 'Next|下一步' -and (Test-Path (Join-Path $destination 'My Cinema.exe'))) {
+        Click-Control $finish
+        Start-Sleep -Milliseconds 300
+        continue
+      }
       if ($finish -and $finish.Current.IsEnabled -and $finish.Current.Name -match 'Finish|完成') {
         $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::CheckBox)
         foreach ($box in $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)) {
@@ -108,10 +129,23 @@ try {
   Assert-True $finished 'Installer did not reach its finish page.'
   $deadline = [DateTime]::UtcNow.AddSeconds(15)
   while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 200; $process.Refresh() }
+  Assert-True ($process.HasExited -and $process.ExitCode -eq 0) 'GUI installer did not exit successfully.'
   Assert-True (Test-Path (Join-Path $destination 'My Cinema.exe')) 'GUI install did not produce the app.'
   Assert-True (-not (Test-Path $desktopLink)) 'Unchecked GUI option still created a desktop shortcut.'
   Assert-True (Test-Path $startLink) 'Start-menu access should remain available after desktop opt-out.'
   $checks.Add('GUI opt-out creates no desktop link and keeps Start menu')
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $portable = Join-Path (Split-Path $Installer) "My-Cinema-$version-portable-win64.zip"
+  $zip = [System.IO.Compression.ZipFile]::OpenRead($portable)
+  try {
+    $entry = $zip.Entries | Where-Object { $_.FullName.Replace('\','/') -eq 'resources/app.asar' } | Select-Object -First 1
+    Assert-True ($null -ne $entry) 'Portable app archive missing.'
+    $stream = $entry.Open()
+    try { $expected = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($stream)) } finally { $stream.Dispose() }
+    $actual = (Get-FileHash -Algorithm SHA256 (Join-Path $destination 'resources/app.asar')).Hash
+    Assert-True ($actual -eq $expected) 'Installed application differs from the verified portable archive.'
+  } finally { $zip.Dispose() }
+  $checks.Add('installed app archive matches verified portable build')
   Run-Silent ''
   Assert-True (-not (Test-Path $desktopLink)) 'Reinstallation forgot the saved opt-out.'
   $checks.Add('reinstallation preserves opt-out')

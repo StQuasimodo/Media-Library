@@ -134,6 +134,7 @@ export class AppRuntime {
     const tmdb = new TmdbProvider({
       getConfig: () => {
         const key = this.credentials.getKey();
+        this.logger.registerSecret(key);
         if (!key) return null;
         return { apiKey: key, language: repo.getSettings().metadataLanguage };
       },

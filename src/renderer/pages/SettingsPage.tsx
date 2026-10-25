@@ -33,6 +33,8 @@ export function SettingsPage() {
   const [lastExport, setLastExport] = useState<string | null>(null);
 
   const hasKey = info?.hasMetadataApiKey ?? false;
+  const credentialState = info?.metadataCredentialState;
+  const credentialLabels = { configured: '已配置', missing: '未配置', unavailable: '凭据存储暂不可用', unreadable: '已保存，读取失败' };
 
   const updateSetting = async (patch: Partial<AppSettings>) => {
     try {
@@ -177,15 +179,29 @@ export function SettingsPage() {
               <div className="setting-name">
                 API Key{' '}
                 <span className={`chip ${hasKey ? 'is-active' : ''}`} style={{ marginLeft: 6 }}>
-                  {hasKey ? '已配置' : '未配置'}
+                  {credentialState ? credentialLabels[credentialState] : '正在读取…'}
                 </span>
               </div>
               <div className="setting-help">
                 在 TMDB 账号设置中免费申请 API Key（v3 Key 或 v4 读取令牌均可）。
-                {hasKey ? ' 当前已保存一个 Key，可以随时替换或清除。' : ''}
+                {hasKey ? ' 当前已保存，无需重新填写。密钥不会回显，输入框留空不影响使用。' : ''}
               </div>
             </div>
           </div>
+
+          {credentialState === 'unreadable' || credentialState === 'unavailable' ? <p role="alert" className="field-error">
+            {credentialState === 'unavailable' ? '系统凭据存储暂不可用。' : '检测到已保存的 API Key，但暂时无法读取或解密。'}
+            原配置文件已保留，请先重试读取，无需立即替换密钥。
+          </p> : null}
+          {!hasKey && info ? <div style={{ marginBottom: 16 }}>
+            <p className="setting-help" style={{ overflowWrap: 'anywhere' }}>当前数据目录：{info.dataDirectory}</p>
+            <div className="row gap-2 wrap">
+              <button type="button" className="btn btn-secondary" disabled={keyBusy} onClick={() => {
+                setKeyBusy(true); void refreshInfo().finally(() => setKeyBusy(false));
+              }}>重新读取已保存的配置</button>
+              <button type="button" className="link-button" onClick={() => void openFolder('data')}>打开数据目录</button>
+            </div>
+          </div> : null}
 
           <div className="form-grid cols-2" style={{ marginBottom: 12 }}>
             <Field

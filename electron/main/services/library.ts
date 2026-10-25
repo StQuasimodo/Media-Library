@@ -137,6 +137,7 @@ export class LibraryService {
     return {
       settings: this.repo.getSettings(),
       hasMetadataApiKey: false,
+      metadataCredentialState: 'missing',
       dataDirectory,
       appVersion,
       schemaVersion,

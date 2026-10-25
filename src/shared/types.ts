@@ -111,10 +111,13 @@ export interface AppSettings {
   motionPreference: MotionPreference;
 }
 
+export type MetadataCredentialState = 'configured' | 'missing' | 'unavailable' | 'unreadable';
+
 export interface SettingsState {
   settings: AppSettings;
   /** True when a metadata API key is stored (the key itself is never sent to the renderer). */
   hasMetadataApiKey: boolean;
+  metadataCredentialState: MetadataCredentialState;
   dataDirectory: string;
   appVersion: string;
   schemaVersion: number;

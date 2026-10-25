@@ -20,6 +20,7 @@ import type {
   RestoreResult,
   SerializedError,
   SettingsState,
+  MetadataCredentialState,
   EntryPatch,
 } from './types';
 import type { QuarkWebStatus, QuarkWebDirectory } from './quarkWeb';
@@ -32,6 +33,7 @@ export interface AppInfo {
   backupsDirectory: string;
   imagesDirectory: string;
   hasMetadataApiKey: boolean;
+  metadataCredentialState: MetadataCredentialState;
   settings: AppSettings;
   platform: string;
 }

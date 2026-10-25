@@ -48,16 +48,20 @@ export function registerIpc(runtime: AppRuntime): void {
   /* App                                                           */
   /* ------------------------------------------------------------ */
 
-  handle('app:info', () => ({
-    appVersion: app.getVersion(),
-    schemaVersion: runtime.schemaVersion,
-    dataDirectory: runtime.paths.dataDirectory,
-    backupsDirectory: runtime.paths.backupsDir,
-    imagesDirectory: runtime.paths.imagesDir,
-    hasMetadataApiKey: runtime.credentials.hasKey(),
-    settings: runtime.repo.getSettings(),
-    platform: process.platform,
-  }));
+  handle('app:info', () => {
+    const metadataCredentialState = runtime.credentials.getState();
+    return {
+      appVersion: app.getVersion(),
+      schemaVersion: runtime.schemaVersion,
+      dataDirectory: runtime.paths.dataDirectory,
+      backupsDirectory: runtime.paths.backupsDir,
+      imagesDirectory: runtime.paths.imagesDir,
+      hasMetadataApiKey: metadataCredentialState === 'configured',
+      metadataCredentialState,
+      settings: runtime.repo.getSettings(),
+      platform: process.platform,
+    };
+  });
 
   handle('app:openExternal', async (url: unknown) => {
     const target = assertString(url, '链接');
@@ -292,13 +296,17 @@ export function registerIpc(runtime: AppRuntime): void {
   /* Settings                                                      */
   /* ------------------------------------------------------------ */
 
-  const settingsState = () => ({
-    settings: runtime.repo.getSettings(),
-    hasMetadataApiKey: runtime.credentials.hasKey(),
-    dataDirectory: runtime.paths.dataDirectory,
-    appVersion: app.getVersion(),
-    schemaVersion: runtime.schemaVersion,
-  });
+  const settingsState = () => {
+    const metadataCredentialState = runtime.credentials.getState();
+    return {
+      settings: runtime.repo.getSettings(),
+      hasMetadataApiKey: metadataCredentialState === 'configured',
+      metadataCredentialState,
+      dataDirectory: runtime.paths.dataDirectory,
+      appVersion: app.getVersion(),
+      schemaVersion: runtime.schemaVersion,
+    };
+  };
 
   handle('settings:get', () => settingsState());
 

@@ -193,7 +193,7 @@ function apiInfo() {
     dataDirectory: profileDir,
     backupsDirectory: join(profileDir, 'backups'),
     imagesDirectory: join(profileDir, 'images'),
-    hasMetadataApiKey: false,
+    hasMetadataApiKey: false, metadataCredentialState: 'missing',
     settings: repo.getSettings(),
     platform: 'win32',
   };
@@ -248,7 +248,7 @@ async function dispatch(channel, args) {
     case 'settings:get':
       return {
         settings: repo.getSettings(),
-        hasMetadataApiKey: false,
+        hasMetadataApiKey: false, metadataCredentialState: 'missing',
         dataDirectory: profileDir,
         appVersion: '1.0.0',
         schemaVersion: 2,
@@ -256,7 +256,7 @@ async function dispatch(channel, args) {
     case 'settings:update':
       return {
         settings: library.updateSettings(args[0] ?? {}),
-        hasMetadataApiKey: false,
+        hasMetadataApiKey: false, metadataCredentialState: 'missing',
         dataDirectory: profileDir,
         appVersion: '1.0.0',
         schemaVersion: 2,

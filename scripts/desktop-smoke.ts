@@ -116,6 +116,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   }
   await waitFor("!!document.querySelector('.focus-rail .rail-item')");
   assert.equal(await js('typeof window.cinema.library.home'), 'function');
+  assert.equal((await js('window.cinema.app.info()')).metadataCredentialState, 'missing');
   assert.equal(await js('window.cinema.library.stats().then(stats => stats.totalFilms)'), 3);
   checks.push('real preload IPC and SQLite');
   assert.equal(await js("document.querySelectorAll('.home .poster-card').length"), 0, 'home must not duplicate the focus rail');

@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -23,6 +25,8 @@ jobs:
           pnpm build
       - name: Check actual application and integrated Quark login
         run: pnpm test:desktop --quark-fixture --quark-web-probe
+      - name: Preserve real Windows credentials through an application upgrade
+        run: node scripts/check-credential-upgrade.mjs
       - name: Package preview installer and portable version
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
@@ -48,3 +52,4 @@ jobs:
           path: |
             .harness/desktop-smoke-*/report.json
             .harness/desktop-smoke-*/*.png
+            .harness/credential-upgrade-*/report-*.json

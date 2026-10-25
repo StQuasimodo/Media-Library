@@ -1,0 +1,41 @@
+name: Publish verified retained release
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Windows release run with verified retained artifacts
+        required: true
+        type: string
+      build_source:
+        description: Exact 40-character source commit of that build
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: my-cinema-windows
+          path: release
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify retained build identity and checksums, then publish original files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SOURCE_SHA: ${{ inputs.build_source }}
+          RELEASE_BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        run: node scripts/publish-release.mjs

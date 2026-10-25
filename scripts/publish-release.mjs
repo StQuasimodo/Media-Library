@@ -13,12 +13,11 @@ const argument = name => {
   return process.argv[index + 1];
 };
 const gh = args => execFileSync('gh', args, { encoding: 'utf8' }).trim();
-const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-assert.match(version, /^\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.[1-9]\d*)?$/);
-const source = argument('--source') || process.env.GITHUB_SHA || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const source = argument('--source') || process.env.RELEASE_SOURCE_SHA || process.env.GITHUB_SHA || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 assert.match(source, /^[a-f0-9]{40}$/);
 const manifest = JSON.parse(execFileSync('git', ['show', `${source}:package.json`], { encoding: 'utf8' }));
-assert.equal(manifest.version, version, 'Artifact version must match the source commit.');
+const { version } = manifest;
+assert.match(version, /^\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.[1-9]\d*)?$/);
 const directory = resolve(argument('--directory') || 'release');
 const assets = [`My-Cinema-${version}-Setup.exe`, `My-Cinema-${version}-portable-win64.zip`, 'INSTALL.cmd', 'RUN-PORTABLE.cmd'];
 const lines = readFileSync(join(directory, 'SHA256SUMS.txt'), 'utf8').trim().split(/\r?\n/);
@@ -31,6 +30,14 @@ for (const line of lines) {
   checked.add(match[2]);
 }
 const repo = process.env.GITHUB_REPOSITORY || gh(['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner']);
+if (process.env.RELEASE_BUILD_RUN_ID) {
+  const runId = process.env.RELEASE_BUILD_RUN_ID;
+  assert.match(runId, /^\d+$/);
+  const run = JSON.parse(gh(['api', `repos/${repo}/actions/runs/${runId}`]));
+  assert.equal(run.head_sha, source, 'Retained build must match the requested source commit.');
+  const { jobs } = JSON.parse(gh(['api', `repos/${repo}/actions/runs/${runId}/jobs`]));
+  assert.ok(jobs.some(job => job.steps.some(step => step.name === 'Verify packaged files and write SHA-256 checksums' && step.conclusion === 'success')), 'Retained build must have passed package verification.');
+}
 const temporary = mkdtempSync(join(tmpdir(), 'mycinema-release-'));
 try {
   const notes = join(temporary, 'notes.md');

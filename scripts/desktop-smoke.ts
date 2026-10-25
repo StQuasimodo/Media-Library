@@ -224,7 +224,23 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   await route('/settings#quark', "!!document.querySelector('#quark')");
   assert.equal(await js("location.hash.startsWith('#/settings')"), true);
   assert.equal(await js("document.querySelector('.page').scrollTop > 0"), true, 'settings anchor must survive page scroll reset');
+  assert.equal(await js("[...document.querySelectorAll('#quark button')].some(b=>b.textContent==='关联夸克账号')"), true);
+  assert.equal((await js("window.cinema.quarkWeb.status()")).state, 'not_checked', 'fresh isolated profile must not claim a verified account');
+  await shot('14-quark-connection');
+  if (process.argv.includes('--quark-web-probe')) {
+    const connected = await js("window.cinema.quarkWeb.check()");
+    assert.equal(connected.state, 'login_required', 'empty integrated session must require login');
+    await js("window.cinema.quarkWeb.connect()");
+    const remote = BrowserWindow.getAllWindows().find(window => window !== win);
+    assert.ok(remote, 'integrated official login window created');
+    assert.equal(await remote.webContents.executeJavaScript("typeof window.cinema"), 'undefined');
+    assert.equal(await remote.webContents.executeJavaScript("typeof require"), 'undefined');
+    remote.close();
+    assert.equal((await js("window.cinema.quarkWeb.disconnect()")).state, 'login_required');
+    checks.push('integrated web login IPC, real anonymous endpoint and remote isolation');
+  }
   if (quarkFixture) {
+    await js("document.querySelector('#quark details').open = true");
     await waitFor("[...document.querySelectorAll('#quark button')].some(b=>b.textContent==='选择云端文件夹' && !b.disabled)");
     await js("[...document.querySelectorAll('#quark button')].find(b=>b.textContent==='选择云端文件夹').click()");
     await waitFor("!!document.querySelector('.quark-folders button:not(:disabled)')");
@@ -251,7 +267,10 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
 }
 
 seed().then((data) => {
+  let primaryWindowHandled = false;
   app.on('browser-window-created', (_event, win) => {
+    if (primaryWindowHandled) return;
+    primaryWindowHandled = true;
     win.webContents.on('console-message', (event) => {
       if (event.level === 'error') errors.push(event.message);
     });
@@ -263,4 +282,4 @@ seed().then((data) => {
   require(join(root, 'dist-electron', 'main.cjs'));
 }).catch((error) => { console.error(error); app.exit(1); });
 // Includes multi-size captures and functional checks across all seven pages.
-setTimeout(() => { console.error('[desktop-smoke] timeout'); app.exit(1); }, 90_000).unref();
+setTimeout(() => { console.error('[desktop-smoke] timeout'); app.exit(1); }, 120_000).unref();

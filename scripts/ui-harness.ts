@@ -286,6 +286,13 @@ window.__MYCINEMA_IMAGE_BASE__ = '/images/';
     return payload.data;
   };
   window.cinema = {
+    quarkWeb: {
+      status: async () => ({state:"not_checked",error:null,loginOpen:false}),
+      connect: async () => { throw new Error("请在桌面应用中登录"); },
+      check: async () => ({state:"unavailable",error:"请在桌面应用中检查",loginOpen:false}),
+      list: async () => { throw new Error("请在桌面应用中浏览"); },
+      disconnect: async () => ({state:"login_required",error:null,loginOpen:false}),
+    },
     quark: {
       status: async () => ({toolPath:null,folder:null,recursive:true,autoRead:true,busy:false,error:null,notices:[],inventory:null}),
       chooseTool: async () => { throw new Error('请在桌面应用中选择夸克工具'); },

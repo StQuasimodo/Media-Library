@@ -1,0 +1,50 @@
+name: Integrated Quark preview
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          node node_modules/electron/install.js
+      - name: Test and build integrated application
+        run: |
+          pnpm test
+          pnpm build
+      - name: Check actual application and integrated Quark login
+        run: pnpm test:desktop --quark-fixture --quark-web-probe
+      - name: Package preview installer and portable version
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          node scripts/package.mjs
+          node scripts/verify-release.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: My-Cinema-Integrated-Quark-Preview
+          if-no-files-found: error
+          path: |
+            release/*Setup.exe
+            release/*portable-win64.zip
+            release/SHA256SUMS.txt
+            release/INSTALL.cmd
+            release/RUN-PORTABLE.cmd
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integrated-quark-evidence
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: |
+            .harness/desktop-smoke-*/report.json
+            .harness/desktop-smoke-*/*.png

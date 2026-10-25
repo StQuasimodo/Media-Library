@@ -1,16 +1,20 @@
 # 验证与交付
 
+## 夸克应用内整合（2026-10-25）
+
+源码已加入「设置 → 夸克网盘」的官方网页登录、目录连接检查、逐层浏览和断开本机会话。新增 Windows 集成预览工作流，运行完整应用的真实 preload/IPC、匿名目录鉴权及官方窗口隔离检查，再打包；结果将在成功运行后补充。真实账号目录访问、实际会话重启、递归同步与 TMDB 自动入库未验证或未完成。
+
 ## Windows Release（2026-10-25）
 
 [v1.0.0 已发布](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.0.0)，构建来源为 `48c306f63ad6f8ea441355b564d812b5110964de`。[Windows 流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40114969102)的日志确认：82项测试通过，完整构建、真实Electron/preload/SQLite检查与包内容验证通过；安装包与免安装ZIP上传完成。GitHub资产的SHA-256与发布的校验文件一致。
 
-这证明Windows runner上的运行和打包链路，不代替个人电脑上的安装、字体/缩放与真实TMDB/夸克账号验收。安装包未签名。目前也没有应用内关联夸克账号的授权入口，目录服务仅用fixture工具做过集成验证。
+这证明Windows runner上的运行和打包链路，不代替个人电脑上的安装、字体/缩放与真实TMDB/夸克账号验收。安装包未签名。该稳定版没有应用内账号入口；上方的新入口属于后续源码与预览构建。
 
 ## 1. 命令
 
 ```powershell
 pnpm typecheck              # tsc --noEmit
-pnpm test                   # vitest run（8 文件 / 82 用例）
+pnpm test                   # vitest run（当前9文件 / 90用例；稳定版为82用例）
 pnpm build                  # 类型检查 + 主进程打包 + 渲染层构建
 pnpm package                # 安装包 + 免安装 zip（自动处理 TMP / PATH / 镜像）
 pnpm package:dir            # 只生成免安装目录 release/win-unpacked

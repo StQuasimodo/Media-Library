@@ -61,7 +61,7 @@ export function QuarkFolderPanel() {
   const shownError = error || status?.error;
 
   return (
-    <section className="section-card" id="quark">
+    <section className="section-card" id="quark-cli">
       <div className="section-card-head">
         <h2 className="section-card-title">夸克文件夹</h2>
         <p className="section-card-desc">

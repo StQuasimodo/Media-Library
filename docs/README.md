@@ -10,7 +10,7 @@
 | [QUARK-FOLDERS.md](QUARK-FOLDERS.md) | 官方工具授权、目录读取配置与待验收边界 | 连接指定夸克文件夹 |
 | [QUARK-AUTH-RESEARCH.md](QUARK-AUTH-RESEARCH.md) | 授权命令、Agent 与 Windows 限制、应用内账号连接方案 | 开发夸克账号连接之前 |
 | [QUARK-VALIDATION.md](QUARK-VALIDATION.md) | 独立运行诊断、真实授权、目录完整性与收藏关联的验收步骤 | 验证夸克连接是否真的可用 |
-| [QUARK-WEB-CHECK.md](QUARK-WEB-CHECK.md) | 独立网页登录与目录验证工具、Windows实机操作步骤 | 验证不依赖Skill的网页登录路线 |
+| [QUARK-WEB-CHECK.md](QUARK-WEB-CHECK.md) | 应用内网页登录、预览下载、目录验收与早期独立工具记录 | 验证不依赖Skill的网页登录路线 |
 | [REQUIREMENTS.md](REQUIREMENTS.md) | 产品范围、功能要求、数据与安全要求、体验要求、验收标准（含状态标记） | 判断某个功能该不该做、是否已完成 |
 | [DESIGN.md](DESIGN.md) | 视觉令牌、排版规则、PS5 式聚焦交互、动效、可访问性、组件约定 | 改界面之前 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 分层、IPC 清单、数据库结构与迁移、备份恢复、安全模型、目录树 | 改数据层/主进程之前 |

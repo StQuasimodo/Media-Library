@@ -22,6 +22,7 @@ import type {
   SettingsState,
   EntryPatch,
 } from './types';
+import type { QuarkWebStatus, QuarkWebDirectory } from './quarkWeb';
 import type { QuarkBrowse, QuarkStatus } from './quark';
 
 export interface AppInfo {
@@ -45,6 +46,13 @@ export type ApiEnvelope<T> = { ok: true; data: T } | { ok: false; error: Seriali
 
 /** The complete IPC surface. Nothing else is reachable from the renderer. */
 export interface CinemaApi {
+  quarkWeb: {
+    status(): Promise<QuarkWebStatus>;
+    connect(): Promise<QuarkWebStatus>;
+    check(): Promise<QuarkWebStatus>;
+    list(id: string): Promise<QuarkWebDirectory>;
+    disconnect(): Promise<QuarkWebStatus>;
+  };
   quark: {
     status(): Promise<QuarkStatus>;
     chooseTool(): Promise<QuarkStatus | null>;

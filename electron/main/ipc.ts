@@ -2,6 +2,9 @@ import { app, clipboard, dialog, ipcMain, shell } from 'electron';
 import type { AppSettings, EntryPatch, FilmPatch, LibraryQuery, MediaType, MetadataCandidate, MetadataSearchOptions, ResourceInput } from '../../src/shared/types';
 import { AppError, toSerializedError } from './errors';
 import type { AppRuntime } from './runtime';
+import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
+import { QuarkWebSession } from './services/quark/webSession';
 import { validateHttpUrl } from '../../src/shared/validation';
 
 type Handler = (...args: never[]) => unknown;
@@ -190,6 +193,25 @@ export function registerIpc(runtime: AppRuntime): void {
   handle('resources:list', (filmId: unknown) =>
     runtime.library.listResources(assertString(filmId, '作品 ID')),
   );
+
+  const webQuark = new QuarkWebSession();
+  for (const action of ['status', 'connect', 'check', 'list', 'disconnect'] as const) {
+    ipcMain.handle(`quark-web:${action}`, async (event, id: unknown) => {
+      let trusted = false;
+      try {
+        const url = new URL(event.senderFrame?.url ?? '');
+        const dev = process.env.VITE_DEV_SERVER_URL;
+        trusted = event.senderFrame === event.sender.mainFrame && (dev
+          ? url.origin === new URL(dev).origin && url.pathname === '/'
+          : url.protocol === 'file:' && resolve(fileURLToPath(url)) === resolve(join(__dirname, '..', 'dist', 'index.html')));
+      } catch { /* reject unknown senders */ }
+      if (!trusted) return { ok: false, error: { code: 'VALIDATION', message: '页面无权访问夸克连接。' } };
+      try {
+        const data = action === 'list' ? await webQuark.list(assertString(id, '文件夹')) : await webQuark[action]();
+        return { ok: true, data };
+      } catch (error) { return { ok: false, error: toSerializedError(error) }; }
+    });
+  }
 
   handle('quark:status', () => runtime.quark.status());
   handle('quark:chooseTool', async () => {

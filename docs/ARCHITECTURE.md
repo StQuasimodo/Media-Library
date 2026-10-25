@@ -35,6 +35,7 @@ SQLite (better-sqlite3)  +  图片缓存目录  +  日志
 | 应用 | `app:info` · `app:openExternal` · `app:openFolder` · `app:relaunch` |
 | 收藏库 | `library:home` · `library:stats` · `library:list` · `library:years` · `library:detail` · `library:createManual` · `library:updateFilm` · `library:updateEntry` · `library:removeFilm` · `library:importCandidate` |
 | 专题 | `collections:list` · `collections:detail` · `collections:create` · `collections:update` · `collections:remove` · `collections:addFilm` · `collections:removeFilm` · `collections:reorder` |
+| 夸克网页登录 | `quark-web:status` · `quark-web:connect` · `quark-web:check` · `quark-web:list` · `quark-web:disconnect` |
 | 夸克只读目录 | `quark:status` · `quark:chooseTool` · `quark:browse` · `quark:selectFolder` · `quark:scan` · `quark:cancel` |
 | 夸克资源 | `resources:list` · `resources:create` · `resources:update` · `resources:remove` · `resources:open` · `resources:copy` |
 | 元数据 | `metadata:search` · `metadata:candidate` · `metadata:refresh` · `metadata:verifyKey` · `metadata:saveKey` · `metadata:clearKey` |
@@ -150,3 +151,10 @@ tests/            library · persistence · metadata · security
 `services/quark/library.ts` 保存选定源与可重建清单，负责递归、去重、取消和上限；`filename.ts` 生成保守的识别线索。服务不下载视频、不调用云端写命令，不读取官方工具凭据文件。
 
 源配置位于userData/quark-source.json，清单位于quark-inventory.json，查询工作目录会清理。它们不修改SQLite schema，不进入个人收藏数据；数据库备份不包含这份可重建清单。凭据仍由官方工具独立管理。后续实际入库需要稳定的云端文件身份及关联设计，不能把临时下载地址或文件名当成主键。
+
+
+## 夸克网页登录整合（2026-10-25）
+
+`services/quark/webSession.ts` 管理专用 Chromium Session `persist:mycinema-quark-web` 与远端登录窗口，`webProtocol.ts` 负责固定只读请求目标、分页完整性与响应校验。新 IPC 仅接受应用主页面的顶层 frame；远端官方网页启用 sandbox/contextIsolation，禁用 Node，未加载业务 preload，顶层导航/弹窗限制为 HTTPS 夸克域名。
+
+会话由 Chromium 保存在 userData 的专用 partition 内，退出前刷新 Cookie 存储；不读取日常浏览器、不把 Cookie/Token 传给渲染层。断开清除该 partition，不删除收藏或网盘文件。当前只读浏览不写入 SQLite，不自动关联 TMDB；实际账号与真实重启验收仍待完成。旧 CLI 桥接继续独立保留。独立诊断工具复用正式目录协议，使用另一套会话存储。

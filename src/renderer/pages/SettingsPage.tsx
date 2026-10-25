@@ -7,7 +7,7 @@ import { useAppState } from '../lib/appState';
 import { useToast } from '../lib/toast';
 import { ConfirmDialog, Field } from '../components/primitives';
 import { Icon } from '../components/icons';
-import { QuarkFolderPanel } from '../components/QuarkFolderPanel';
+import { QuarkWebPanel } from '../components/QuarkWebPanel';
 import { PageHeading } from '../components/PageHeading';
 import { formatBytes, formatDateTime } from '../lib/format';
 import { prefersReducedMotion } from '../lib/motion';
@@ -254,7 +254,7 @@ export function SettingsPage() {
           </div>
         </section>
 
-        <QuarkFolderPanel />
+        <QuarkWebPanel />
 
         <section className="section-card" id="appearance">
           <div className="section-card-head">

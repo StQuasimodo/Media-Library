@@ -30,7 +30,7 @@ pnpm dev
 ## 文档
 
 - [使用指南](docs/USAGE.md)：安装、TMDB 配置、数据备份与快捷键。
-- [夸克目录接入](docs/QUARK-FOLDERS.md)：官方授权方式、配置与实现边界。
+- [夸克网盘接入](docs/QUARK-WEB-CHECK.md)：账号登录、目录读取与验证边界。
 - [视觉与交互](docs/DESIGN.md)：布局、字体、动效与可访问性。
 - [架构说明](docs/ARCHITECTURE.md)：Electron、数据层与安全模型。
 - [验证说明](docs/VERIFICATION.md) · [故障排查](docs/TROUBLESHOOTING.md) · [修复记录](docs/REPAIRS-2026-10-24.md)。

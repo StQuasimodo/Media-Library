@@ -32,6 +32,12 @@
 
 仅构建 Actions 集成预览时使用 [Integrated Quark preview](../.github/workflows/integrated-preview.yml)，它要求预览后缀并检查已有 Tag/Release。Actions 产物不自动创建版本占位 Tag；维护者仍须为已分发的新预览递增编号，不能靠重复运行绕过规则。
 
+## 仅发布失败时的恢复
+
+若构建、测试和包校验都已通过，仅上传/Release 创建失败，可用 [Publish verified retained release](../.github/workflows/publish-retained-release.yml)发布原产物，填写原 `build_run_id` 和40位 `build_source`，无需重新打包。恢复流程校验构建提交、原包校验步骤、文件哈希与Tag指向；不得把后续修复发布脚本的提交当成构建源码，不覆盖现有Release资产。
+
+发布使用 `scripts/publish-release.mjs` 的参数数组，先创建或核对固定Tag，再创建Release，避免PowerShell把标量展开为字符，以及对历史提交传递不必要的目标参数。若runner无法创建标签，维护者可先通过已有仓库权限创建指向原构建的标签，再恢复发布；禁止强制改写标签。仅修复发布脚本而复用同一批文件，不构成分发新内容。
+
 ## 交付文件
 
 以 `1.1.0` 为例：`My-Cinema-1.1.0-Setup.exe`、`My-Cinema-1.1.0-portable-win64.zip`、Tag `v1.1.0`。`INSTALL.cmd` 和 `RUN-PORTABLE.cmd` 自动引用当前版本；SHA-256 必须来自本次实际打包产物。

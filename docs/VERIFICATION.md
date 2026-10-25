@@ -1,5 +1,15 @@
 # 验证与交付
 
+## v1.1.0 正式交付（2026-10-25）
+
+[v1.1.0 Release](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.1.0)已发布并设为 Latest。构建源码为 `cadfcecc4c8630abe8895e609bdfea880826cb00`，数据库仍为 schema v2。Windows 的94项测试、类型检查、生产构建、真实 Electron/preload/SQLite、夸克官方窗口与匿名鉴权、v1.0.0→v1.1.0 真实加密凭据兼容检查和安装包内容校验均通过。凭据检查使用合成值，个人安装与真实 TMDB/夸克账号仍待验收。
+
+[原构建流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40189670556)在打包和校验后因 PowerShell 发布参数展开错误失败；修正为 Node 参数数组。云环境上传接口返回401，runner对历史提交的Release创建返回403；随后核对固定Tag并取消不必要的目标提交参数，[保留产物发布流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40190610384)成功。发布复用原文件，未重新打包或替换旧版资产。
+
+已再次核对全部5个GitHub资产的SHA-256与保留文件相符，并确认旧版本号和错误预览版本会被发布前检查拒绝。[交付范围及资产摘要](../artifacts/releases/v1.1.0/summary.json)、[校验文件](../artifacts/releases/v1.1.0/SHA256SUMS.txt)、[桌面报告](../artifacts/releases/v1.1.0/desktop-report.json)、[版本检查记录](../artifacts/releases/v1.1.0/version-guard.json)、[新版凭据读取](../artifacts/releases/v1.1.0/report-read-new.json)、[重启复读](../artifacts/releases/v1.1.0/report-restart-new.json)。
+
+安装包：`My-Cinema-1.1.0-Setup.exe`，121228626字节，SHA-256 `355b22990b167896864c7e24405c700a08af2f540ad3ac52abc6d2572473b800`。历史1.0.0预览与早期交付记录保留在下方，不代表当前版本。
+
 ## API Key 更新后状态排查（2026-10-25）
 
 用户报告更新后需要重新配置 API；尚未确认本机是状态为未配置，还是仅输入框为空，也未确认其他收藏/设置是否保留。代码检查发现旧 `CredentialStore` 将缺失、解密失败、系统存储暂不可用都变成 null，并缓存到进程退出；这是已修复的独立问题，不能据此认定它就是用户本机的原因。

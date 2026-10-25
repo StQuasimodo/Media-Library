@@ -1,0 +1,46 @@
+{
+  "version": "1.1.0",
+  "buildSource": "cadfcecc4c8630abe8895e609bdfea880826cb00",
+  "buildRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40189670556",
+  "buildChecksPassed": true,
+  "originalBuildWorkflowConclusion": "failure (initial publication command failed after successful package verification)",
+  "publicationRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40190610384",
+  "publicationConclusion": "success",
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.1.0",
+  "unitTestsPassed": 94,
+  "publishedAssetDigestsMatchRetainedFiles": true,
+  "realAccountVerified": false,
+  "installerUpgradeVerified": false,
+  "assets": [
+    {
+      "name": "INSTALL.cmd",
+      "size": 1331,
+      "digest": "sha256:e230295dd6a9529a2268d086fab596de654dd72734e12213bc9258ffb777b937",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.1.0/INSTALL.cmd"
+    },
+    {
+      "name": "My-Cinema-1.1.0-portable-win64.zip",
+      "size": 169713234,
+      "digest": "sha256:756790ab0cb04d32c4958d8a19b11a8a7b8b5380bc97e941d0d1474958effc0d",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.1.0/My-Cinema-1.1.0-portable-win64.zip"
+    },
+    {
+      "name": "My-Cinema-1.1.0-Setup.exe",
+      "size": 121228626,
+      "digest": "sha256:355b22990b167896864c7e24405c700a08af2f540ad3ac52abc6d2572473b800",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.1.0/My-Cinema-1.1.0-Setup.exe"
+    },
+    {
+      "name": "RUN-PORTABLE.cmd",
+      "size": 969,
+      "digest": "sha256:384cde1b6e9f3acfdcd2d8cda82ca767f27527894cf60a8e717b0669c64f6daa",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.1.0/RUN-PORTABLE.cmd"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 354,
+      "digest": "sha256:5e44b1ac20db4ac3479c960d7d32e70fc8e83533ce1c0c85c9298c802aabfb18",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.1.0/SHA256SUMS.txt"
+    }
+  ]
+}

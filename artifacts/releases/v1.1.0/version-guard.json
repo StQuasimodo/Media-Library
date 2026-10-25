@@ -1,0 +1,5 @@
+{
+  "availableVersionAcceptedBeforeRelease": true,
+  "stableVersionRejectedByPreviewGuard": true,
+  "publishedVersionRejectedAfterRelease": true
+}

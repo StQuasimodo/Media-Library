@@ -247,8 +247,9 @@ export function ImportFilmDialog({
               {!hasKey ? (
                 <div className="state-panel" style={{ padding: '20px 18px', marginBottom: 16 }}>
                   <p className="state-text" style={{ maxWidth: 620 }}>
-                    尚未配置 TMDB API Key，因此无法在线搜索。你可以在「设置」中填入自己的 Key（免费申请），
-                    或者先用「手动添加」记录作品信息。
+                    {info?.metadataCredentialState === 'unreadable' || info?.metadataCredentialState === 'unavailable'
+                      ? '已保存的 TMDB API Key 暂时无法读取。请到「设置」重新读取已保存的配置，或先手动添加作品。'
+                      : '尚未配置 TMDB API Key，因此无法在线搜索。你可以在「设置」中填入自己的 Key（免费申请），或先手动添加作品。'}
                   </p>
                   <div className="state-actions">
                     <button

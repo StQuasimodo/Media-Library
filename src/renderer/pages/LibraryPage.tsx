@@ -199,7 +199,9 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
             text={
               info?.hasMetadataApiKey
                 ? '从 TMDB 搜索并导入第一部作品。资料与海报会保存在本机。'
-                : '可以先手动添加一部作品，或到「设置」配置 TMDB API Key 后在线搜索。'
+                : info?.metadataCredentialState === 'unreadable' || info?.metadataCredentialState === 'unavailable'
+                  ? '已保存的 TMDB API Key 暂时无法读取，请到「设置」重新检查，也可先手动添加作品。'
+                  : '可以先手动添加一部作品，或到「设置」配置 TMDB API Key 后在线搜索。'
             }
           >
             <button type="button" className="btn btn-primary btn-sm" onClick={onOpenImport}>

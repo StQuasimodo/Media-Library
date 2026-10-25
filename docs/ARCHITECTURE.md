@@ -158,3 +158,10 @@ tests/            library · persistence · metadata · security
 `services/quark/webSession.ts` 管理专用 Chromium Session `persist:mycinema-quark-web` 与远端登录窗口，`webProtocol.ts` 负责固定只读请求目标、分页完整性与响应校验。新 IPC 仅接受应用主页面的顶层 frame；远端官方网页启用 sandbox/contextIsolation，禁用 Node，未加载业务 preload，顶层导航/弹窗限制为 HTTPS 夸克域名。
 
 会话由 Chromium 保存在 userData 的专用 partition 内，退出前刷新 Cookie 存储；不读取日常浏览器、不把 Cookie/Token 传给渲染层。断开清除该 partition，不删除收藏或网盘文件。当前只读浏览不写入 SQLite，不自动关联 TMDB；实际账号与真实重启验收仍待完成。旧 CLI 桥接继续独立保留。独立诊断工具复用正式目录协议，使用另一套会话存储。
+
+
+## TMDB 凭据读取状态（2026-10-25）
+
+凭据文件继续使用原有版本1格式与 Electron safeStorage，不迁移目录、不改数据库。`CredentialStore.getState()` 区分 configured/missing/unavailable/unreadable；仅缓存成功读取的密钥，暂时不可用、解密失败或文件缺失可在同一进程重试，不覆盖旧文件。`app:info` 和 `settings:get` 返回无密钥的状态字段，设置与导入界面不再把解密失败描述为未配置。输入框不会回显已保存密钥。
+
+Windows 预览流程还运行 `scripts/check-credential-upgrade.mjs`：用稳定版原始 CredentialStore 与真实 safeStorage 写入合成测试值，再从另一个安装目录的新 Electron 外壳读取、替换，最后新进程重读。测试使用隔离 profile，不登录 TMDB、不接触个人配置；这不是安装器升级验收，也无法诊断用户本机是否丢失 Local State 或改换 Windows 账户。

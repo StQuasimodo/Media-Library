@@ -1,0 +1,12 @@
+{
+  "platform": "win32",
+  "stage": "read",
+  "officialPageLoaded": true,
+  "loginControlsVisible": true,
+  "remotePageIsolated": true,
+  "anonymousDirectoryRequiresLogin": true,
+  "syntheticCookieSurvived": true,
+  "actualAccountVerified": false,
+  "actualAccountRestartVerified": false,
+  "productionDataTouched": false
+}

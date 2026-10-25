@@ -1,0 +1,7 @@
+{
+  "platform": "win32",
+  "stage": "packaged-local",
+  "localUiPreloadIpcPassed": true,
+  "actualAccountVerified": false,
+  "productionDataTouched": false
+}

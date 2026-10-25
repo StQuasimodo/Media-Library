@@ -32,7 +32,7 @@
 | 项目 | 状态 |
 |---|---|
 | 版本 / 数据库 | 1.0.0 / schema v2 |
-| 自动化测试 | 最近一次业务测试：8 个文件、82 项通过 |
+| 自动化测试 | 最近一次回归：9 个文件、90 项通过（含网页登录验证原型的8项）；稳定版Release为82项 |
 | 构建与界面 | Windows Release 构建、82项测试、真实 Electron 与包内容验证通过；Linux 诊断检查也已通过 |
 | 当前截图 | [界面预览](GALLERY.md)，与最近一次字体调整一致 |
 | Windows 发行产物 | [v1.0.0 已发布](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.0.0)；此前 DSH 产物见[历史记录](HANDOFF-HISTORY.md) |

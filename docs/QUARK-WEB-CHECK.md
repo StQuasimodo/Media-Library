@@ -2,6 +2,14 @@
 
 这是与正式My Cinema分开的实验工具，验证“官方网页登录 → 本机会话 → 只读目录访问”。不依赖Skill、Codex或DSH，不改正式版数据库、配置或收藏，不生成分享链接、不自动导入TMDB。
 
+## 自动验证结果（2026-10-25）
+
+[Windows构建与检查](https://github.com/StQuasimodo/Media-Library/actions/runs/40156521106)全部完成：90项测试、原型类型检查、打包后本地控制界面/preload/IPC、官方登录页面与登录文字、匿名目录要求登录、远端无Node/本地桥接、测试Cookie跨进程持久化均通过。构建源码为`a9354c0`。
+
+[下载Windows验证工具产物](https://github.com/StQuasimodo/Media-Library/actions/runs/40156521106/artifacts/12584364978)（需登录GitHub；产物内包含便携ZIP和SHA-256文件）。[本地界面报告](../artifacts/research-2026-10-25/windows-quark-web-packaged-local.json)、[初次网页检查](../artifacts/research-2026-10-25/windows-quark-web-write.json)、[重启检查](../artifacts/research-2026-10-25/windows-quark-web-read.json)。所有报告明确标注真实账号未验证。
+
+第一次Windows尝试等待整页加载超时；调整为有界的可信顶层DOM和登录文字检查后通过，未跳过TLS验证。当前Linux云环境的Electron有NSS/证书问题，在线检查未通过；Linux本地界面、类型检查与90项测试通过。Windows结果不能被描述为真实账号授权成功。
+
 ## 在Windows上验证
 
 1. 从 [Quark web session validation构建记录](https://github.com/StQuasimodo/Media-Library/actions/workflows/quark-web-check.yml)下载便携验证工具产物。解开产物中的`My-Cinema-Quark-Web-Check-Windows.zip`，运行`My Cinema Quark Check.exe`。

@@ -6,6 +6,7 @@ import { CheckError, directoryUrl, parsePage, readDirectory, trustedLoginUrl } f
 
 app.setName('My Cinema Quark Check');
 const stage = process.argv.find(arg => arg.startsWith('--self-test='))?.split('=')[1];
+if (stage && !['write', 'read', 'packaged-local'].includes(stage)) throw new Error('Unknown self-test stage');
 if (stage) {
   const profile = resolve('.harness/quark-web-check-profile'); mkdirSync(profile, { recursive: true }); app.setPath('userData', profile);
 }
@@ -104,8 +105,8 @@ app.whenReady().then(async () => {
   store = session.fromPartition('persist:quark-web-check');
   store.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   store.setPermissionCheckHandler(() => false);
-  if (stage) { await selfTest(); return; }
-  controller = new BrowserWindow({ title: 'My Cinema · 夸克连接验证', width: 1000, height: 760,
+  if (stage && stage !== 'packaged-local') { await selfTest(); return; }
+  controller = new BrowserWindow({ title: 'My Cinema · 夸克连接验证', width: 1000, height: 760, show: !stage,
     webPreferences: { preload: join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false } });
   controller.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   controller.webContents.on('will-navigate', (event, target) => { if (target !== ui) event.preventDefault(); });
@@ -115,7 +116,7 @@ app.whenReady().then(async () => {
     busy = true;
     try {
       if (action === 'status') return { ok: true, data: snapshot() };
-      if (action === 'login') { await openLogin(); return { ok: true, data: snapshot() }; }
+      if (action === 'login') { known.clear(); known.add('0'); await openLogin(); return { ok: true, data: snapshot() }; }
       if (action === 'check') return { ok: true, data: await check() };
       if (action === 'list') {
         if (typeof id !== 'string' || !known.has(id)) throw new CheckError('protocol', '请从列表中选择目录。');
@@ -138,7 +139,21 @@ app.whenReady().then(async () => {
     } finally { busy = false; }
   });
   await controller.loadURL(ui);
-}).catch(error => { console.error('[quark-web-check] Failed.', stage && error instanceof Error ? error.message : 'No raw network responses or credentials are logged.'); app.exit(1); });
+  if (stage === 'packaged-local') {
+    const result = await controller.webContents.executeJavaScript("window.quarkCheck.action('status')");
+    if (!result.ok || result.data.state !== 'not_checked') throw new Error('Packaged local UI/preload/IPC check failed');
+    const report = { platform: process.platform, stage, localUiPreloadIpcPassed: true, actualAccountVerified: false, productionDataTouched: false };
+    writeFileSync(resolve('.harness/quark-web-packaged-local.json'), JSON.stringify(report, null, 2));
+    console.log('[quark-web-check]', JSON.stringify(report)); app.quit();
+  }
+}).catch(error => {
+  const message = stage && error instanceof Error ? error.message : 'No raw network responses or credentials are logged.';
+  if (stage) {
+    mkdirSync('.harness', { recursive: true });
+    writeFileSync(resolve(`.harness/quark-web-${stage}.json`), JSON.stringify({ platform: process.platform, stage, completed: false, failure: message, actualAccountVerified: false, productionDataTouched: false }, null, 2));
+  }
+  console.error('[quark-web-check] Failed.', message); app.exit(1);
+});
 let quitting = false;
 app.on('before-quit', event => {
   if (quitting || !store) return; event.preventDefault(); quitting = true;

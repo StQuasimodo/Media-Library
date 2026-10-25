@@ -21,14 +21,10 @@ jobs:
         run: |
           pnpm exec tsc --noEmit -p tools/quark-web-check/tsconfig.json
           pnpm test
-      - name: Check isolated official login page and persist synthetic test cookie
-        run: node scripts/quark-web-check.mjs --self-test=write
-      - name: Verify persistence after restarting Electron
-        run: node scripts/quark-web-check.mjs --self-test=read
       - name: Build standalone portable validation tool
         run: |
           node scripts/quark-web-check.mjs --package
-          $probe = Start-Process -FilePath 'release/quark-web-check/My Cinema Quark Check.exe' -ArgumentList '--self-test=packaged-read' -Wait -PassThru -WorkingDirectory (Get-Location).Path
+          $probe = Start-Process -FilePath 'release/quark-web-check/My Cinema Quark Check.exe' -ArgumentList '--self-test=packaged-local' -Wait -PassThru -WorkingDirectory (Get-Location).Path
           if ($probe.ExitCode -ne 0) { throw 'Packaged validation tool failed its own startup check.' }
           Compress-Archive -Path 'release/quark-web-check/*' -DestinationPath 'release/My-Cinema-Quark-Web-Check-Windows.zip'
           (Get-FileHash release/My-Cinema-Quark-Web-Check-Windows.zip -Algorithm SHA256).Hash | Set-Content release/QUARK-CHECK-SHA256.txt
@@ -40,6 +36,10 @@ jobs:
           path: |
             release/My-Cinema-Quark-Web-Check-Windows.zip
             release/QUARK-CHECK-SHA256.txt
+      - name: Check isolated official login page and persist synthetic test cookie
+        run: node scripts/quark-web-check.mjs --self-test=write
+      - name: Verify persistence after restarting Electron
+        run: node scripts/quark-web-check.mjs --self-test=read
       - name: Upload sanitized evidence only
         if: always()
         uses: actions/upload-artifact@v4

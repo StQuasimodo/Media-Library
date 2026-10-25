@@ -9,6 +9,7 @@ function renderState(data) {
   if (data) { statusNode.textContent = labels[data.state] || '状态未知'; errorNode.textContent = data.error || ''; }
 }
 async function run(action, id) {
+  if (action === 'login') { filesNode.replaceChildren(); countNode.textContent = ''; trail = [{ id: '0', name: '夸克网盘' }]; renderTrail(); }
   const buttons = [...document.querySelectorAll('button')]; buttons.forEach(button => { button.disabled = true; });
   errorNode.textContent = ''; statusNode.textContent = '正在处理…';
   try {

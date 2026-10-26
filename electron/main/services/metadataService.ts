@@ -1,3 +1,4 @@
+import { parseTmdbIdentity } from '../../../src/shared/tmdbIdentity';
 import type { Film, MediaType, MetadataCandidate, MetadataSearchOptions, MetadataSearchResult } from '../../../src/shared/types';
 import { AppError } from '../errors';
 import type { LibraryRepository } from '../data/repository';
@@ -43,7 +44,7 @@ export class MetadataService {
   }
 
   async getCandidate(externalId: string, mediaType: MediaType): Promise<MetadataCandidate> {
-    if (!/^\d+$/.test(externalId)) throw new AppError('VALIDATION', '影视资料标识无效。');
+    if (!parseTmdbIdentity(externalId, mediaType)) throw new AppError('VALIDATION', '影视资料标识无效。');
     if (mediaType !== 'movie' && mediaType !== 'tv') {
       throw new AppError('VALIDATION', '作品类型无效。');
     }

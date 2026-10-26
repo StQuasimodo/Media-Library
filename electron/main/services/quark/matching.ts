@@ -3,8 +3,11 @@ import type { MetadataSearchResult } from '../../../../src/shared/types';
 import type { QuarkMatchCandidate, QuarkMatchQuery } from '../../../../src/shared/quarkSync';
 
 export const normalTitle = (value: string) => value.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
-export function groupIdentity(query: QuarkMatchQuery) {
-  return createHash('sha256').update(JSON.stringify([normalTitle(query.title),query.year,query.mediaType])).digest('hex');
+export function groupIdentity(query: QuarkMatchQuery, season: number | null = null) {
+  // Keep non-season group IDs stable so existing movie and non-episodic links survive.
+  const identity = [normalTitle(query.title),query.year,query.mediaType];
+  if (season !== null) identity.push(season);
+  return createHash('sha256').update(JSON.stringify(identity)).digest('hex');
 }
 export function rankMatches(results: MetadataSearchResult[], query: QuarkMatchQuery): QuarkMatchCandidate[] {
   const seen=new Set<string>();

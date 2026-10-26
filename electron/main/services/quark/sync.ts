@@ -52,7 +52,7 @@ export class QuarkSync {
     const filmId=conflict ? null : choice?.filmId ?? (linkedIds.length === 1 ? linkedIds[0] : null);
     const film=filmId ? this.context().repo.getFilm(filmId) : null;
     const cache=this.cache.get(key);
-    return {key,query,files:items.length,examples:items.slice(0,3).map(file=>file.path),
+    return {key,season:first.season,query,files:items.length,examples:items.slice(0,3).map(file=>file.path),
       formats:[...new Set(items.flatMap(file=>resourceInfoLabels(file.technical)))].slice(0,8),
       state:choice?.ignored ? 'ignored' : film ? 'linked' : cache?.error ? 'error' : cache?.candidates.length ? 'review' : 'pending',
       film:film ? {id:film.id,title:film.title} : null,
@@ -113,7 +113,7 @@ export class QuarkSync {
             seenFiles.add(item.id);
             const hint=inferVideoName(item.name,current.parents);
             const mediaType=hint.season!==null || hint.episode!==null || current.parents.some(part=>/^(电视剧|tv|series)$/i.test(part)) ? 'tv' : 'all';
-            const groupKey=groupIdentity({title:hint.title,year:hint.year,mediaType});
+            const groupKey=groupIdentity({title:hint.title,year:hint.year,mediaType},hint.season);
             files.push({...hint,id:item.id,parentId:current.folder.id,name:item.name,path,mediaType,groupKey,
               size:item.size,technical:inferResourceInfo(item.name,current.parents)});
           }
@@ -182,7 +182,7 @@ export class QuarkSync {
     this.active(signal);
     this.store.setQuery(source.scope,root,key,query);
     try {
-      const results=await this.context().metadata.search({query:query.title,year:query.year,mediaType:query.mediaType});
+      const results=await this.context().metadata.search({query:query.title,year:this.group(key).group.season !== null ? null : query.year,mediaType:query.mediaType});
       this.active(signal);
       this.cache.set(key,{candidates:rankMatches(results,query),error:null});
     } catch(error) {
@@ -198,7 +198,7 @@ export class QuarkSync {
     const {source,group,root}=this.group(key);
     if(!group.candidates.some(candidate=>candidate.externalId===externalId && candidate.mediaType===mediaType)) throw new AppError('VALIDATION','请选择本次搜索返回的影视候选。');
     this.phase='importing'; this.active(signal);
-    const candidate=await this.context().metadata.getCandidate(externalId,mediaType);
+    const candidate=await this.context().metadata.getCandidate(mediaType==='tv' && group.season !== null ? `${externalId}:season:${group.season}` : externalId,mediaType);
     this.active(signal);
     const result=await this.context().library.importCandidate(candidate,{},()=>this.active(signal));
     this.active(signal);
@@ -223,6 +223,19 @@ export class QuarkSync {
     this.assertIdle(); this.requireReader(); const {source,root}=this.group(key);
     if(!this.context().repo.getFilm(filmId)) throw new AppError('NOT_FOUND','收藏作品不存在。');
     this.store.choose(source.scope,root,key,filmId,false); this.cache.delete(key); return this.status();
+  }
+  createManual(key: string, input: QuarkMatchQuery) {
+    this.assertIdle(); this.requireReader();
+    const query=this.validateQuery(input);
+    const {source,root,group}=this.group(key);
+    if (group.film) throw new AppError('VALIDATION','该分组已关联收藏，请先更改匹配。');
+    this.context().repo.inTransaction(()=>{
+      const title=group.season === null ? query.title : `${query.title} · 第${group.season}季`;
+      const detail=this.context().library.createManualFilm({title,year:query.year,
+        mediaType:query.mediaType==='all' ? (group.season === null ? 'movie' : 'tv') : query.mediaType});
+      this.store.choose(source.scope,root,key,detail.film.id,false,query);
+    });
+    this.cache.delete(key); return this.status();
   }
   ignore(key: string, ignored: boolean) {
     this.assertIdle(); this.requireReader(); const {source,root}=this.group(key);

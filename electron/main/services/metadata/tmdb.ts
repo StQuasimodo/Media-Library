@@ -6,6 +6,7 @@ import type {
   MetadataSearchResult,
 } from '../../../../src/shared/types';
 import { AppError } from '../../errors';
+import { parseTmdbIdentity } from '../../../../src/shared/tmdbIdentity';
 import type { Logger } from '../logger';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -167,6 +168,26 @@ export class TmdbProvider {
 
   async getCandidate(externalId: string, mediaType: MediaType): Promise<MetadataCandidate> {
     const config = this.requireConfig();
+    const identity = parseTmdbIdentity(externalId, mediaType);
+    if (!identity) throw new AppError('VALIDATION', '影视资料标识无效。');
+    if (identity.season !== null) {
+      const series = await this.fetchCandidate(identity.id, 'tv', config.apiKey, config.language);
+      const path = `/tv/${identity.id}/season/${identity.season}`;
+      type Season = { season_number?: number; air_date?: string; overview?: string; poster_path?: string | null; episodes?: Array<{ runtime?: number }> };
+      const season = await this.request<Season>(path, config);
+      if (season.season_number !== identity.season) throw new AppError('BAD_RESPONSE', 'TMDB 季资料不完整，请手动建档或重试。');
+      let overview = season.overview?.trim() ?? '';
+      if (!overview && config.language !== 'en-US') {
+        try { overview = (await this.request<Season>(path, { ...config, language: 'en-US' })).overview?.trim() ?? ''; }
+        catch (error) { this.logger?.warn(`TMDB season overview fallback failed: ${String(error)}`); }
+      }
+      const label = identity.season === 0 ? '特别篇' : `第${identity.season}季`;
+      return { ...series, externalId, title: `${series.title} · ${label}`,
+        originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
+        year: parseYear(season.air_date), overview: overview || series.overview,
+        posterUrl: posterUrl(season.poster_path) ?? series.posterUrl,
+        runtime: season.episodes?.find(episode => typeof episode.runtime === 'number' && episode.runtime > 0)?.runtime ?? series.runtime };
+    }
     return this.fetchCandidate(externalId, mediaType, config.apiKey, config.language);
   }
 

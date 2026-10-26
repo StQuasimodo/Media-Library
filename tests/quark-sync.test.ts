@@ -21,7 +21,7 @@ let readOverride: SyncReader['read'] | null;
 const provider={get configured(){return configured;},search:async(options:{query:string})=>{
   calls++; if(searchError) throw searchError;
   return results.filter(result=>result.title.toLowerCase()===options.query.toLowerCase());
-},getCandidate:async(_id:string,type:MediaType)=>candidateOverride ?? (type==='tv'?show:movie)};
+},getCandidate:async(id:string,type:MediaType)=>candidateOverride ?? (type==='tv'?{...show,externalId:id}:movie)};
 const reader: SyncReader={folder:id=>id===folder.id?folder:null,ready:()=>{},read:async(id,signal)=>{
   if(readOverride)return readOverride(id,signal);return tree[id] ?? [];
 }};
@@ -46,7 +46,7 @@ describe('完整目录、匹配与真实 SQLite 关联',()=>{
     const tv=films.find(film=>film.mediaType==='tv')!;
     expect(app.library.getFilmDetail(tv.id).cloudResources.map(file=>file.episode)).toEqual([1,2]);
     // TMDB movie and TV namespaces can contain the exact same numeric ID.
-    expect(films.every(film=>film.externalId==='603')).toBe(true);
+    expect(films.map(film=>film.externalId).sort()).toEqual(['603','603:season:1']);
     expect(new Set(films.map(film=>film.id)).size).toBe(2);
   });
   it('可自动导入唯一高置信结果；新增集数与同FID改名增量复用，保留个人资料',async()=>{
@@ -198,4 +198,37 @@ it('资源画质、编码与大小跟随真实FID持久保存，改名重读更�
   file=app.library.getFilmDetail(film.id).cloudResources[0];
   expect(file.technical).toMatchObject({resolution:'1080p',videoCodec:'H.264 / AVC'});
   expect(app.library.getFilmDetail(film.id).cloudResources).toHaveLength(1);expect(app.repo.listAllFilms()).toHaveLength(2);
+});
+
+it('多季独立匹配、建档与评分，搜不到的季可直接手动创建并关联',async()=>{
+  tree.show.push(item('s2','Season 2',true));tree.s2=[item('e21','S02E01.mkv')];
+  await service.scan();
+  expect(service.status().groups.filter(group=>group.season!==null).map(group=>group.season).sort()).toEqual([1,2]);
+  await service.confirmHigh();
+  expect(app.repo.listAllFilms().map(film=>film.externalId).sort()).toEqual(['603','603:season:1','603:season:2']);
+  const second=app.repo.listAllFilms().find(film=>film.externalId==='603:season:2')!;
+  expect(app.library.getFilmDetail(second.id).cloudResources.map(file=>file.fileId)).toEqual(['e21']);
+  const group=service.status().groups.find(group=>group.season===2)!;
+  service.ignore(group.key,false);
+  service.createManual(group.key,{title:'冷门剧',year:2024,mediaType:'tv'});
+  const manual=app.repo.listAllFilms().find(film=>film.metadataSource==='manual')!;
+  expect(manual.title).toContain('第2季');
+  expect(app.library.getFilmDetail(manual.id).cloudResources[0].fileId).toBe('e21');
+  await service.scan();expect(service.status().groups.find(value=>value.season===2)?.film?.id).toBe(manual.id);
+});
+
+it('旧整剧分组升级到分季时保留忽略与自定义查询',async()=>{
+  await service.scan();const group=service.status().groups.find(g=>g.season===1)!;
+  service.ignore(group.key,true);
+  app.db.prepare('UPDATE quark_cloud_files SET group_key=? WHERE group_key=?').run('legacy-series',group.key);
+  app.db.prepare('UPDATE quark_match_choices SET group_key=?,query_json=? WHERE group_key=?').run('legacy-series',JSON.stringify({title:'自定义别名',year:2017,mediaType:'tv'}),group.key);
+  await service.scan();
+  expect(service.status().groups.find(g=>g.season===1)).toMatchObject({state:'ignored',query:{title:'自定义别名'}});
+});
+it('无需Key即可手动建档，重复操作不会产生孤立收藏',async()=>{
+  configured=false;await service.scan();const group=service.status().groups.find(g=>g.season===1)!;
+  service.createManual(group.key,{title:'冷门作品',year:null,mediaType:'tv'});
+  expect(app.repo.listAllFilms()).toHaveLength(1);
+  expect(()=>service.createManual(group.key,{title:'重复',year:null,mediaType:'tv'})).toThrow();
+  expect(app.repo.listAllFilms()).toHaveLength(1);
 });

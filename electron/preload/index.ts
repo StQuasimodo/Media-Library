@@ -60,6 +60,7 @@ const api: CinemaApi = {
     match: () => invoke<QuarkSyncStatus>('quark-sync:match'),
     search: (key,query) => invoke<QuarkSyncStatus>('quark-sync:search',key,query),
     confirm: (key,id,type) => invoke<QuarkSyncStatus>('quark-sync:confirm',key,id,type),
+    createManual: (key,query) => invoke<QuarkSyncStatus>('quark-sync:createManual',key,query),
     confirmHigh: () => invoke<QuarkSyncStatus>('quark-sync:confirmHigh'),
     linkExisting: (key,id) => invoke<QuarkSyncStatus>('quark-sync:linkExisting',key,id),
     ignore: (key,ignored) => invoke<QuarkSyncStatus>('quark-sync:ignore',key,ignored),

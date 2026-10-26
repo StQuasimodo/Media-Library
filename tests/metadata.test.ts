@@ -159,6 +159,17 @@ describe('TMDB 搜索', () => {
 });
 
 describe('TMDB 详情', () => {
+  it('按季读取独立年份、海报和简介，保留可刷新的季标识',async()=>{
+    const fetchImpl=(async(input:string|URL|Request)=>{
+      const url=new URL(String(input));
+      if(url.pathname.endsWith('/tv/603/season/2'))return jsonResponse({season_number:2,air_date:'2019-06-21',overview:'第二季简介',poster_path:'/season2.jpg',episodes:[{runtime:55}]});
+      return jsonResponse({id:603,name:'暗黑',original_name:'Dark',first_air_date:'2017-12-01',overview:'整剧简介',backdrop_path:'/series.jpg',genres:[{name:'悬疑'}]});
+    }) as typeof fetch;
+    const detail=await provider(fetchImpl).getCandidate('603:season:2','tv');
+    expect(detail).toMatchObject({externalId:'603:season:2',title:'暗黑 · 第2季',year:2019,overview:'第二季简介',runtime:55,genres:['悬疑']});
+    expect(detail.posterUrl).toContain('/season2.jpg');expect(detail.backdropUrl).toContain('/series.jpg');
+    await expect(provider(fetchImpl).getCandidate('603:season:2','movie')).rejects.toMatchObject({code:'VALIDATION'});
+  });
   it('解析电影详情字段', async () => {
     const fetchImpl = (async (input: string | URL | Request) => {
       const url = String(input);

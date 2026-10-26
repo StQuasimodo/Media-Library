@@ -29,6 +29,7 @@ function MatchGroup({group,busy,perform}: {group:QuarkSyncGroup;busy:boolean;per
   return <article className="quark-match-group" data-match-state={group.state}>
     <div className="row gap-2 wrap"><strong>{group.query.title}</strong>
       <span className="tag">{group.query.year ?? '年份待确认'}</span><span className="tag">{group.files} 个视频</span>
+      {group.season !== null ? <span className="tag">第 {group.season} 季</span> : null}
       {group.film ? <Link className="link-button" to={`/film/${group.film.id}`}>已关联《{group.film.title}》</Link> : null}
       {group.state==='ignored' ? <span className="setting-help">已忽略</span> : null}
     </div>
@@ -48,11 +49,13 @@ function MatchGroup({group,busy,perform}: {group:QuarkSyncGroup;busy:boolean;per
         <button type="button" className="btn cinema-primary" disabled={busy || !selected} onClick={()=>void perform(()=>{
           const candidate=group.candidates.find(item=>`${item.mediaType}:${item.externalId}`===selected)!;
           return api.quarkSync.confirm(group.key,candidate.externalId,candidate.mediaType);
-        })}>确认导入并关联</button>
+        })}>确认导入{group.season !== null ? `第${group.season}季` : ''}并关联</button>
       </div> : <p className="setting-help">{group.state==='pending'?'等待自动匹配，也可修改关键词后搜索。':'暂无候选，请尝试调整片名、年份或类型。'}</p>}
       {group.error ? <p className="field-error" role="alert">{group.error}</p> : null}
+      <p className="setting-help">搜不到时，可修改上方片名、年份和类型后手动创建收藏；每季会独立保存，之后可在详情编辑资料。</p>
       <div className="row gap-2 wrap">
         <button type="button" className="link-button" disabled={busy || lookupBusy} onClick={()=>void lookup()}>关联已有收藏</button>
+        <button type="button" className="link-button" disabled={busy} onClick={()=>void perform(()=>api.quarkSync.createManual(group.key,query))}>手动创建{group.season === null ? '并关联' : `第${group.season}季并关联`}</button>
         <button type="button" className="link-button" disabled={busy} onClick={()=>void perform(()=>api.quarkSync.ignore(group.key,true))}>忽略这组资源</button>
       </div>
       {existing ? <div className="quark-existing-match"><div className="row gap-2 wrap">
@@ -102,12 +105,12 @@ export function QuarkSyncPanel({folderId,blocked,refreshToken,onBusyChange,onSou
   const high=pending.filter(group=>group.candidates.some(candidate=>candidate.confidence==='high')).length;
   return <div className="quark-sync-panel">
     <h3 className="section-card-title">目录匹配与收藏关联</h3>
-    <p className="setting-help">逐层浏览到影视目录后，使用当前目录开始递归读取。视频会按片名与季集归并，匹配 TMDB 后直接关联文件，无需创建分享链接。画质、编码、音轨等由文件名和目录识别，未读取视频流。</p>
+    <p className="setting-help">逐层浏览到影视目录后，使用当前目录开始递归读取。视频会按片名与季分别归组，确认剧集后读取对应季资料并独立收藏，直接关联文件，无需创建分享链接。画质、编码、音轨等由文件名和目录识别，未读取视频流。</p>
     <div className="quark-sync-options">
       <label><input type="checkbox" checked={autoRead} disabled={busy} onChange={event=>setAutoRead(event.target.checked)}/> 启动时自动读取并匹配</label>
       <label><input type="checkbox" checked={autoImport} disabled={busy} onChange={event=>setAutoImport(event.target.checked)}/> 自动导入唯一高置信匹配</label>
     </div>
-    <p className="setting-help">高置信要求片名或原名一致、年份一致且候选唯一。其他结果留待确认；已确认剧集的新集数会沿用原关联。重新关联账号会重置同步范围，收藏保留。</p>
+    <p className="setting-help">TMDB 搜索先选择整部剧，导入时读取本组对应季。高置信要求片名或原名一致、年份一致且候选唯一。其他结果留待确认；已确认剧集的新集数会沿用原关联。重新关联账号会重置同步范围，收藏保留。</p>
     {status?.source.folder ? <p className="setting-help quark-path">当前同步目录：{status.source.folder.path}<br/>上次完整读取：{status.source.lastScanAt ? new Date(status.source.lastScanAt).toLocaleString() : '尚未读取'}</p> : null}
     <div className="row gap-2 wrap">
       <button type="button" className="btn cinema-primary" disabled={busy || !folderId} onClick={()=>void perform(async()=>{

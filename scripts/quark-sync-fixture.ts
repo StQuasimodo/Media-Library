@@ -40,11 +40,14 @@ export function installQuarkSyncFixture(profile: string) {
       return Response.json({results:query==='the matrix'?[movie]:query==='dark'?[tv]:[]});
     }
     if(url.pathname.endsWith('/movie/603'))return Response.json(movie);
+    if(url.pathname.endsWith('/tv/603/season/2'))return Response.json({season_number:2,air_date:'2019-06-21',overview:'受控第二季资料',poster_path:'/season2-fixture.png',episodes:[{runtime:55}]});
+    if(url.pathname.endsWith('/tv/603/season/1'))return Response.json({season_number:1,air_date:'2017-12-01',overview:'受控第一季资料',poster_path:'/season-fixture.png',episodes:[{runtime:50}]});
     if(url.pathname.endsWith('/tv/603'))return Response.json(tv);
     throw new Error('Unexpected fixture metadata path');
   }) as typeof fetch;
   return {
     searches:()=>searches,
+    addSeasons:()=>{tree['sync-show'].push(directory('sync-season2','Season 2'));tree['sync-season2']=[video('sync-e21','S02E01.mkv')];tree['sync-media'].push(directory('sync-obscure','Obscure.2024'));tree['sync-obscure']=[video('sync-o31','S03E01.mkv')];},
     incremental:()=>{tree['sync-season'][0].file_name='Dark.S01E01.1080p.mkv';tree['sync-season'].push(video('sync-e3','S01E03.mkv'));},
     removeSecond:()=>{tree['sync-season']=tree['sync-season'].filter(file=>file.fid!=='sync-e2');},
     setFailure:(value:boolean)=>{failure=value;},

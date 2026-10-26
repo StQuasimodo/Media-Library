@@ -1,3 +1,4 @@
+import { parseTmdbIdentity } from '../../../src/shared/tmdbIdentity';
 import { randomUUID } from 'node:crypto';
 import type {
   AppSettings,
@@ -207,7 +208,7 @@ export class LibraryService {
     beforeCommit: () => void = () => {},
   ): Promise<ImportResult> {
     beforeCommit();
-    if (!candidate.externalId || !/^\d+$/.test(candidate.externalId)) {
+    if (!parseTmdbIdentity(candidate.externalId, candidate.mediaType)) {
       throw new AppError('VALIDATION', '影视资料标识无效。');
     }
     if (!isMediaType(candidate.mediaType)) {

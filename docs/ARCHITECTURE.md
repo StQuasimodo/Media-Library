@@ -180,3 +180,7 @@ v3同时修正TMDB唯一索引为 `(metadata_source,media_type,external_id)`，�
 规格解析独立于TMDB：文件名优先，按字段回退最近父目录，保留未知；大小取真实目录响应的安全整数。`resourceInfo.ts`提取分辨率、片源、编码器/编码、位深、HDR、音频/声道、语言/字幕、版本、帧率与显式码率，明确不探测视频流。规格与关联进入SQLite备份及JSON归档，后者标记私人资源信息。
 
 正式窗口不设原生应用菜单；开发模式保留开发菜单。NSIS自定义选项页独立控制桌面快捷方式，注册表保存偏好，禁用builder无条件创建；开始菜单保留。应用图标由用户指定原图转换，PNG/ICO随应用打包，Windows AppUserModelID与builder保持一致。实际Windows UI、键盘和安装器验证以交付记录为准。
+
+### 1.2.0-beta.2 分季身份
+
+TMDB整剧继续用数字external_id；季条目使用`<seriesId>:season:<N>`，由shared/tmdbIdentity统一校验，仅允许tv类型。沿用schema v3已有文本字段与唯一索引，不需迁移。Provider将该身份路由到`/tv/{id}/season/{N}`并继承整剧背景与类型；刷新走相同路由。目录group_key在存在季号时纳入季号，电影/无季号分组身份稳定；旧文件关联、编辑查询和忽略选择保留。新增`quark-sync:createManual`复用可信页面IPC校验，手动建档与文件关联在同一SQLite事务完成。

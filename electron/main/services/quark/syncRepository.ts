@@ -35,6 +35,14 @@ export class SyncRepository {
   }
   replace(scope: string, root: string, files: CloudFile[], at: string) {
     this.db.transaction(() => {
+      const previous = new Map(this.files(scope,root).map(file=>[file.id,file]));
+      // Splitting a legacy series group must retain edited queries and ignore choices.
+      const inherit=this.db.prepare(`INSERT OR IGNORE INTO quark_match_choices(scope,root_id,group_key,ignored,query_json)
+        SELECT scope,root_id,?,ignored,query_json FROM quark_match_choices WHERE scope=? AND root_id=? AND group_key=?`);
+      for (const file of files) {
+        const old=previous.get(file.id);
+        if (old && old.groupKey!==file.groupKey) inherit.run(file.groupKey,scope,root,old.groupKey);
+      }
       this.db.prepare('UPDATE quark_cloud_files SET present=0 WHERE scope=? AND root_id=?').run(scope,root);
       const statement=this.db.prepare(`INSERT INTO quark_cloud_files
         (scope,file_id,root_id,parent_id,name,path,title,year,season,episode,media_type,group_key,seen_at,size_bytes,technical_json)

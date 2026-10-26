@@ -229,6 +229,7 @@ export function registerIpc(runtime: AppRuntime): void {
     scan:()=>runtime.quarkSync.start(), match:()=>runtime.quarkSync.startMatching(),
     search:(key,query)=>runtime.quarkSync.search(assertString(key,'资源分组'),query as QuarkMatchQuery),
     confirm:(key,id,type)=>runtime.quarkSync.confirm(assertString(key,'资源分组'),assertString(id,'影视资料'),type as MediaType),
+    createManual:(key,query)=>runtime.quarkSync.createManual(assertString(key,'资源分组'),query as QuarkMatchQuery),
     confirmHigh:()=>runtime.quarkSync.confirmHigh(),
     linkExisting:(key,id)=>runtime.quarkSync.linkExisting(assertString(key,'资源分组'),assertString(id,'收藏作品')),
     ignore:(key,ignored)=>{

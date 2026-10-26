@@ -56,6 +56,7 @@ export interface CinemaApi {
     match(): Promise<QuarkSyncStatus>;
     search(key: string, query: QuarkMatchQuery): Promise<QuarkSyncStatus>;
     confirm(key: string, externalId: string, mediaType: MediaType): Promise<QuarkSyncStatus>;
+    createManual(key: string, query: QuarkMatchQuery): Promise<QuarkSyncStatus>;
     confirmHigh(): Promise<QuarkSyncStatus>;
     linkExisting(key: string, filmId: string): Promise<QuarkSyncStatus>;
     ignore(key: string, ignored: boolean): Promise<QuarkSyncStatus>;

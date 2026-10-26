@@ -12,6 +12,7 @@ export interface QuarkMatchQuery { title: string; year: number | null; mediaType
 export interface QuarkMatchCandidate extends MetadataSearchResult { confidence: 'high' | 'review' }
 export interface QuarkSyncGroup {
   key: string;
+  season: number | null;
   query: QuarkMatchQuery;
   files: number;
   examples: string[];

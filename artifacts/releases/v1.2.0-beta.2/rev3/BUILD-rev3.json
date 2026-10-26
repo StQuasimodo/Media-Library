@@ -1,0 +1,25 @@
+{
+  "version": "1.2.0-beta.2",
+  "revision": "rev3",
+  "buildSource": "acf7b788e63745e10f2079303a27ee8dd04863b2",
+  "originalTagSource": "c25e4cec60649095510e98e7de6643f774f6e694",
+  "run": "https://github.com/StQuasimodo/Media-Library/actions/runs/40317376963",
+  "assets": [
+    {
+      "name": "My-Cinema-1.2.0-beta.2-rev3-Setup.exe",
+      "sha256": "2ce650b6a8beb24b3f56520d65c7739ef75c28a262f7ecf7b6492a670cd9ca14"
+    },
+    {
+      "name": "My-Cinema-1.2.0-beta.2-rev3-portable-win64.zip",
+      "sha256": "24db1c7014c9ff0f302d64c398887ebe1d38362f38582382698a14e14e6f3087"
+    },
+    {
+      "name": "INSTALL-rev3.cmd",
+      "sha256": "f0b9cb146264ae57012a9f25ab0759ecd10bc4307f9faf33bf6902fda0786ab3"
+    },
+    {
+      "name": "RUN-PORTABLE-rev3.cmd",
+      "sha256": "3289cc3ac7808dacad8938479747f0c697c4434a6fffbf54f921359b2368cd4e"
+    }
+  ]
+}

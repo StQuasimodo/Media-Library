@@ -2,6 +2,10 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## beta.2 rev3 系列分类
+
+[查看系列筛选与1/2/10升序排列](../artifacts/review-2026-10-26/beta2-rev3/19-series-wall.png)。截图来自真实Windows Electron窗口，使用独立测试条目和占位海报，验证操作与排列；不代表个人账号或在线海报效果。[原始报告](../artifacts/releases/v1.2.0-beta.2/rev3/quark-sync-desktop-report.json)。
+
 ## beta.2 rev2 普通搜索选择季
 
 真实Windows Electron窗口，使用受控《绝命毒师》季资料和测试图片，包含真实preload、SQLite和导入逻辑；不是个人账号或在线海报验收。[原始报告](../artifacts/releases/v1.2.0-beta.2/rev2/quark-sync-desktop-report.json)。

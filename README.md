@@ -9,7 +9,7 @@
 ## 能做什么
 
 - 横向海报浏览，背景与焦点联动。
-- 收藏、评分、观看状态、短评与自定义专题。
+- 收藏、评分、观看状态、短评、系列分类与自定义专题。
 - TMDB 搜索导入，海报和背景图本地缓存。
 - 夸克资源记录、目录自动匹配与画质编码识别（1.2预览）。
 - SQLite 本地保存，支持备份、恢复与 JSON 导出。
@@ -20,7 +20,7 @@
 
 [下载 Windows 安装包与免安装版](https://github.com/StQuasimodo/Media-Library/releases/latest)。安装与首次配置见[使用指南](docs/USAGE.md)。
 
-[1.2.0-beta.2 rev2 修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)包含目录自动匹配、搜索后选择季、多季导入和手动补录；本次下载文件带 `rev2` 后缀，使用步骤见[夸克自动匹配](docs/QUARK-MATCHING.md)。
+[1.2.0-beta.2 rev3 修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)包含目录自动匹配、搜索后选择季、系列分类和海报墙自动聚合；本次下载文件带 `rev3` 后缀，使用步骤见[夸克自动匹配](docs/QUARK-MATCHING.md)。
 
 从源码开发需要 Node.js 22+ 和 pnpm 11：
 

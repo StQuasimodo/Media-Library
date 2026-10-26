@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { candidate, pngFetch, TestApp } from './helpers';
 
 let app: TestApp;
@@ -97,6 +97,33 @@ describe('收藏条目的增删改', () => {
 });
 
 describe('外部元数据与个人数据隔离', () => {
+  it('刷新季资料替换旧整剧背景，无剧照时清除旧背景，保留个人数据并持久化', async () => {
+    const original=candidate({mediaType:'tv',externalId:'1396:season:2'});
+    const {film,entry}=await app.library.importCandidate(original,{personalRating:9,personalReview:'私人短评'});
+    const updated=await app.library.applyExternalMetadata(film.id,{...original,backdropUrl:'https://image.tmdb.org/t/p/w1280/season2-still.jpg'});
+    expect(updated.backdropPath).toBeTruthy();expect(updated.backdropPath).not.toBe(film.backdropPath);
+    const poster=updated.posterPath;
+    await app.library.applyExternalMetadata(film.id,{...original,backdropUrl:null});
+    app.restart();
+    const detail=app.library.getFilmDetail(film.id);
+    expect(detail.film.backdropPath).toBeNull();expect(detail.film.posterPath).toBe(poster);
+    expect(detail.entry.id).toBe(entry.id);expect(detail.entry.personalRating).toBe(9);
+    expect(detail.entry.personalReview).toBe('私人短评');
+  });
+
+  it('图片下载失败仍保留已有缓存，整剧缺图刷新也保留原背景', async () => {
+    const original=candidate({mediaType:'tv',externalId:'1396:season:1'});
+    const {film}=await app.library.importCandidate(original);
+    const store=app.images.store.bind(app.images);
+    const download=vi.spyOn(app.images,'store').mockImplementation((url,kind)=>
+      kind==='backdrop' ? Promise.reject(new Error('network unavailable')) : store(url,kind));
+    const updated=await app.library.applyExternalMetadata(film.id,{...original,backdropUrl:'https://image.tmdb.org/t/p/w1280/new-still.jpg'});
+    download.mockRestore();
+    expect(updated.backdropPath).toBe(film.backdropPath);
+    const whole=await app.library.importCandidate(candidate({mediaType:'tv',externalId:'1396'}));
+    expect((await app.library.applyExternalMetadata(whole.film.id,candidate({mediaType:'tv',externalId:'1396',backdropUrl:null}))).backdropPath).toBe(whole.film.backdropPath);
+  });
+
   it('刷新外部资料不会覆盖评分、笔记与网盘资源', async () => {
     const { film, entry } = await app.library.importCandidate(candidate());
     app.library.updateEntry(entry.id, {

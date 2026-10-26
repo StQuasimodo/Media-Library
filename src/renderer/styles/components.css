@@ -464,6 +464,64 @@
   padding-right: 30px;
 }
 
+/* The expanded list needs its own surface; a transparent trigger otherwise
+   lets native Windows popup styling show through. Keep native select semantics. */
+.select option,
+.select optgroup {
+  background-color: var(--bg-raised);
+  color: var(--text-primary);
+}
+
+@supports (appearance: base-select) {
+  .select:not([multiple]),
+  .select:not([multiple])::picker(select) {
+    appearance: base-select;
+  }
+
+  .select:not([multiple]) {
+    align-items: center;
+    gap: 10px;
+    background-image: none;
+    padding-right: 10px;
+  }
+
+  .select::picker-icon {
+    color: var(--text-secondary);
+  }
+
+  .select::picker(select) {
+    margin-block: 5px;
+    padding: 5px;
+    max-height: min(360px, 60vh);
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--bg-raised);
+    color: var(--text-primary);
+    font: inherit;
+    box-shadow: var(--shadow-raised);
+  }
+
+  .select option {
+    min-height: 34px;
+    padding: 7px 11px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+  }
+
+  .select option:hover,
+  .select option:focus-visible {
+    background-color: var(--bg-hover);
+    outline-offset: -2px;
+  }
+
+  .select option:checked {
+    background-color: var(--accent-wash);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+}
+
 .form-grid {
   display: grid;
   gap: var(--s-4);

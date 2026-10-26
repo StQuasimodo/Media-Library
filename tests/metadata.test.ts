@@ -172,22 +172,41 @@ describe('TMDB 详情', () => {
   });
   it('缺少季简介与海报时保留缺失，不冒充整剧资料',async()=>{
     const fetchImpl=(async(input:string|URL|Request)=>jsonResponse(String(input).includes('/season/') ?
-      {season_number:2,air_date:'2009-03-08',overview:'',poster_path:null} :
-      {id:1396,name:'绝命毒师',overview:'整剧简介',poster_path:'/series.jpg'})) as typeof fetch;
+      {season_number:2,air_date:'2009-03-08',overview:'',poster_path:null,episodes:[{still_path:null},{still_path:'  '}]} :
+      {id:1396,name:'绝命毒师',overview:'整剧简介',poster_path:'/series.jpg',backdrop_path:'/series-bg.jpg'})) as typeof fetch;
     const season=await provider(fetchImpl).getCandidate('1396:season:2','tv');
-    expect(season.overview).toBeNull();expect(season.posterUrl).toBeNull();
+    expect(season.overview).toBeNull();expect(season.posterUrl).toBeNull();expect(season.backdropUrl).toBeNull();
   });
 
   it('按季读取独立年份、海报和简介，保留可刷新的季标识',async()=>{
     const fetchImpl=(async(input:string|URL|Request)=>{
       const url=new URL(String(input));
-      if(url.pathname.endsWith('/tv/603/season/2'))return jsonResponse({season_number:2,air_date:'2019-06-21',overview:'第二季简介',poster_path:'/season2.jpg',episodes:[{runtime:55}]});
+      if(url.pathname.endsWith('/tv/603/season/2'))return jsonResponse({season_number:2,air_date:'2019-06-21',overview:'第二季简介',poster_path:'/season2.jpg',episodes:[{runtime:55,still_path:null},{still_path:'/season2-still.jpg'}]});
       return jsonResponse({id:603,name:'暗黑',original_name:'Dark',first_air_date:'2017-12-01',overview:'整剧简介',backdrop_path:'/series.jpg',genres:[{name:'悬疑'}]});
     }) as typeof fetch;
     const detail=await provider(fetchImpl).getCandidate('603:season:2','tv');
     expect(detail).toMatchObject({externalId:'603:season:2',title:'暗黑 · 第2季',year:2019,overview:'第二季简介',runtime:55,genres:['悬疑']});
-    expect(detail.posterUrl).toContain('/season2.jpg');expect(detail.backdropUrl).toContain('/series.jpg');
+    expect(detail.posterUrl).toContain('/season2.jpg');expect(detail.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/season2-still.jpg');
     await expect(provider(fetchImpl).getCandidate('603:season:2','movie')).rejects.toMatchObject({code:'VALIDATION'});
+  });
+  it('不同季使用各自剧照，无剧照时留空以回退本季海报，整剧背景不变',async()=>{
+    const fetchImpl=(async(input:string|URL|Request)=>{
+      const match=/\/season\/(\d+)$/.exec(new URL(String(input)).pathname);
+      if(match) {
+        const n=Number(match[1]);
+        return jsonResponse({season_number:n,overview:'本季简介',poster_path:`/s${n}.jpg`,
+          episodes:n===3 ? [] : [{still_path:null},{still_path:`/s${n}-episode1.jpg`},{still_path:`/s${n}-episode2.jpg`}]});
+      }
+      return jsonResponse({id:1396,name:'绝命毒师',overview:'整剧简介',backdrop_path:'/whole-show.jpg'});
+    }) as typeof fetch;
+    const tmdb=provider(fetchImpl);
+    const first=await tmdb.getCandidate('1396:season:1','tv');
+    const second=await tmdb.getCandidate('1396:season:2','tv');
+    const third=await tmdb.getCandidate('1396:season:3','tv');
+    expect(first.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/s1-episode1.jpg');
+    expect(second.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/s2-episode1.jpg');
+    expect(third.backdropUrl).toBeNull();expect(third.posterUrl).toContain('/s3.jpg');
+    expect((await tmdb.getCandidate('1396','tv')).backdropUrl).toContain('/whole-show.jpg');
   });
   it('解析电影详情字段', async () => {
     const fetchImpl = (async (input: string | URL | Request) => {

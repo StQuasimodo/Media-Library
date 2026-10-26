@@ -156,6 +156,24 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   assert.equal(await js("document.querySelector('.page').scrollTop"), 0);
   checks.push('route change resets page scroll');
   await shot('03-library');
+  const picker=await js(`(() => {
+    const select=document.querySelector('[aria-label="按观看状态筛选"]');
+    const rect=select.getBoundingClientRect();
+    return {x:Math.round(rect.x+rect.width/2),y:Math.round(rect.y+rect.height/2),
+      appearance:getComputedStyle(select).appearance,
+      background:getComputedStyle(select,'::picker(select)').backgroundColor,
+      color:getComputedStyle(select,'::picker(select)').color};
+  })()`);
+  assert.equal(picker.appearance,'base-select');
+  assert.equal(picker.background,'rgb(27, 32, 41)');assert.equal(picker.color,'rgb(233, 236, 242)');
+  win.webContents.sendInputEvent({type:'mouseDown',x:picker.x,y:picker.y,button:'left',clickCount:1});
+  win.webContents.sendInputEvent({type:'mouseUp',x:picker.x,y:picker.y,button:'left',clickCount:1});
+  await waitFor("document.querySelector('[aria-label=按观看状态筛选]').matches(':open')");
+  await shot('20-library-filter-menu');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});
+  win.webContents.sendInputEvent({type:'keyUp',keyCode:'Escape'});
+  await waitFor("!document.querySelector('[aria-label=按观看状态筛选]').matches(':open')");
+  checks.push('real expanded library select uses dark themed picker and readable text; mouse opens and Escape dismisses');
   await js(`(() => {
     const input = document.querySelector('[aria-label="搜索影视库"]');
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Matrix');
@@ -351,6 +369,14 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(obscure.id)})`)).film.metadataSource,'manual');
     const refreshed=await js(`window.cinema.metadata.refresh(${JSON.stringify(second.id)})`);
     assert.equal(refreshed.externalId,'603:season:2');assert.equal(refreshed.year,2019);
+    const firstDetail=await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`);
+    assert.ok(refreshed.backdropPath);assert.notEqual(refreshed.backdropPath,firstDetail.film.backdropPath);
+    for(const [filmId,backdropPath,name] of [[tv.id,firstDetail.film.backdropPath,'21-season1-backdrop'],[second.id,refreshed.backdropPath,'22-season2-backdrop']]) {
+      await route(`/film/${filmId}`,"!!document.querySelector('.film-title')");
+      await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(backdropPath)})`);
+      await shot(name);
+    }
+    checks.push('separate season stills cached and displayed as different detail backdrops through real import/refresh/UI');
     checks.push('independent TV seasons, real season endpoint import/refresh and missing-title manual creation through UI/IPC');
     await js('window.cinema.quarkWeb.disconnect()');
     assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`)).cloudResources.every((file:any)=>!file.active),true);
@@ -414,6 +440,12 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     const manualSeason=(await js("window.cinema.library.list({search:'绝命毒师'})")).find((entry:any)=>entry.film.metadataSource==='manual');
     assert.ok(manualSeason);extraFilmIds.push(manualSeason.filmId);
     checks.push('normal TMDB search expands six season rows, single/batch season import, collected markers, personal rating preservation, whole-series choice and manual missing-season form through real UI/IPC');
+    const noStill=imported.find((entry:any)=>entry.film.externalId==='1396:season:3').film;
+    assert.equal(noStill.backdropPath,null);assert.ok(noStill.posterPath);
+    await route(`/film/${noStill.id}`,"!!document.querySelector('.film-title')");
+    await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(noStill.posterPath)})`);
+    await shot('23-season-poster-fallback');
+    checks.push('season without still falls back to its own cached poster instead of the whole-show backdrop');
     for(const title of ['影墙排序10','影墙排序2','影墙排序']) {
       const entry=await js(`window.cinema.library.createManual({title:${JSON.stringify(title)},mediaType:'movie'})`);extraFilmIds.push(entry.film.id);
     }

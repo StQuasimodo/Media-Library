@@ -373,7 +373,11 @@ export class LibraryService {
     if (!film) throw new AppError('NOT_FOUND', '作品不存在。');
 
     let posterPath = film.posterPath;
-    let backdropPath = film.backdropPath;
+    const season = film.metadataSource === 'tmdb' && film.externalId
+      ? parseTmdbIdentity(film.externalId, film.mediaType)?.season : null;
+    // A successful season response with no still is authoritative. Clear the
+    // old whole-show backdrop so HeroBackdrop can fall back to this season's poster.
+    let backdropPath = season != null && candidate.backdropUrl === null ? null : film.backdropPath;
     if (candidate.posterUrl) {
       try {
         posterPath = await this.images.store(candidate.posterUrl, 'poster');

@@ -217,7 +217,7 @@ export class TmdbProvider {
     if (identity.season !== null) {
       const series = await this.fetchCandidate(identity.id, 'tv', config.apiKey, config.language);
       const path = `/tv/${identity.id}/season/${identity.season}`;
-      type Season = { season_number?: number; air_date?: string; overview?: string; poster_path?: string | null; episodes?: Array<{ runtime?: number }> };
+      type Season = { season_number?: number; air_date?: string; overview?: string; poster_path?: string | null; episodes?: Array<{ runtime?: number; still_path?: string | null }> };
       const season = await this.request<Season>(path, config);
       if (season.season_number !== identity.season) throw new AppError('BAD_RESPONSE', 'TMDB 季资料不完整，请手动建档或重试。');
       let overview = season.overview?.trim() ?? '';
@@ -226,10 +226,14 @@ export class TmdbProvider {
         catch (error) { this.logger?.warn(`TMDB season overview fallback failed: ${String(error)}`); }
       }
       const label = identity.season === 0 ? '特别篇' : `第${identity.season}季`;
+      // TMDB seasons have posters, but no season-level backdrop. Use a still
+      // from this season instead of borrowing the same whole-show artwork.
+      const still = season.episodes?.find(episode => typeof episode.still_path === 'string' && episode.still_path.trim())?.still_path;
       return { ...series, externalId, title: `${series.title} · ${label}`,
         originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
         year: parseYear(season.air_date), overview: overview || null,
         posterUrl: posterUrl(season.poster_path),
+        backdropUrl: backdropUrl(still),
         runtime: season.episodes?.find(episode => typeof episode.runtime === 'number' && episode.runtime > 0)?.runtime ?? series.runtime };
     }
     return this.fetchCandidate(externalId, mediaType, config.apiKey, config.language);

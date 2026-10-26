@@ -1,10 +1,21 @@
 /** Test-only boundaries: real production Electron/UI/SQLite/metadata, controlled HTTP responses. */
-import { session, safeStorage, net } from 'electron';
+import { session, safeStorage, net, nativeImage } from 'electron';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { CredentialStore } from '../electron/main/services/credentials';
 
 export function installQuarkSyncFixture(profile: string) {
+  // Distinct synthetic stills let screenshots catch accidental reuse of one
+  // season's image. These are test swatches, not actual TMDB artwork.
+  const stills=new Map<string,Buffer>();
+  for(const [name,color] of [['/season1-still.png',[120,75,35]],['/season2-still.png',[35,85,150]]] as const) {
+    const bitmap=Buffer.alloc(160*90*4);
+    for(let pixel=0;pixel<160*90;pixel++) {
+      const shade=0.6+0.4*(pixel%160)/159;
+      bitmap[pixel*4]=color[0]*shade;bitmap[pixel*4+1]=color[1]*shade;bitmap[pixel*4+2]=color[2]*shade;bitmap[pixel*4+3]=255;
+    }
+    stills.set(name,nativeImage.createFromBitmap(bitmap,{width:160,height:90}).toPNG());
+  }
   if(process.platform==='linux') safeStorage.setUsePlainTextEncryption(true);
   assert.equal(safeStorage.isEncryptionAvailable(),true,'fixture needs isolated OS storage');
   new CredentialStore(join(profile,'credentials.json'),{
@@ -35,7 +46,7 @@ export function installQuarkSyncFixture(profile: string) {
     : net.fetch(request,{bypassCustomProtocolHandlers:true}));
   globalThis.fetch=(async(input: string | URL | Request)=>{
     const url=new URL(String(input));
-    if(url.hostname==='image.tmdb.org') return new Response(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64'),{headers:{'content-type':'image/png'}});
+    if(url.hostname==='image.tmdb.org') return new Response(Uint8Array.from(stills.get('/'+url.pathname.split('/').at(-1)) ?? Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64')),{headers:{'content-type':'image/png'}});
     assert.ok(['api.tmdb.org','api.themoviedb.org'].includes(url.hostname),'fixture must not access another host');
     const movie={id:603,media_type:'movie',title:'黑客帝国',original_title:'The Matrix',belongs_to_collection:{id:234,name:'黑客帝国系列'},release_date:'1999-03-31',overview:'受控匹配测试资料',poster_path:null,backdrop_path:null,genres:[]};
     const tv={id:603,media_type:'tv',name:'暗黑',original_name:'Dark',first_air_date:'2017-12-01',overview:'受控剧集匹配测试资料',poster_path:'/sync-fixture.png',backdrop_path:'/sync-fixture-bg.png',genres:[],episode_run_time:[50]};
@@ -49,8 +60,8 @@ export function installQuarkSyncFixture(profile: string) {
     }
     if(url.pathname.endsWith('/collection/234'))return Response.json({parts:[{id:603,release_date:'1999-03-31'},{id:604,release_date:'2003-05-15'}]});
     if(url.pathname.endsWith('/movie/603'))return Response.json(movie);
-    if(url.pathname.endsWith('/tv/603/season/2'))return Response.json({season_number:2,air_date:'2019-06-21',overview:'受控第二季资料',poster_path:'/season2-fixture.png',episodes:[{runtime:55}]});
-    if(url.pathname.endsWith('/tv/603/season/1'))return Response.json({season_number:1,air_date:'2017-12-01',overview:'受控第一季资料',poster_path:'/season-fixture.png',episodes:[{runtime:50}]});
+    if(url.pathname.endsWith('/tv/603/season/2'))return Response.json({season_number:2,air_date:'2019-06-21',overview:'受控第二季资料',poster_path:'/season2-fixture.png',episodes:[{runtime:55,still_path:'/season2-still.png'}]});
+    if(url.pathname.endsWith('/tv/603/season/1'))return Response.json({season_number:1,air_date:'2017-12-01',overview:'受控第一季资料',poster_path:'/season-fixture.png',episodes:[{runtime:50,still_path:'/season1-still.png'}]});
     if(url.pathname.endsWith('/tv/603'))return Response.json(tv);
     throw new Error('Unexpected fixture metadata path');
   }) as typeof fetch;

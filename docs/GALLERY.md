@@ -4,12 +4,12 @@
 
 ## 1.2自动匹配（Windows）
 
-以下来自1.2.0-beta.1构建源码的真实Windows Electron窗口，包含真实preload、SQLite与导入/缓存代码。目录和TMDB响应使用受控测试数据，不代表个人账号已验收。[原始报告](../artifacts/releases/v1.2.0-beta.1/quark-sync-desktop-report.json)。
+以下来自1.2.0-beta.2构建源码的真实Windows Electron窗口，包含真实preload、SQLite与导入/缓存代码。目录和TMDB响应使用受控测试数据，不代表个人账号已验收。[原始报告](../artifacts/releases/v1.2.0-beta.2/quark-sync-desktop-report.json)。
 
 | 页面或场景 | 截图 |
 |---|---|
-| 目录归并、规格识别与TMDB候选确认 | [查看](../artifacts/review-2026-10-26/15-quark-matches.png) |
-| 作品关联文件、季集、画质编码与增量状态 | [查看](../artifacts/review-2026-10-26/16-quark-cloud-resources.png) |
+| 目录归并、规格识别与TMDB候选确认 | [查看](../artifacts/review-2026-10-26/beta2/15-quark-matches.png) |
+| 作品关联文件、季集、画质编码与增量状态 | [查看](../artifacts/review-2026-10-26/beta2/16-quark-cloud-resources.png) |
 
 ## 沉浸浏览与字体
 

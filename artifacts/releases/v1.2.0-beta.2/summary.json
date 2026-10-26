@@ -1,0 +1,52 @@
+{
+  "version": "1.2.0-beta.2",
+  "prerelease": true,
+  "latestStable": "1.1.0",
+  "buildSource": "c25e4cec60649095510e98e7de6643f774f6e694",
+  "buildRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40292153664",
+  "buildConclusion": "success",
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2",
+  "unitTestFilesPassed": 12,
+  "unitTestsPassed": 131,
+  "publishedAssetDigestsMatchRetainedFiles": true,
+  "actualWindowsElectronVerified": true,
+  "controlledSeasonImportRefreshAndManualCreationVerified": true,
+  "actualInstallerUiOptOutVerified": true,
+  "realWindowsEncryptionCompatibilityVerified": true,
+  "realQuarkAccountVerified": false,
+  "realTmdbKeyOnlineVerified": false,
+  "personalMachineFullUpgradeVerified": false,
+  "databaseSchema": 3,
+  "assets": [
+    {
+      "name": "INSTALL.cmd",
+      "size": 1338,
+      "digest": "sha256:9380c5aeeec51f94758f49ff7e7547b5521ced30ebfd40ab69afbaa1658ffc22",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/INSTALL.cmd"
+    },
+    {
+      "name": "My-Cinema-1.2.0-beta.2-portable-win64.zip",
+      "size": 171268388,
+      "digest": "sha256:2c3b716d258bc6bfe82bd59fe34510bdc9d75c3002441538b7b004b5de3d6f8b",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/My-Cinema-1.2.0-beta.2-portable-win64.zip"
+    },
+    {
+      "name": "My-Cinema-1.2.0-beta.2-Setup.exe",
+      "size": 122931269,
+      "digest": "sha256:1643be7a976db70a29a4d57d7ac753ba415ae4cb850b7a6b3ded808032cfa99a",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/My-Cinema-1.2.0-beta.2-Setup.exe"
+    },
+    {
+      "name": "RUN-PORTABLE.cmd",
+      "size": 976,
+      "digest": "sha256:1402da6b36c45951a699f8c49a8aa386a60b21249d78dddc98cbcc40802af7e5",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/RUN-PORTABLE.cmd"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 368,
+      "digest": "sha256:a49670571217b9bd56eff83d6c0d06444824583145d2a92ca8a2cee66e48dd45",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/SHA256SUMS.txt"
+    }
+  ]
+}

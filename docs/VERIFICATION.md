@@ -1,5 +1,15 @@
 # 验证与交付
 
+## v1.2.0-beta.2 分季收藏（2026-10-26）
+
+[测试版下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，构建源码和Tag为`c25e4cec60649095510e98e7de6643f774f6e694`，数据库保持schema v3。[Windows完整发布流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40292153664)成功，包含12文件/131项测试、类型检查、生产构建、真实Electron、凭据兼容、打包与实际安装器选择检查。Linux真实Electron受控界面检查亦通过。
+
+新增验证覆盖同剧两季独立分组和收藏、季接口的海报/简介/首播年份、季条目刷新、真实UI手动创建缺失作品并关联、无需Key建档、增量复用，以及旧整剧分组拆分时保留忽略和查询。旧关联和个人字段保留；将原整剧关联改为独立季收藏须按季点「更改匹配」。
+
+已下载保留产物并核对全部5项GitHub资产大小与SHA-256，校验文件一致。安装包122931269字节，SHA-256 `1643be7a976db70a29a4d57d7ac753ba415ae4cb850b7a6b3ded808032cfa99a`。Latest仍为1.1.0。
+
+[交付摘要](../artifacts/releases/v1.2.0-beta.2/summary.json) · [自动匹配/分季报告](../artifacts/releases/v1.2.0-beta.2/quark-sync-desktop-report.json) · [安装器报告](../artifacts/releases/v1.2.0-beta.2/installer-report.json) · [校验文件](../artifacts/releases/v1.2.0-beta.2/SHA256SUMS.txt)。目录与TMDB响应为受控数据，真实账号、真实Key在线匹配和个人电脑完整升级仍待验收。TMDB缺少的作品/季可手动建档，并未新增其他元数据来源。
+
 ## v1.2.0-beta.1 测试版交付（2026-10-26）
 
 [Release与下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.1)已发布为预览版，Latest仍为1.1.0。构建与Tag固定在 `a944fe63fcd1b68d634f1a42743821e9d8d71efa`，后续仅修复安装器自动化驱动和补充交付记录，未替换已构建文件。
@@ -56,7 +66,7 @@
 
 ```powershell
 pnpm typecheck              # tsc --noEmit
-pnpm test                   # vitest run（当前12文件 / 127用例；1.1.0为94用例）
+pnpm test                   # vitest run（当前12文件 / 131用例；1.1.0为94用例）
 pnpm build                  # 类型检查 + 主进程打包 + 渲染层构建
 pnpm package                # 安装包 + 免安装 zip（自动处理 TMP / PATH / 镜像）
 pnpm package:dir            # 只生成免安装目录 release/win-unpacked

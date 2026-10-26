@@ -1,5 +1,15 @@
 # 验证与交付
 
+## beta.2 rev4 修订：展开菜单与分季背景（2026-10-27）
+
+修订源码`04467141826a858397fe8bafb341e05349266de2`，应用版本仍为`1.2.0-beta.2`、schema v4。[Windows完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40422141453)成功：13文件/145项测试、类型检查、构建、真实Electron窗口、DPAPI旧版凭据兼容、包内容及实际NSIS安装器选择检查通过。原Tag及此前17项发布资产的ID、大小和哈希均保持不变；新增6项rev4资产已从公开Release下载，大小、SHA-256与独立校验文件及BUILD记录一致。Latest仍为1.1.0。
+
+真实Windows界面验证展开菜单的深色表面与浅色文字、鼠标展开与Escape关闭、不同季剧照独立缓存及显示、缺少季剧照时使用本季海报。额外单元检查覆盖旧共用背景刷新替换/清除、个人评分短评保留及重启持久化、图片下载失败保留缓存，以及整剧/电影原有背景逻辑。Linux真实Electron诊断也通过，使用headless与no-sandbox参数，仅代表该环境的诊断结果。
+
+界面验证采用受控TMDB/目录响应、占位海报与不同颜色的合成季剧照，不能替代真实账号验收。另从TMDB公开季页面核对《绝命毒师》第一、二季的不同单集剧照，两个w1280图片地址均返回HTTP 200、JPEG、1280×720；这是公开页面/CDN验证，没有使用真实API Key。个人电脑升级、真实Key搜索导入与账号目录仍待验收。
+
+[下载rev4安装包](https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/My-Cinema-1.2.0-beta.2-rev4-Setup.exe) · [摘要](../artifacts/releases/v1.2.0-beta.2/rev4/summary.json) · [构建身份](../artifacts/releases/v1.2.0-beta.2/rev4/BUILD-rev4.json) · [SHA-256](../artifacts/releases/v1.2.0-beta.2/rev4/SHA256SUMS-rev4.txt) · [Windows界面报告](../artifacts/releases/v1.2.0-beta.2/rev4/quark-sync-desktop-report.json) · [安装器报告](../artifacts/releases/v1.2.0-beta.2/rev4/installer-report.json) · [公开图片核对](../artifacts/releases/v1.2.0-beta.2/rev4/public-season-image-check.json)。已有季收藏可通过「更多操作 → 刷新资料」更新旧背景，详见[使用说明](USAGE.md)。
+
 ## beta.2 rev3 修订：系列分类与海报聚合（2026-10-26）
 
 继续按本轮合并beta.2的要求发布`rev3`资产，应用版本仍为`1.2.0-beta.2`。修订源码`acf7b788e63745e10f2079303a27ee8dd04863b2`；原Tag和此前11项资产保留且哈希一致。新的6项资产大小和SHA-256均与下载的保留文件及独立校验文件一致，Latest仍为1.1.0。

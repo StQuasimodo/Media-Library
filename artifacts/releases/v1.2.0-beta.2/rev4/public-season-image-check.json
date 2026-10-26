@@ -1,0 +1,20 @@
+[
+  {
+    "season": 1,
+    "publicPage": "https://www.themoviedb.org/tv/1396-breaking-bad/season/1?language=zh-CN",
+    "image": "https://image.tmdb.org/t/p/w1280/ydlY3iPfeOAvu8gVqrxPoMvzNCn.jpg",
+    "status": 200,
+    "contentType": "image/jpeg",
+    "bytes": 243980,
+    "source": "public TMDB website; no API key or private account"
+  },
+  {
+    "season": 2,
+    "publicPage": "https://www.themoviedb.org/tv/1396-breaking-bad/season/2?language=zh-CN",
+    "image": "https://image.tmdb.org/t/p/w1280/6Uo1z56uKnX60JXvYYFWACHR31u.jpg",
+    "status": 200,
+    "contentType": "image/jpeg",
+    "bytes": 106074,
+    "source": "public TMDB website; no API key or private account"
+  }
+]

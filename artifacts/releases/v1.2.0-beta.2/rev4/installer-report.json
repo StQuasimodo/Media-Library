@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "actual installer checkbox can be unchecked",
+    "GUI opt-out creates no desktop link and keeps Start menu",
+    "installed app archive matches verified portable build",
+    "reinstallation preserves opt-out",
+    "explicit opt-in creates a link to the installed app",
+    "opt-out removes retained desktop link"
+  ],
+  "actualInstallerUi": true,
+  "result": "passed",
+  "version": "1.2.0-beta.2"
+}

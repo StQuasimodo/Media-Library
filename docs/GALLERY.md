@@ -2,6 +2,17 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## beta.2 rev4 展开菜单与分季背景
+
+以下截图来自真实Windows Electron窗口，TMDB/目录为受控响应；海报为占位图片，蓝/橙背景为合成测试剧照，用于验证不同季不会复用背景，红色背景用于验证本季海报回退，不代表真实影视图片。[原始报告](../artifacts/releases/v1.2.0-beta.2/rev4/quark-sync-desktop-report.json)。
+
+| 场景 | 截图 |
+|---|---|
+| 展开筛选菜单的深色主题 | [查看](../artifacts/review-2026-10-27/beta2-rev4/20-library-filter-menu.png) |
+| 第一季的独立背景 | [查看](../artifacts/review-2026-10-27/beta2-rev4/21-season1-backdrop.png) |
+| 第二季的独立背景 | [查看](../artifacts/review-2026-10-27/beta2-rev4/22-season2-backdrop.png) |
+| 缺少本季剧照时回退本季海报 | [查看](../artifacts/review-2026-10-27/beta2-rev4/23-season-poster-fallback.png) |
+
 ## beta.2 rev3 系列分类
 
 [查看系列筛选与1/2/10升序排列](../artifacts/review-2026-10-26/beta2-rev3/19-series-wall.png)。截图来自真实Windows Electron窗口，使用独立测试条目和占位海报，验证操作与排列；不代表个人账号或在线海报效果。[原始报告](../artifacts/releases/v1.2.0-beta.2/rev3/quark-sync-desktop-report.json)。

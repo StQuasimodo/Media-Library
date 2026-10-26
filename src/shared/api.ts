@@ -16,6 +16,7 @@ import type {
   MetadataCandidate,
   MetadataSearchOptions,
   MetadataSearchResult,
+  MetadataSeasonList,
   ResourceInput,
   RestoreResult,
   SerializedError,
@@ -122,6 +123,7 @@ export interface CinemaApi {
     copy(text: string): Promise<void>;
   };
   metadata: {
+    seasons(seriesId: string): Promise<MetadataSeasonList>;
     search(options: MetadataSearchOptions): Promise<MetadataSearchResult[]>;
     candidate(externalId: string, mediaType: MediaType): Promise<MetadataCandidate>;
     refresh(filmId: string): Promise<Film>;

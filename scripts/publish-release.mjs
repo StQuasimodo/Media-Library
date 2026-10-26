@@ -1,3 +1,4 @@
+if(process.env.RELEASE_REVISION) { await import('./publish-release-revision.mjs'); process.exit(0); }
 /** Publish verified artifacts with an argument array, independent of shell quoting. */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';

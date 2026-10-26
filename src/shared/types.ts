@@ -281,3 +281,18 @@ export interface SerializedError {
   code: AppErrorCode;
   message: string;
 }
+
+export interface MetadataSeason {
+  number: number;
+  name: string;
+  year: number | null;
+  episodeCount: number | null;
+  overview: string | null;
+  posterUrl: string | null;
+  collectedFilmId?: string | null;
+}
+export interface MetadataSeasonList {
+  seriesId: string;
+  title: string;
+  seasons: MetadataSeason[];
+}

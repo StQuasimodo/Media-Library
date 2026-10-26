@@ -294,6 +294,8 @@ export function registerIpc(runtime: AppRuntime): void {
     runtime.metadata.search((options ?? {}) as MetadataSearchOptions),
   );
 
+  handle('metadata:seasons', (id: unknown) => runtime.metadata.seasons(assertString(id,'剧集 ID')));
+
   handle('metadata:candidate', (externalId: unknown, mediaType: unknown) =>
     runtime.metadata.getCandidate(assertString(externalId, '资料 ID'), mediaType as MediaType),
   );

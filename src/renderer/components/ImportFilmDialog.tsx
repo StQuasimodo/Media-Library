@@ -11,9 +11,10 @@ import { useAppState } from '../lib/appState';
 import { useToast } from '../lib/toast';
 import { Field, Modal, RatingInput, Segmented } from './primitives';
 import { Icon } from './icons';
+import { SeasonPicker } from './SeasonPicker';
 import { MEDIA_TYPE_LABEL, WATCH_STATUS_OPTIONS } from '../lib/format';
 
-type Stage = 'search' | 'confirm';
+type Stage = 'search' | 'seasons' | 'confirm';
 
 interface EntryDraft {
   personalRating: number | null;
@@ -48,6 +49,7 @@ export function ImportFilmDialog({
   const [errorKind, setErrorKind] = useState<string>('');
 
   const [stage, setStage] = useState<Stage>('search');
+  const [series,setSeries]=useState<MetadataSearchResult|null>(null);
   const [candidate, setCandidate] = useState<MetadataCandidate | null>(null);
   const [loadingCandidate, setLoadingCandidate] = useState(false);
   const [draft, setDraft] = useState<EntryDraft>(EMPTY_DRAFT);
@@ -64,6 +66,7 @@ export function ImportFilmDialog({
   useEffect(() => {
     if (!open) return;
     setStage('search');
+    setSeries(null);
     setCandidate(null);
     setResults(null);
     setError(null);
@@ -101,12 +104,16 @@ export function ImportFilmDialog({
     }
   };
 
-  const chooseCandidate = async (result: MetadataSearchResult) => {
+  const chooseCandidate = async (result: MetadataSearchResult, wholeSeries = false) => {
+    if(result.mediaType==='tv' && !result.externalId.includes(':season:') && !wholeSeries) {
+      setSeries(result);setStage('seasons');setError(null);return;
+    }
     setLoadingCandidate(true);
     setError(null);
     try {
       const detail = await api.metadata.candidate(result.externalId, result.mediaType);
       setCandidate(detail);
+      setDraft(EMPTY_DRAFT);
       setStage('confirm');
     } catch (cause) {
       setError(describeError(cause));
@@ -171,7 +178,7 @@ export function ImportFilmDialog({
   };
 
   const title =
-    stage === 'confirm' && candidate
+    stage === 'seasons' ? '选择要收藏的季' : stage === 'confirm' && candidate
       ? '确认导入影视资料'
       : mode === 'manual'
         ? '手动添加影视作品'
@@ -187,18 +194,18 @@ export function ImportFilmDialog({
           ? '确认后会把资料和海报保存到本地收藏库'
           : '从 TMDB 搜索真实影视资料，或手动录入没有网络资料的作品'
       }
-      onClose={onClose}
+      onClose={()=>{if(!saving && !loadingCandidate)onClose();}}
       footer={
         stage === 'confirm' ? (
           <>
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => setStage('search')}
+              onClick={() => {setStage(series ? 'seasons' : 'search');setError(null);}}
               disabled={saving}
             >
               <Icon name="chevronLeft" size={15} />
-              返回结果
+              {series ? '返回季列表' : '返回结果'}
             </button>
             <span className="spacer" />
             <button type="button" className="btn btn-primary" onClick={importCandidate} disabled={saving}>
@@ -206,7 +213,7 @@ export function ImportFilmDialog({
               确认导入
             </button>
           </>
-        ) : mode === 'manual' ? (
+        ) : stage === 'seasons' ? <button className="btn btn-secondary" disabled={saving || loadingCandidate} onClick={()=>{setStage('search');setSeries(null);setError(null);}}>返回搜索结果</button> : mode === 'manual' ? (
           <>
             <span className="spacer" />
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving}>
@@ -317,6 +324,8 @@ export function ImportFilmDialog({
                 />
               </div>
 
+              <p className="setting-help">剧集请搜索整剧名称；年份筛选使用整剧首播年份，选择季后可查看各季年份。</p>
+
               {error ? (
                 <div className="field-error" style={{ marginBottom: 12 }}>
                   {error}
@@ -381,9 +390,10 @@ export function ImportFilmDialog({
                         <button
                           type="button"
                           className="btn btn-secondary btn-sm"
-                          onClick={() => void chooseCandidate(result)}
+                          disabled={loadingCandidate}
+                          onClick={() => {setSeries(null);void chooseCandidate(result);}}
                         >
-                          选择
+                          {result.mediaType==='tv' ? '选择季' : '选择'}
                         </button>
                       </div>
                     ))}
@@ -448,6 +458,16 @@ export function ImportFilmDialog({
           )}
         </>
       ) : null}
+
+      {stage === 'seasons' && series ? <>
+        <SeasonPicker series={series} disabled={saving || loadingCandidate} onBusy={setSaving}
+          onChoose={id=>void chooseCandidate({...series,externalId:id})}
+          onSeries={()=>void chooseCandidate(series,true)}
+          onOpen={id=>{onClose();navigate(`/film/${id}`);}}
+          onManual={number=>{setManual({title:`${series.title} · ${number===0?'特别篇':`第${number}季`}`,originalTitle:'',year:'',mediaType:'tv',overview:''});setMode('manual');setStage('search');setError(null);setDraft(EMPTY_DRAFT);}}/>
+        {loadingCandidate ? <p role="status">正在读取本季资料…</p> : null}
+        {error ? <p className="field-error" role="alert">{error}</p> : null}
+      </> : null}
 
       {stage === 'confirm' && candidate ? (
         <>

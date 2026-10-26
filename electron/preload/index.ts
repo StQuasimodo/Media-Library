@@ -22,6 +22,7 @@ import type {
   MetadataCandidate,
   MetadataSearchOptions,
   MetadataSearchResult,
+  MetadataSeasonList,
   ResourceInput,
   RestoreResult,
   SettingsState,
@@ -127,6 +128,7 @@ const api: CinemaApi = {
     copy: (text) => invoke<void>('resources:copy', text),
   },
   metadata: {
+    seasons: id => invoke<MetadataSeasonList>('metadata:seasons',id),
     search: (options: MetadataSearchOptions) =>
       invoke<MetadataSearchResult[]>('metadata:search', options),
     candidate: (externalId, mediaType: MediaType) =>

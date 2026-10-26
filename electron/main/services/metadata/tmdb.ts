@@ -4,6 +4,7 @@ import type {
   MetadataLanguage,
   MetadataSearchOptions,
   MetadataSearchResult,
+  MetadataSeasonList,
 } from '../../../../src/shared/types';
 import { AppError } from '../../errors';
 import { parseTmdbIdentity } from '../../../../src/shared/tmdbIdentity';
@@ -54,6 +55,7 @@ interface RawSearchResponse {
 }
 
 interface RawDetail {
+  seasons?: Array<{ season_number?: number; name?: string; air_date?: string; episode_count?: number; overview?: string; poster_path?: string | null }>;
   id?: number;
   title?: string;
   name?: string;
@@ -166,6 +168,22 @@ export class TmdbProvider {
     return results;
   }
 
+  async seasons(seriesId: string): Promise<MetadataSeasonList> {
+    if (!/^\d+$/.test(seriesId)) throw new AppError('VALIDATION','剧集标识无效。');
+    const payload=await this.request<RawDetail>(`/tv/${seriesId}`,this.requireConfig());
+    if (!payload.name || !Array.isArray(payload.seasons)) throw new AppError('BAD_RESPONSE','TMDB 未返回有效的季列表，请重试或手动建档。');
+    const seen=new Set<number>();
+    const seasons=payload.seasons.flatMap(season=>{
+      const number=season.season_number;
+      if (typeof number !== 'number' || !Number.isInteger(number) || number < 0 || number > 9999 || seen.has(number)) return [];
+      seen.add(number);
+      return [{number,name:season.name?.trim() || (number===0?'特别篇':`第${number}季`),
+        year:parseYear(season.air_date),episodeCount:Number.isInteger(season.episode_count) && season.episode_count!>=0 ? season.episode_count! : null,
+        overview:season.overview?.trim() || null,posterUrl:posterUrl(season.poster_path)}];
+    }).sort((a,b)=>a.number-b.number);
+    return {seriesId,title:payload.name,seasons};
+  }
+
   async getCandidate(externalId: string, mediaType: MediaType): Promise<MetadataCandidate> {
     const config = this.requireConfig();
     const identity = parseTmdbIdentity(externalId, mediaType);
@@ -184,8 +202,8 @@ export class TmdbProvider {
       const label = identity.season === 0 ? '特别篇' : `第${identity.season}季`;
       return { ...series, externalId, title: `${series.title} · ${label}`,
         originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
-        year: parseYear(season.air_date), overview: overview || series.overview,
-        posterUrl: posterUrl(season.poster_path) ?? series.posterUrl,
+        year: parseYear(season.air_date), overview: overview || null,
+        posterUrl: posterUrl(season.poster_path),
         runtime: season.episodes?.find(episode => typeof episode.runtime === 'number' && episode.runtime > 0)?.runtime ?? series.runtime };
     }
     return this.fetchCandidate(externalId, mediaType, config.apiKey, config.language);

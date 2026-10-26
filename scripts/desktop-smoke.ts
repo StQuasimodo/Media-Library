@@ -355,6 +355,66 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await js('window.cinema.quarkWeb.disconnect()');
     assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`)).cloudResources.every((file:any)=>!file.active),true);
     checks.push('controlled Quark/TMDB: select folder through UI, recurse, match, confirm, real import/cache/SQLite, typed IDs, increment, missing files, failed scan and session isolation (not live account)');
+    async function openTvSeasons() {
+      await js("document.querySelector('[aria-label=添加影视作品]').click()");
+      await waitFor("!!document.querySelector('#import-query')");
+      await js("(()=>{const input=document.querySelector('#import-query');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'绝命毒师');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+      await js("[...document.querySelectorAll('.modal button')].find(b=>b.textContent.trim()==='搜索').click()");
+      await waitFor("[...document.querySelectorAll('.import-item button')].some(b=>b.textContent==='选择季')");
+      await js("[...document.querySelectorAll('.import-item button')].find(b=>b.textContent==='选择季').click()");
+      await waitFor("document.querySelectorAll('[data-season-number]').length===6");
+    }
+    await openTvSeasons();await shot('17-tmdb-season-picker');
+    await js("document.querySelector('[data-season-number=\"1\"] button').click()");
+    await waitFor("document.querySelector('.modal-title')?.textContent==='确认导入影视资料'");
+    await js("[...document.querySelectorAll('.modal-footer button')].find(b=>b.textContent.includes('确认导入')).click()");
+    await waitFor("!document.querySelector('.modal')");
+    const firstSeason=(await js("window.cinema.library.list({search:'绝命毒师'})")).find((entry:any)=>entry.film.externalId==='1396:season:1');
+    assert.ok(firstSeason);extraFilmIds.push(firstSeason.filmId);
+    await js(`window.cinema.library.updateEntry(${JSON.stringify(firstSeason.id)},{personalRating:8.5})`);
+    await openTvSeasons();
+    assert.equal(await js("document.querySelector('[data-season-number=\"1\"] input').disabled"),true);
+    await js("document.querySelector('[data-season-number=\"2\"] input').click();document.querySelector('[data-season-number=\"3\"] input').click()");
+    await js("[...document.querySelectorAll('.season-picker button')].find(b=>b.textContent==='导入所选 2 季').click()");
+    await waitFor("document.querySelector('[data-season-number=\"2\"] input').disabled && document.querySelector('[data-season-number=\"3\"] input').disabled");
+    await waitFor("[...document.querySelectorAll('.season-picker button')].some(b=>b.textContent==='收藏整剧' && !b.disabled)");
+    await shot('18-tmdb-seasons-collected');
+    const imported=await js("window.cinema.library.list({search:'绝命毒师'})");
+    assert.equal(imported.length,3);assert.equal(imported.find((entry:any)=>entry.id===firstSeason.id).personalRating,8.5);
+    for(const entry of imported)if(entry.id!==firstSeason.id)extraFilmIds.push(entry.filmId);
+    assert.equal(imported.find((entry:any)=>entry.film.externalId==='1396:season:2').film.overview,null);
+
+    cloudFixture.setSeasonFailure(5);
+    await js("document.querySelector('[data-season-number=\"4\"] input').click();document.querySelector('[data-season-number=\"5\"] input').click()");
+    await js("[...document.querySelectorAll('.season-picker button')].find(b=>b.textContent==='导入所选 2 季').click()");
+    await waitFor("document.querySelector('.season-picker [role=alert]')?.textContent.includes('已保存 1 季')");
+    assert.equal(await js("document.querySelector('[data-season-number=\"4\"] input').disabled"),true);
+    assert.equal(await js("document.querySelector('[data-season-number=\"5\"] input').disabled"),false);
+    cloudFixture.setSeasonFailure(null);
+    await waitFor("[...document.querySelectorAll('.season-picker button')].some(b=>b.textContent==='导入所选 1 季' && !b.disabled)");
+    await js("[...document.querySelectorAll('.season-picker button')].find(b=>b.textContent==='导入所选 1 季').click()");
+    await waitFor("document.querySelector('[data-season-number=\"5\"] input').disabled");
+    await waitFor("[...document.querySelectorAll('.season-picker button')].some(b=>b.textContent==='收藏整剧' && !b.disabled)");
+    for (const entry of await js("window.cinema.library.list({search:'绝命毒师'})"))
+      if(!extraFilmIds.includes(entry.filmId))extraFilmIds.push(entry.filmId);
+    checks.push('season batch partial failure preserves completed imports and retries only the remaining season');
+    await js("[...document.querySelectorAll('.season-picker button')].find(b=>b.textContent==='收藏整剧').click()");
+    await waitFor("document.querySelector('.modal-title')?.textContent==='确认导入影视资料'");
+    await js("[...document.querySelectorAll('.modal-footer button')].find(b=>b.textContent.includes('确认导入')).click()");
+    await waitFor("!document.querySelector('.modal')");
+    const whole=(await js("window.cinema.library.list({search:'绝命毒师'})")).find((entry:any)=>entry.film.externalId==='1396');
+    assert.ok(whole);extraFilmIds.push(whole.filmId);
+    await openTvSeasons();
+    await js("document.querySelector('.season-picker details summary').click()");
+    await js("(()=>{const input=document.querySelector('[aria-label=手动补录季数]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'6');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await js("[...document.querySelectorAll('.season-picker button')].find(b=>b.textContent==='填写本季资料').click()");
+    await waitFor("document.querySelector('#manual-title')?.value==='绝命毒师 · 第6季'");
+    await js("[...document.querySelectorAll('.modal-footer button')].find(b=>b.textContent.includes('添加到收藏库')).click()");
+    await waitFor("!document.querySelector('.modal')");
+    const manualSeason=(await js("window.cinema.library.list({search:'绝命毒师'})")).find((entry:any)=>entry.film.metadataSource==='manual');
+    assert.ok(manualSeason);extraFilmIds.push(manualSeason.filmId);
+    checks.push('normal TMDB search expands six season rows, single/batch season import, collected markers, personal rating preservation, whole-series choice and manual missing-season form through real UI/IPC');
+
   }
   // Mutations stay within this disposable profile's explicitly seeded or imported test entries.
   const testFilmIds = [...data.films.map((item) => item.film.id), data.missing.film.id, ...extraFilmIds];

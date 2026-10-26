@@ -184,3 +184,7 @@ v3同时修正TMDB唯一索引为 `(metadata_source,media_type,external_id)`，�
 ### 1.2.0-beta.2 分季身份
 
 TMDB整剧继续用数字external_id；季条目使用`<seriesId>:season:<N>`，由shared/tmdbIdentity统一校验，仅允许tv类型。沿用schema v3已有文本字段与唯一索引，不需迁移。Provider将该身份路由到`/tv/{id}/season/{N}`并继承整剧背景与类型；刷新走相同路由。目录group_key在存在季号时纳入季号，电影/无季号分组身份稳定；旧文件关联、编辑查询和忽略选择保留。新增`quark-sync:createManual`复用可信页面IPC校验，手动建档与文件关联在同一SQLite事务完成。
+
+### beta.2 rev2 普通搜索分季导入
+
+新增只读`metadata:seasons(seriesId)`，主进程校验整剧数字ID，从整剧详情的seasons字段读取摘要，并按已有季身份标记collectedFilmId。renderer SeasonPicker负责季列表、单季确认与顺序批量导入，复用metadata:candidate和library:importCandidate；与夸克路径使用同一个季详情Provider和唯一身份。批次失败保留完成项，剩余项可重试。独立手动补录复用已有手动表单，不新增数据库关系或修改schema。

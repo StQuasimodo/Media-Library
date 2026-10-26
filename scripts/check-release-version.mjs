@@ -20,13 +20,23 @@ if (process.argv.includes('--preview')) assert.ok(version.includes('-'), 'Previe
 const gh = args => execFileSync('gh', args, { encoding: 'utf8' }).trim();
 const repo = process.env.GITHUB_REPOSITORY || gh(['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner']);
 const tag = `v${version}`;
+const revision=process.env.RELEASE_REVISION || '';
+if(revision)assert.match(revision,/^rev(?:[2-9]|[1-9]\d+)$/,'Revision must be rev2 or higher.');
 const refs = JSON.parse(gh(['api', `repos/${repo}/git/matching-refs/tags/${tag}`]));
-assert.ok(!refs.some(ref => ref.ref === `refs/tags/${tag}`), `Tag ${tag} already exists; use a new version.`);
+if(!revision)assert.ok(!refs.some(ref => ref.ref === `refs/tags/${tag}`), `Tag ${tag} already exists; use a new version.`);
 const releases = [];
 for (let page = 1; ; page++) {
   const batch = JSON.parse(gh(['api', `repos/${repo}/releases?per_page=100&page=${page}`]));
   releases.push(...batch);
   if (batch.length < 100) break;
+}
+if(revision) {
+  assert.ok(version.includes('-'),'Only an existing prerelease may have an authorized revision.');
+  const release=releases.find(release=>release.tag_name===tag && !release.draft && release.prerelease);
+  assert.ok(release,'Revision requires an existing published prerelease.');
+  assert.ok(!release.assets.some(asset=>asset.name===`BUILD-${revision}.json`),'This revision was already published.');
+  console.log(`[release] Authorized ${version} ${revision}; existing assets and original tag will be retained.`);
+  process.exit(0);
 }
 assert.ok(!releases.some(release => release.tag_name === tag), `Release ${tag} already exists; do not replace published assets.`);
 for (const release of releases) {

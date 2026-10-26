@@ -159,6 +159,25 @@ describe('TMDB 搜索', () => {
 });
 
 describe('TMDB 详情', () => {
+  it('读取整剧季列表，保留特别篇、年份与集数，排除无效和重复季',async()=>{
+    const fetchImpl=(async()=>jsonResponse({name:'绝命毒师',seasons:[
+      {season_number:2,name:'第2季',air_date:'2009-03-08',episode_count:13},
+      {season_number:0,name:'特别篇',episode_count:9},{season_number:1,air_date:'2008-01-20',episode_count:7},
+      {season_number:2},{season_number:-1},{season_number:'3'}]})) as typeof fetch;
+    const list=await provider(fetchImpl).seasons('1396');
+    expect(list.seasons.map(season=>season.number)).toEqual([0,1,2]);
+    expect(list.seasons[2]).toMatchObject({year:2009,episodeCount:13,overview:null,posterUrl:null});
+    await expect(provider(fetchImpl).seasons('../1396')).rejects.toMatchObject({code:'VALIDATION'});
+    await expect(provider((async()=>jsonResponse({name:'X'})) as typeof fetch).seasons('1')).rejects.toMatchObject({code:'BAD_RESPONSE'});
+  });
+  it('缺少季简介与海报时保留缺失，不冒充整剧资料',async()=>{
+    const fetchImpl=(async(input:string|URL|Request)=>jsonResponse(String(input).includes('/season/') ?
+      {season_number:2,air_date:'2009-03-08',overview:'',poster_path:null} :
+      {id:1396,name:'绝命毒师',overview:'整剧简介',poster_path:'/series.jpg'})) as typeof fetch;
+    const season=await provider(fetchImpl).getCandidate('1396:season:2','tv');
+    expect(season.overview).toBeNull();expect(season.posterUrl).toBeNull();
+  });
+
   it('按季读取独立年份、海报和简介，保留可刷新的季标识',async()=>{
     const fetchImpl=(async(input:string|URL|Request)=>{
       const url=new URL(String(input));

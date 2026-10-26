@@ -51,6 +51,13 @@ export class MetadataService {
     return this.provider.getCandidate(externalId, mediaType);
   }
 
+  async seasons(seriesId: string) {
+    if (!/^\d+$/.test(seriesId)) throw new AppError('VALIDATION','剧集标识无效。');
+    const list=await this.provider.seasons(seriesId);
+    return {...list,seasons:list.seasons.map(season=>({...season,
+      collectedFilmId:this.repo.getFilmByExternal('tmdb',`${seriesId}:season:${season.number}`,'tv')?.id ?? null}))};
+  }
+
   /** Re-fetches external metadata for a stored film; personal fields stay untouched. */
   async refreshFilm(filmId: string): Promise<Film> {
     const film = this.repo.getFilm(filmId);

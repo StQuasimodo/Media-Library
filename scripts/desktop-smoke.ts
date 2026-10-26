@@ -445,6 +445,16 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     assert.equal(tvNames[0],'绝命毒师');assert.ok(tvNames[1].includes('第1季'));assert.ok(tvNames[6].includes('第6季'));
     assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(data.films[1].film.id)})`)).film.series.key,'tmdb:collection:234');
     checks.push('series filter and automatic wall grouping keep film 1/2/10 and TV whole/1..6 adjacent in ascending order');
+    await route(`/film/${data.films[1].film.id}`,"!!document.querySelector('.film-title')");
+    await js("document.querySelector('.film-tools summary').click();document.querySelector('[aria-label=编辑影视资料]').click()");
+    await waitFor("document.querySelector('#film-series')?.value==='黑客帝国系列'");
+    await js("(()=>{const input=document.querySelector('#film-series-order');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'2');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await js("[...document.querySelectorAll('.modal-footer button')].find(button=>button.textContent.trim()==='保存').click()");
+    await waitFor("!document.querySelector('.modal')");
+    const manualOrder=await js(`window.cinema.metadata.refresh(${JSON.stringify(data.films[1].film.id)})`);
+    assert.equal(manualOrder.series.key,'tmdb:collection:234');assert.equal(manualOrder.series.order,2);
+    checks.push('editing only installment order retains the official series association and survives external metadata refresh');
+
 
 
   }

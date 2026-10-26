@@ -84,3 +84,13 @@ it('手动重分类只影响选中的作品，不将同名其他作品带入自�
   expect(identities.get(first.id)?.key).toBe(identities.get(tenth.id)?.key);
   expect(identities.get(second.id)?.key).not.toBe(identities.get(first.id)?.key);
 });
+
+it('只改官方系列内序号保留系列身份，覆盖标题数字，刷新后仍保留',async()=>{
+  const entry=(await app.library.importCandidate(candidate({title:'系列10',posterUrl:null,backdropUrl:null,series:{key:'tmdb:collection:9',title:'官方系列',order:10}}))).entry;
+  app.library.updateFilm(entry.filmId,{series:{key:'manual:movie:官方系列',title:'官方系列',order:1}});
+  const saved=app.repo.getEntry(entry.id)!;
+  expect(saved.film.series).toMatchObject({key:'tmdb:collection:9',order:1,customOrder:true});
+  expect(identifySeries([saved]).get(saved.id)?.order).toBe(1);
+  await app.library.applyExternalMetadata(entry.filmId,candidate({posterUrl:null,backdropUrl:null,series:{key:'tmdb:collection:9',title:'官方系列',order:10}}));
+  expect(app.repo.getFilm(entry.filmId)?.series?.order).toBe(1);
+});

@@ -1,3 +1,4 @@
+import { identifySeries } from '../../../src/shared/series';
 import { parseTmdbIdentity } from '../../../src/shared/tmdbIdentity';
 import { randomUUID } from 'node:crypto';
 import type {
@@ -347,7 +348,20 @@ export class LibraryService {
         typeof value.title!=='string' || !value.title.trim() || value.title.length>200 ||
         (value.order!==null && (!Number.isInteger(value.order) || value.order<0 || value.order>9999))))
         throw new AppError('VALIDATION','系列名称或序号无效。');
-      allowed.series=value===null ? null : {...value,title:value.title.trim()};
+      if(value===null)allowed.series=null;
+      else {
+        const current=this.repo.getFilm(filmId);
+        if(!current)throw new AppError('NOT_FOUND','作品不存在。');
+        const normalize=(text:string)=>text.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+        let key=value.key;
+        if(current.series && normalize(current.series.title)===normalize(value.title))key=current.series.key;
+        else if(key.startsWith('manual:')) {
+          const groups=identifySeries(this.repo.listEntries().filter(entry=>entry.film.mediaType===(patch.mediaType ?? current.mediaType) && entry.filmId!==filmId));
+          const matches=new Set([...groups.values()].filter(group=>normalize(group.title)===normalize(value.title)).map(group=>group.key));
+          if(matches.size===1)key=[...matches][0];
+        }
+        allowed.series={key,title:value.title.trim(),order:value.order,customOrder:true};
+      }
     }
     // Poster/backdrop are managed by the image cache; user edits never touch them.
     return this.repo.updateFilm(filmId, allowed);
@@ -386,7 +400,7 @@ export class LibraryService {
       originalLanguage: candidate.originalLanguage,
       posterPath,
       backdropPath,
-      series: film.series?.key.startsWith('manual:') ? film.series : candidate.series,
+      series: film.series && (film.series.customOrder || film.series.key.startsWith('manual:')) ? film.series : candidate.series,
       metadataUpdatedAt: now(),
     });
   }

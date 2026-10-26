@@ -40,17 +40,17 @@ export function identifySeries(entries:CollectionEntry[]):Map<string,FilmSeries>
     const structured=film.series ?? (identity ? {key:`tmdb:tv:${identity.id}`,title:root.replace(/\s*·\s*特别篇$/,''),order:identity.season ?? -1}:null);
     const rootKey=`${film.mediaType}:${normal(root)}`;
 
-    if(structured && !structured.key.startsWith('manual:')) {const keys=known.get(rootKey) ?? new Set<string>();keys.add(structured.key);known.set(rootKey,keys);}
+    if(structured && !structured.customOrder && !structured.key.startsWith('manual:')) {const keys=known.get(rootKey) ?? new Set<string>();keys.add(structured.key);known.set(rootKey,keys);}
     return {entry,sequence,structured,root,rootKey};
   });
   const roots=new Map<string,number>();
-  for(const item of base)if(!item.structured?.key.startsWith('manual:'))roots.set(item.rootKey,(roots.get(item.rootKey) ?? 0)+1);
-  for(const item of base)if(item.sequence && !item.structured?.key.startsWith('manual:') &&
+  for(const item of base)if(!item.structured?.customOrder && !item.structured?.key.startsWith('manual:'))roots.set(item.rootKey,(roots.get(item.rootKey) ?? 0)+1);
+  for(const item of base)if(item.sequence && !item.structured?.customOrder && !item.structured?.key.startsWith('manual:') &&
     (item.entry.film.mediaType==='tv' || (roots.get(item.rootKey) ?? 0)>1 || known.has(item.rootKey)))numbered.add(item.rootKey);
   const names=new Map(base.filter(item=>item.structured).map(item=>[item.structured!.key,item.structured!.title]));
   const result=new Map<string,FilmSeries>();
   for(const item of base) {
-    if(item.structured) {result.set(item.entry.id,{...item.structured,order:item.structured.key.startsWith('manual:') ? item.structured.order : item.sequence?.order ?? item.structured.order});continue;}
+    if(item.structured) {result.set(item.entry.id,{...item.structured,order:item.structured.customOrder || item.structured.key.startsWith('manual:') ? item.structured.order : item.sequence?.order ?? item.structured.order});continue;}
     if(!numbered.has(item.rootKey))continue;
     const matches=known.get(item.rootKey);
     const key=matches?.size===1 ? [...matches][0] : `title:${item.rootKey}`;

@@ -194,3 +194,5 @@ TMDB整剧继续用数字external_id；季条目使用`<seriesId>:season:<N>`，
 Schema v4新增films.series_json可空列。SQL NULL代表未知，JSON null代表已查询而无官方系列，对象保存key/title/order；电影Provider从belongs_to_collection与collection.parts获取系列和首映顺序。Film/MetadataCandidate包含可选series。metadata:resolveSeries后台最多双并发补旧电影，不改作品/个人字段，每会话避免重复失败请求；Runtime关闭时dispose旧MetadataService以禁止恢复后异步落库。手动编辑的manual:系列在外部刷新时保留。
 
 shared/series统一识别整剧身份、明确标题序号与官方系列。组锚点沿用当前列表排序，组内按序号升序。影视库提供系列筛选与默认开启的聚合开关，专题详情复用聚合函数。数据会进入原有SQLite备份和JSON导出。
+
+手动编辑保留同名既有系列身份，仅修改序号时不会拆出原系列；series.customOrder标记手动顺序，刷新外部资料不覆盖它。手工关联不作为推断其他同名作品的依据，避免重分类带动无关条目。

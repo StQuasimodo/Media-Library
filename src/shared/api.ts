@@ -123,6 +123,7 @@ export interface CinemaApi {
     copy(text: string): Promise<void>;
   };
   metadata: {
+    resolveSeries(): Promise<{updated:number;failed:number}>;
     seasons(seriesId: string): Promise<MetadataSeasonList>;
     search(options: MetadataSearchOptions): Promise<MetadataSearchResult[]>;
     candidate(externalId: string, mediaType: MediaType): Promise<MetadataCandidate>;

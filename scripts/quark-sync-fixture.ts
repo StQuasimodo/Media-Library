@@ -37,7 +37,7 @@ export function installQuarkSyncFixture(profile: string) {
     const url=new URL(String(input));
     if(url.hostname==='image.tmdb.org') return new Response(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64'),{headers:{'content-type':'image/png'}});
     assert.ok(['api.tmdb.org','api.themoviedb.org'].includes(url.hostname),'fixture must not access another host');
-    const movie={id:603,media_type:'movie',title:'黑客帝国',original_title:'The Matrix',release_date:'1999-03-31',overview:'受控匹配测试资料',poster_path:null,backdrop_path:null,genres:[]};
+    const movie={id:603,media_type:'movie',title:'黑客帝国',original_title:'The Matrix',belongs_to_collection:{id:234,name:'黑客帝国系列'},release_date:'1999-03-31',overview:'受控匹配测试资料',poster_path:null,backdrop_path:null,genres:[]};
     const tv={id:603,media_type:'tv',name:'暗黑',original_name:'Dark',first_air_date:'2017-12-01',overview:'受控剧集匹配测试资料',poster_path:'/sync-fixture.png',backdrop_path:'/sync-fixture-bg.png',genres:[],episode_run_time:[50]};
     const breaking={id:1396,media_type:'tv',name:'绝命毒师',original_name:'Breaking Bad',first_air_date:'2008-01-20',overview:'受控整剧简介',poster_path:'/breaking.jpg',backdrop_path:'/breaking-bg.jpg',genres:[],seasons:[0,1,2,3,4,5].map(number=>({season_number:number,name:number===0?'特别篇':`第${number}季`,air_date:`${number===0?2009:2007+number}-01-01`,episode_count:[9,7,13,13,13,16][number],overview:number===2?'':`第${number}季受控简介`,poster_path:number===2?null:'/breaking-season.jpg'}))};
     if(url.pathname.endsWith('/tv/1396'))return Response.json(breaking);
@@ -47,6 +47,7 @@ export function installQuarkSyncFixture(profile: string) {
       searches++;const query=url.searchParams.get('query')!.toLowerCase();
       return Response.json({results:query==='the matrix'?[movie]:query==='dark'?[tv]:query==='绝命毒师'?[breaking]:[]});
     }
+    if(url.pathname.endsWith('/collection/234'))return Response.json({parts:[{id:603,release_date:'1999-03-31'},{id:604,release_date:'2003-05-15'}]});
     if(url.pathname.endsWith('/movie/603'))return Response.json(movie);
     if(url.pathname.endsWith('/tv/603/season/2'))return Response.json({season_number:2,air_date:'2019-06-21',overview:'受控第二季资料',poster_path:'/season2-fixture.png',episodes:[{runtime:55}]});
     if(url.pathname.endsWith('/tv/603/season/1'))return Response.json({season_number:1,air_date:'2017-12-01',overview:'受控第一季资料',poster_path:'/season-fixture.png',episodes:[{runtime:50}]});

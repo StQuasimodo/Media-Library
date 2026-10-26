@@ -414,6 +414,38 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     const manualSeason=(await js("window.cinema.library.list({search:'绝命毒师'})")).find((entry:any)=>entry.film.metadataSource==='manual');
     assert.ok(manualSeason);extraFilmIds.push(manualSeason.filmId);
     checks.push('normal TMDB search expands six season rows, single/batch season import, collected markers, personal rating preservation, whole-series choice and manual missing-season form through real UI/IPC');
+    for(const title of ['影墙排序10','影墙排序2','影墙排序']) {
+      const entry=await js(`window.cinema.library.createManual({title:${JSON.stringify(title)},mediaType:'movie'})`);extraFilmIds.push(entry.film.id);
+    }
+    await route('/library',"!!document.querySelector('[aria-label=按系列筛选]')");
+    await waitFor("[...document.querySelectorAll('[aria-label=按系列筛选] option')].some(o=>o.textContent==='影墙排序')");
+    await js("(()=>{const input=document.querySelector('[aria-label=按系列筛选]');input.value=[...input.options].find(o=>o.textContent==='影墙排序').value;input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await waitFor("document.querySelector('.result-count')?.textContent==='3 部'");
+    assert.deepEqual(await js("[...document.querySelectorAll('.poster-title')].map(n=>n.textContent)"),['影墙排序','影墙排序2','影墙排序10']);
+    await shot('19-series-wall');
+    await js("document.querySelector('[aria-label=同系列聚合]').click()");
+    await js("document.querySelector('[aria-label=同系列聚合]').click()");
+
+    await js("[...document.querySelectorAll('.poster-title')].find(node=>node.textContent==='影墙排序2').closest('a').click()");
+    await waitFor("!!document.querySelector('.film-title')");
+    await js("document.querySelector('.film-tools summary').click();document.querySelector('[aria-label=编辑影视资料]').click()");
+    await waitFor("!!document.querySelector('#film-series')");
+    await js("(()=>{for(const [id,value] of [['film-series','影墙自定义组'],['film-series-order','2']]){const input=document.getElementById(id);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}})()");
+    await js("[...document.querySelectorAll('.modal-footer button')].find(button=>button.textContent.trim()==='保存').click()");
+    await waitFor("!document.querySelector('.modal')");
+    await route('/library',"!!document.querySelector('[aria-label=按系列筛选]')");
+    await waitFor("[...document.querySelectorAll('[aria-label=按系列筛选] option')].some(option=>option.textContent==='影墙自定义组')");
+    await js("(()=>{const input=document.querySelector('[aria-label=按系列筛选]');input.value=[...input.options].find(option=>option.textContent==='影墙自定义组').value;input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await waitFor("document.querySelector('.result-count')?.textContent==='1 部'");
+    assert.equal(await js("document.querySelector('.poster-title').textContent"),'影墙排序2');
+    checks.push('manual series name and order saved through metadata edit dialog, persisted and exposed as a series category');
+    await js("(()=>{const input=document.querySelector('[aria-label=按系列筛选]');input.value='tmdb:tv:1396';input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await waitFor("document.querySelector('.result-count')?.textContent==='7 部'");
+    const tvNames=await js("[...document.querySelectorAll('.poster-title')].map(n=>n.textContent)");
+    assert.equal(tvNames[0],'绝命毒师');assert.ok(tvNames[1].includes('第1季'));assert.ok(tvNames[6].includes('第6季'));
+    assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(data.films[1].film.id)})`)).film.series.key,'tmdb:collection:234');
+    checks.push('series filter and automatic wall grouping keep film 1/2/10 and TV whole/1..6 adjacent in ascending order');
+
 
   }
   // Mutations stay within this disposable profile's explicitly seeded or imported test entries.

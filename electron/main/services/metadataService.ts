@@ -16,6 +16,33 @@ export class MetadataService {
     private readonly library: LibraryService,
   ) {}
 
+  private disposed=false;
+  private seriesPaused=false;
+  private attempted=new Set<string>();
+  private seriesJob: Promise<{updated:number;failed:number}> | null=null;
+  dispose() { this.disposed=true; }
+  resolveSeries(): Promise<{updated:number;failed:number}> {
+    if(this.seriesJob)return this.seriesJob;
+    if(this.disposed || this.seriesPaused || !this.hasApiKey)return Promise.resolve({updated:0,failed:0});
+    const films=this.repo.listAllFilms().filter(film=>film.mediaType==='movie' && film.metadataSource==='tmdb' && film.externalId && film.series===undefined && !this.attempted.has(film.id));
+    const work=async()=>{
+      let updated=0,failed=0,index=0;
+      const worker=async()=>{
+        while(index<films.length && !this.disposed && !this.seriesPaused) {
+          const film=films[index++];this.attempted.add(film.id);
+          try {
+            const series=await this.provider.movieSeries(film.externalId!);
+            if(this.disposed)break;
+            const current=this.repo.getFilm(film.id);
+            if(current && current.series===undefined) {this.repo.updateFilm(film.id,{series});updated++;}
+          } catch(error) {failed++;if(!(error instanceof AppError) || error.code!=='NOT_FOUND')this.seriesPaused=true;}
+        }
+      };
+      await Promise.all([worker(),worker()]);return {updated,failed};
+    };
+    this.seriesJob=work().finally(()=>{this.seriesJob=null;});return this.seriesJob;
+  }
+
   get hasApiKey(): boolean {
     return this.provider.configured;
   }
@@ -24,6 +51,7 @@ export class MetadataService {
     const trimmed = key.trim();
     if (!trimmed) throw new AppError('VALIDATION', 'API Key 不能为空。');
     await this.provider.verifyKey(trimmed);
+    this.seriesPaused=false;this.attempted.clear();
   }
 
   async search(options: MetadataSearchOptions): Promise<MetadataSearchResult[]> {

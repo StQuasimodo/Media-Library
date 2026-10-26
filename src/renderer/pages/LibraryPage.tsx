@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LibrarySort, WatchStatus } from '@shared/types';
+import { groupSeriesEntries,identifySeries } from '@shared/series';
+import { useResolveSeries } from '../lib/useSeries';
 import { api } from '../lib/api';
 import { useAppState } from '../lib/appState';
 import { useAsyncData, useDebounced } from '../lib/useAsync';
@@ -20,6 +22,9 @@ const SORT_OPTIONS: Array<{ value: LibrarySort; label: string }> = [
 
 export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
   const { version, settings, info } = useAppState();
+  const [seriesKey,setSeriesKey]=useState('');
+  const [seriesAnchor,setSeriesAnchor]=useState('');
+  const [grouped,setGrouped]=useState(()=>{try{return localStorage.getItem('mycinema.groupSeries')!=='false';}catch{return true;}});
   const [search, setSearch] = useState('');
   const [year, setYear] = useState('');
   const [status, setStatus] = useState<WatchStatus | 'all'>('all');
@@ -60,8 +65,14 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
     [version, debouncedSearch, year, status, collectionId, sort],
   );
 
-  const hasFilters = Boolean(search || year || status !== 'all' || collectionId);
-  const list = entries.data ?? [];
+  const source=entries.data ?? [];
+  const resolvingSeries=useResolveSeries(source);
+  const identities=identifySeries(source);
+  const seriesOptions=[...new Map([...identities.values()].map(value=>[value.key,value])).values()].sort((a,b)=>a.title.localeCompare(b.title,'zh-CN',{numeric:true}));
+  const effectiveSeriesKey=seriesOptions.some(value=>value.key===seriesKey) ? seriesKey : identities.get(seriesAnchor)?.key ?? seriesKey;
+  const filtered=effectiveSeriesKey ? source.filter(entry=>identities.get(entry.id)?.key===effectiveSeriesKey) : source;
+  const list=grouped ? groupSeriesEntries(filtered,identities) : filtered;
+  const hasFilters = Boolean(search || year || status !== 'all' || collectionId || seriesKey);
   const compact = settings.posterDensity === 'compact';
 
   const clearFilters = () => {
@@ -69,6 +80,7 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
     setYear('');
     setStatus('all');
     setCollectionId('');
+    setSeriesKey('');setSeriesAnchor('');
   };
 
   return (
@@ -145,13 +157,18 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
           ))}
         </select>
 
+        <select className="select" aria-label="按系列筛选" value={effectiveSeriesKey} onChange={event=>{const key=event.target.value;setSeriesKey(key);setSeriesAnchor(source.find(entry=>identities.get(entry.id)?.key===key)?.id ?? '');}}><option value="">全部系列</option>{seriesOptions.map(series=><option key={series.key} value={series.key}>{series.title}</option>)}</select>
+        <label className="setting-help row gap-2"><input type="checkbox" aria-label="同系列聚合" checked={grouped} onChange={event=>{setGrouped(event.target.checked);try{localStorage.setItem('mycinema.groupSeries',String(event.target.checked));}catch{}}}/> 同系列聚合</label>
         <span className="toolbar-spacer" />
         <span className="result-count">{entries.loading ? '…' : `${list.length} 部`}</span>
 
       </div>
 
+      <p className="setting-help">{resolvingSeries ? '正在补充已有电影的系列信息…' : grouped ? '同系列相邻，系列内部按序号升序；系列之间沿用所选排序。' : '可按系列筛选收藏，或开启同系列聚合。'}</p>
+
       {hasFilters ? (
         <div className="active-filters">
+          {seriesKey ? <span className="chip is-active">系列：{seriesOptions.find(series=>series.key===effectiveSeriesKey)?.title ?? '当前系列'}</span> : null}
           {search ? <span className="chip is-active">搜索：{search}</span> : null}
           {year ? <span className="chip is-active">年份：{year}</span> : null}
           {status !== 'all' ? (

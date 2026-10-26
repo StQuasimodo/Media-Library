@@ -69,8 +69,8 @@ export class LibraryRepository {
         `INSERT INTO films (
            id, title, original_title, year, overview, tagline, poster_path, backdrop_path,
            media_type, runtime, genres, original_language, metadata_source, external_id,
-           metadata_updated_at, created_at, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           metadata_updated_at, created_at, updated_at, series_json
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         film.id,
@@ -90,6 +90,7 @@ export class LibraryRepository {
         film.metadataUpdatedAt,
         film.createdAt,
         film.updatedAt,
+        film.series === undefined ? null : JSON.stringify(film.series),
       );
   }
 
@@ -105,7 +106,7 @@ export class LibraryRepository {
     return row ? rowToFilm(row) : null;
   }
 
-  updateFilm(id: string, patch: FilmPatch & { metadataUpdatedAt?: string | null }): Film {
+  updateFilm(id: string, patch: FilmPatch & { metadataUpdatedAt?: string | null; series?: Film['series'] }): Film {
     const assignments: string[] = [];
     const values: SqlValue[] = [];
 
@@ -125,6 +126,7 @@ export class LibraryRepository {
     if (patch.runtime !== undefined) push('runtime', patch.runtime);
     if (patch.genres !== undefined) push('genres', JSON.stringify(patch.genres));
     if (patch.originalLanguage !== undefined) push('original_language', patch.originalLanguage);
+    if (patch.series !== undefined) push('series_json',JSON.stringify(patch.series));
     if (patch.metadataUpdatedAt !== undefined) {
       push('metadata_updated_at', patch.metadataUpdatedAt);
     }

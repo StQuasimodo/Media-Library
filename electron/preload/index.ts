@@ -128,6 +128,7 @@ const api: CinemaApi = {
     copy: (text) => invoke<void>('resources:copy', text),
   },
   metadata: {
+    resolveSeries: () => invoke('metadata:resolveSeries'),
     seasons: id => invoke<MetadataSeasonList>('metadata:seasons',id),
     search: (options: MetadataSearchOptions) =>
       invoke<MetadataSearchResult[]>('metadata:search', options),

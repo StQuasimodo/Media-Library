@@ -168,6 +168,11 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 4,
+    name: 'persist_film_series_metadata',
+    up: db => { db.exec('ALTER TABLE films ADD COLUMN series_json TEXT;'); },
+  },
 ];
 
 export const SCHEMA_VERSION = migrations[migrations.length - 1].version;

@@ -43,6 +43,7 @@ export function EditFilmDialog({
     overview: film.overview ?? '',
     tagline: film.tagline ?? '',
     genres: film.genres.join(' / '),
+    seriesTitle:film.series?.title ?? '',seriesOrder:film.series?.order == null ? '' : String(film.series.order),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export function EditFilmDialog({
       overview: film.overview ?? '',
       tagline: film.tagline ?? '',
       genres: film.genres.join(' / '),
+      seriesTitle:film.series?.title ?? '',seriesOrder:film.series?.order == null ? '' : String(film.series.order),
     });
     setError(null);
   }, [open, film]);
@@ -66,7 +68,9 @@ export function EditFilmDialog({
     setSaving(true);
     setError(null);
     try {
+      const seriesChanged=form.seriesTitle!==(film.series?.title ?? '') || form.seriesOrder!==(film.series?.order == null ? '' : String(film.series.order));
       await api.library.updateFilm(film.id, {
+        ...(seriesChanged ? {series:form.seriesTitle.trim() ? {key:`manual:${form.mediaType}:${form.seriesTitle.trim().normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')}`,title:form.seriesTitle.trim(),order:form.seriesOrder ? Number(form.seriesOrder) : null} : null}:{}),
         title: form.title,
         originalTitle: form.originalTitle || null,
         year: form.year ? Number.parseInt(form.year, 10) : null,
@@ -126,6 +130,8 @@ export function EditFilmDialog({
             onChange={(event) => setForm({ ...form, originalTitle: event.target.value })}
           />
         </Field>
+        <Field label="系列名称" htmlFor="film-series" optional><input id="film-series" className="input" value={form.seriesTitle} onChange={event=>setForm({...form,seriesTitle:event.target.value})} placeholder="例如：黑客帝国"/></Field>
+        <Field label="系列内序号" htmlFor="film-series-order" optional><input id="film-series-order" className="input" type="number" min={0} max={9999} value={form.seriesOrder} onChange={event=>setForm({...form,seriesOrder:event.target.value})}/></Field>
         <Field label="年份" htmlFor="film-year" optional>
           <input
             id="film-year"

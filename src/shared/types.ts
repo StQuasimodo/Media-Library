@@ -30,6 +30,8 @@ export type MetadataLanguage = 'zh-CN' | 'en-US';
 
 export type MotionPreference = 'system' | 'reduce' | 'full';
 
+export interface FilmSeries { key: string; title: string; order: number | null }
+
 export interface Film {
   id: string;
   title: string;
@@ -44,6 +46,7 @@ export interface Film {
   runtime: number | null;
   genres: string[];
   originalLanguage: string | null;
+  series?: FilmSeries | null;
   metadataSource: MetadataSource;
   externalId: string | null;
   metadataUpdatedAt: string | null;
@@ -161,6 +164,7 @@ export interface MetadataSearchResult {
 }
 
 export interface MetadataCandidate extends MetadataSearchResult {
+  series?: FilmSeries | null;
   backdropUrl: string | null;
   tagline: string | null;
   runtime: number | null;
@@ -179,6 +183,7 @@ export interface MetadataSearchOptions {
 /* ------------------------------------------------------------------ */
 
 export interface FilmPatch {
+  series?: FilmSeries | null;
   title?: string;
   originalTitle?: string | null;
   year?: number | null;

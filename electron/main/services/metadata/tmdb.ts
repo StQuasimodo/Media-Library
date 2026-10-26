@@ -5,6 +5,7 @@ import type {
   MetadataSearchOptions,
   MetadataSearchResult,
   MetadataSeasonList,
+  FilmSeries,
 } from '../../../../src/shared/types';
 import { AppError } from '../../errors';
 import { parseTmdbIdentity } from '../../../../src/shared/tmdbIdentity';
@@ -55,6 +56,7 @@ interface RawSearchResponse {
 }
 
 interface RawDetail {
+  belongs_to_collection?: { id?: number; name?: string } | null;
   seasons?: Array<{ season_number?: number; name?: string; air_date?: string; episode_count?: number; overview?: string; poster_path?: string | null }>;
   id?: number;
   title?: string;
@@ -168,6 +170,30 @@ export class TmdbProvider {
     return results;
   }
 
+  private collections = new Map<string, Promise<Array<{id:number;release_date?:string}>>>();
+  async movieSeries(id: string): Promise<FilmSeries | null> {
+    if (!/^\d+$/.test(id)) throw new AppError('VALIDATION','电影标识无效。');
+    const config=this.requireConfig();
+    const detail=await this.request<RawDetail>(`/movie/${id}`,config);
+    return this.seriesFromMovie(id,detail,config);
+  }
+  private async seriesFromMovie(id: string, detail: RawDetail, config: TmdbConfig): Promise<FilmSeries | null> {
+    const collection=detail.belongs_to_collection;
+    if (!collection || typeof collection.id!=='number' || !Number.isSafeInteger(collection.id) || collection.id<=0 || !collection.name) return null;
+    const key=String(collection.id);
+    let pending=this.collections.get(key);
+    if (!pending) {
+      pending=this.request<{parts?:Array<{id:number;release_date?:string}>}>(`/collection/${key}`,config)
+        .then(payload=>(payload.parts ?? []).filter(part=>Number.isInteger(part.id))
+          .sort((a,b)=>(a.release_date || '9999').localeCompare(b.release_date || '9999') || a.id-b.id));
+      this.collections.set(key,pending);
+    }
+    try {
+      const parts=await pending;const index=parts.findIndex(part=>String(part.id)===id);
+      return {key:`tmdb:collection:${key}`,title:collection.name,order:index<0?null:index+1};
+    } catch { this.collections.delete(key);return {key:`tmdb:collection:${key}`,title:collection.name,order:null}; }
+  }
+
   async seasons(seriesId: string): Promise<MetadataSeasonList> {
     if (!/^\d+$/.test(seriesId)) throw new AppError('VALIDATION','剧集标识无效。');
     const payload=await this.request<RawDetail>(`/tv/${seriesId}`,this.requireConfig());
@@ -249,6 +275,7 @@ export class TmdbProvider {
 
     return {
       source: 'tmdb',
+      series: mediaType === 'movie' ? await this.seriesFromMovie(externalId,payload,{apiKey,language}) : undefined,
       externalId,
       mediaType,
       title,

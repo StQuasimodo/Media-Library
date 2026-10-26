@@ -156,6 +156,7 @@ export class AppRuntime {
 
   private close(): void {
     try {
+      this.core?.metadata.dispose();
       this.core?.db.close();
     } catch {
       // closing a already-closed handle is not an error worth surfacing

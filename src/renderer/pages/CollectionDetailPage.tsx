@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { CollectionEntry } from '@shared/types';
+import { groupSeriesEntries } from '@shared/series';
+import { useResolveSeries } from '../lib/useSeries';
 import { api, describeError } from '../lib/api';
 import { useAppState } from '../lib/appState';
 import { useToast } from '../lib/toast';
@@ -30,12 +32,15 @@ export function CollectionDetailPage() {
     if (!pickerOpen) setPickerSearch('');
   }, [pickerOpen]);
 
+  useResolveSeries(detail.data?.entries ?? []);
+
   if (!collectionId) return null;
   if (detail.loading && !detail.data) return <div className="cinema-status"><LoadingRow label="正在读取专题…" /></div>;
   if (detail.error) return <div className="cinema-status"><ErrorState message={detail.error} onRetry={detail.reload} /></div>;
   if (!detail.data) return null;
 
-  const { collection, entries } = detail.data;
+  const { collection } = detail.data;
+  const entries = groupSeriesEntries(detail.data.entries);
   const artwork = entries.find((entry) => entry.film.backdropPath)?.film ??
     entries.find((entry) => entry.film.posterPath)?.film;
   const memberIds = new Set(entries.map((entry) => entry.id));

@@ -267,6 +267,7 @@ export class LibraryService {
       runtime: candidate.runtime ?? null,
       genres: Array.isArray(candidate.genres) ? candidate.genres.filter(Boolean).slice(0, 12) : [],
       originalLanguage: candidate.originalLanguage ?? null,
+      series: candidate.series,
       metadataSource: 'tmdb',
       externalId: candidate.externalId,
       metadataUpdatedAt: timestamp,
@@ -340,6 +341,14 @@ export class LibraryService {
       if (!value.ok) throw new AppError('VALIDATION', value.message);
       allowed.originalLanguage = value.value;
     }
+    if (patch.series !== undefined) {
+      const value=patch.series;
+      if(value!==null && (!value || typeof value.key!=='string' || !value.key.trim() || value.key.length>400 ||
+        typeof value.title!=='string' || !value.title.trim() || value.title.length>200 ||
+        (value.order!==null && (!Number.isInteger(value.order) || value.order<0 || value.order>9999))))
+        throw new AppError('VALIDATION','系列名称或序号无效。');
+      allowed.series=value===null ? null : {...value,title:value.title.trim()};
+    }
     // Poster/backdrop are managed by the image cache; user edits never touch them.
     return this.repo.updateFilm(filmId, allowed);
   }
@@ -377,6 +386,7 @@ export class LibraryService {
       originalLanguage: candidate.originalLanguage,
       posterPath,
       backdropPath,
+      series: film.series?.key.startsWith('manual:') ? film.series : candidate.series,
       metadataUpdatedAt: now(),
     });
   }

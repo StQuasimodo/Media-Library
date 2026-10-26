@@ -2,6 +2,7 @@ import type {
   AvailabilityStatus,
   CollectionEntry,
   Film,
+  FilmSeries,
   FilmCollection,
   MediaResource,
   MediaType,
@@ -24,6 +25,7 @@ export interface FilmRow {
   original_language: string | null;
   metadata_source: string;
   external_id: string | null;
+  series_json: string | null;
   metadata_updated_at: string | null;
   created_at: string;
   updated_at: string;
@@ -82,6 +84,15 @@ export function parseGenres(raw: string | null): string[] {
   }
 }
 
+function parseSeries(raw: string | null): FilmSeries | null | undefined {
+  if (raw == null) return undefined;
+  try {
+    const value=JSON.parse(raw);
+    return value && typeof value.key==='string' && typeof value.title==='string' &&
+      (value.order===null || (Number.isInteger(value.order) && value.order>=0)) ? value : null;
+  } catch { return null; }
+}
+
 export function rowToFilm(row: FilmRow): Film {
   return {
     id: row.id,
@@ -98,6 +109,7 @@ export function rowToFilm(row: FilmRow): Film {
     originalLanguage: row.original_language,
     metadataSource: row.metadata_source === 'tmdb' ? 'tmdb' : 'manual',
     externalId: row.external_id,
+    series: parseSeries(row.series_json),
     metadataUpdatedAt: row.metadata_updated_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -168,7 +180,7 @@ export const collectionEntrySelect = `
     f.backdrop_path as f_backdrop_path, f.media_type as f_media_type, f.runtime as f_runtime,
     f.genres as f_genres, f.original_language as f_original_language,
     f.metadata_source as f_metadata_source, f.external_id as f_external_id,
-    f.metadata_updated_at as f_metadata_updated_at, f.created_at as f_created_at,
+    f.series_json as f_series_json, f.metadata_updated_at as f_metadata_updated_at, f.created_at as f_created_at,
     f.updated_at as f_updated_at
   FROM collection_entries e
   JOIN films f ON f.id = e.film_id
@@ -189,6 +201,7 @@ export interface EntryJoinRow extends EntryRow {
   f_original_language: string | null;
   f_metadata_source: MetadataSource;
   f_external_id: string | null;
+  f_series_json: string | null;
   f_metadata_updated_at: string | null;
   f_created_at: string;
   f_updated_at: string;
@@ -212,6 +225,7 @@ export function entryJoinToFilm(row: EntryJoinRow): Film {
     originalLanguage: row.f_original_language,
     metadataSource: row.f_metadata_source,
     externalId: row.f_external_id,
+    series: parseSeries(row.f_series_json),
     metadataUpdatedAt: row.f_metadata_updated_at,
     createdAt: row.f_created_at,
     updatedAt: row.f_updated_at,

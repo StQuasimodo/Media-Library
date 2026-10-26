@@ -33,11 +33,11 @@
 
 | 项目 | 状态 |
 |---|---|
-| 版本 / 数据库 | 源码1.2.0-beta.2 / schema v3；正式版1.1.0 / schema v2 |
-| 自动化测试 | v1.2.0-beta.2：12个文件、131项通过，含目录增量、资源规格与v2→v3迁移 |
+| 版本 / 数据库 | beta.2 rev2修订，应用版本仍1.2.0-beta.2 / schema v3；正式版1.1.0 / schema v2 |
+| 自动化测试 | v1.2.0-beta.2：12个文件、133项通过，含目录增量、资源规格与v2→v3迁移 |
 | 构建与界面 | Windows构建、包校验、真实Electron、受控自动匹配、无菜单复制快捷键、网页登录隔离和加密兼容检查通过 |
 | 当前截图 | [界面预览](GALLERY.md)，含Windows自动匹配与文件规格展示 |
-| Windows 发行产物 | [1.2.0-beta.2测试版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
+| Windows 发行产物 | [1.2.0-beta.2 rev2修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
 | 待验收 | 个人电脑完整升级、字体与缩放；真实TMDB带Key在线匹配；夸克真实账号目录与会话重启 |
 
 详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

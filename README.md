@@ -20,7 +20,7 @@
 
 [下载 Windows 安装包与免安装版](https://github.com/StQuasimodo/Media-Library/releases/latest)。安装与首次配置见[使用指南](docs/USAGE.md)。
 
-[1.2.0-beta.2 测试版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)包含目录自动匹配、分季收藏和缺失资料手动建档，也保留新图标与安装修复，使用步骤见[夸克自动匹配](docs/QUARK-MATCHING.md)。
+[1.2.0-beta.2 rev2 修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)包含目录自动匹配、搜索后选择季、多季导入和手动补录；本次下载文件带 `rev2` 后缀，使用步骤见[夸克自动匹配](docs/QUARK-MATCHING.md)。
 
 从源码开发需要 Node.js 22+ 和 pnpm 11：
 

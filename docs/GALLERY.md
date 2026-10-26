@@ -2,6 +2,15 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## beta.2 rev2 普通搜索选择季
+
+真实Windows Electron窗口，使用受控《绝命毒师》季资料和测试图片，包含真实preload、SQLite和导入逻辑；不是个人账号或在线海报验收。[原始报告](../artifacts/releases/v1.2.0-beta.2/rev2/quark-sync-desktop-report.json)。
+
+| 场景 | 截图 |
+|---|---|
+| 整剧搜索后选择季、特别篇和手动补季入口 | [查看](../artifacts/review-2026-10-26/beta2-rev2/17-tmdb-season-picker.png) |
+| 单季与批量导入后的已收藏标记 | [查看](../artifacts/review-2026-10-26/beta2-rev2/18-tmdb-seasons-collected.png) |
+
 ## 1.2自动匹配（Windows）
 
 以下来自1.2.0-beta.2构建源码的真实Windows Electron窗口，包含真实preload、SQLite与导入/缓存代码。目录和TMDB响应使用受控测试数据，不代表个人账号已验收。[原始报告](../artifacts/releases/v1.2.0-beta.2/quark-sync-desktop-report.json)。

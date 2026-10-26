@@ -1,0 +1,62 @@
+{
+  "version": "1.2.0-beta.2",
+  "revision": "rev2",
+  "buildSource": "c18d0ab5dfe01a756cce34ad9b45f2020c87278d",
+  "originalTagSource": "c25e4cec60649095510e98e7de6643f774f6e694",
+  "originalTagAndFiveAssetsPreserved": true,
+  "buildRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40302566818",
+  "successfulRunAttempt": 2,
+  "buildConclusion": "success",
+  "initialAttempt": "Quark official login page readiness timed out before new season UI check; retry succeeded without code changes",
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2",
+  "unitTestFilesPassed": 12,
+  "unitTestsPassed": 133,
+  "publishedAssetDigestsMatchRetainedFiles": true,
+  "actualWindowsElectronVerified": true,
+  "singleAndBatchSeasonImportVerified": true,
+  "batchPartialFailureRetryVerified": true,
+  "collectedMarkersAndPersonalRatingPreserved": true,
+  "wholeSeriesAndManualSeasonFormVerified": true,
+  "actualInstallerUiOptOutVerified": true,
+  "realWindowsEncryptionCompatibilityVerified": true,
+  "realAccountOnlineMetadataVerified": false,
+  "databaseSchema": 3,
+  "assets": [
+    {
+      "name": "BUILD-rev2.json",
+      "size": 858,
+      "digest": "sha256:850d9bb0cff4da98487f1afa08c1a655e750608e9dcab7286ebe42149a66ef63",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/BUILD-rev2.json"
+    },
+    {
+      "name": "INSTALL-rev2.cmd",
+      "size": 1348,
+      "digest": "sha256:e0ebdcf06e436e7dd05ea9aa2f90483af2c4f69ee095c4d1bb16cf040b3292d3",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/INSTALL-rev2.cmd"
+    },
+    {
+      "name": "My-Cinema-1.2.0-beta.2-rev2-portable-win64.zip",
+      "size": 171270685,
+      "digest": "sha256:dd1dad2368d6f259ff56e59830b5576730a309729e34326650f66ced0bba7c0b",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/My-Cinema-1.2.0-beta.2-rev2-portable-win64.zip"
+    },
+    {
+      "name": "My-Cinema-1.2.0-beta.2-rev2-Setup.exe",
+      "size": 122933091,
+      "digest": "sha256:9b603391f765fa1810486a003e03044ca6b28ecc99f1fc645a42f5cd60791ea3",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/My-Cinema-1.2.0-beta.2-rev2-Setup.exe"
+    },
+    {
+      "name": "RUN-PORTABLE-rev2.cmd",
+      "size": 986,
+      "digest": "sha256:54c08ca6b453750a154dba427827728b1f8b87efe3a81862e98c2c42597af189",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/RUN-PORTABLE-rev2.cmd"
+    },
+    {
+      "name": "SHA256SUMS-rev2.txt",
+      "size": 470,
+      "digest": "sha256:17f5edded3ea0001c711a60feb63b79e68acbe432ffa3b21daa790ad572faf50",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/SHA256SUMS-rev2.txt"
+    }
+  ]
+}

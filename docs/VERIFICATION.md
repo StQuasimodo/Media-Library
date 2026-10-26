@@ -1,5 +1,15 @@
 # 验证与交付
 
+## beta.2 rev2 修订：普通搜索选择季（2026-10-26）
+
+应用户明确要求并入beta.2，应用版本保持`1.2.0-beta.2`。修订源码为`c18d0ab5dfe01a756cce34ad9b45f2020c87278d`；原Tag仍指向`c25e4cec60649095510e98e7de6643f774f6e694`，原5个发布文件均保留且哈希一致。新增文件带`rev2`后缀，独立的BUILD记录和校验文件注明实际修订来源。Latest仍为1.1.0。
+
+[Windows完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40302566818)第2次尝试成功：12文件/133项测试、类型检查、构建、真实Electron、凭据兼容、安装包内容和实际安装器选择验证通过。第一次因夸克官方登录页就绪超时而停止，尚未进入新季选择场景；相同源码重试后通过。
+
+真实UI/IPC受控链路使用《绝命毒师》样例，验证展开五季及特别篇、单季确认、多季导入、已收藏禁选、原评分保留、整剧收藏及缺失季转手动表单；还验证批量第一个季成功、下一季请求失败时保留完成项，只重试剩余季。图片和API响应均为测试夹具，不代表真实账号在线验收。Linux真实Electron诊断也通过。
+
+[下载修订安装包](https://github.com/StQuasimodo/Media-Library/releases/download/v1.2.0-beta.2/My-Cinema-1.2.0-beta.2-rev2-Setup.exe) · [交付摘要](../artifacts/releases/v1.2.0-beta.2/rev2/summary.json) · [构建身份](../artifacts/releases/v1.2.0-beta.2/rev2/BUILD-rev2.json) · [校验文件](../artifacts/releases/v1.2.0-beta.2/rev2/SHA256SUMS-rev2.txt) · [界面报告](../artifacts/releases/v1.2.0-beta.2/rev2/quark-sync-desktop-report.json) · [安装器报告](../artifacts/releases/v1.2.0-beta.2/rev2/installer-report.json)。已下载并核对全部6个修订资产的大小和SHA-256。数据库仍为schema v3；真实Key在线导入与个人电脑完整升级仍待验收。
+
 ## v1.2.0-beta.2 分季收藏（2026-10-26）
 
 [测试版下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，构建源码和Tag为`c25e4cec60649095510e98e7de6643f774f6e694`，数据库保持schema v3。[Windows完整发布流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40292153664)成功，包含12文件/131项测试、类型检查、生产构建、真实Electron、凭据兼容、打包与实际安装器选择检查。Linux真实Electron受控界面检查亦通过。
@@ -66,7 +76,7 @@
 
 ```powershell
 pnpm typecheck              # tsc --noEmit
-pnpm test                   # vitest run（当前12文件 / 131用例；1.1.0为94用例）
+pnpm test                   # vitest run（当前12文件 / 133用例；1.1.0为94用例）
 pnpm build                  # 类型检查 + 主进程打包 + 渲染层构建
 pnpm package                # 安装包 + 免安装 zip（自动处理 TMP / PATH / 镜像）
 pnpm package:dir            # 只生成免安装目录 release/win-unpacked

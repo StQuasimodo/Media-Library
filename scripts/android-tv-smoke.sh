@@ -10,7 +10,15 @@ adb shell wm density 160
 adb install -r android-tv/app/build/outputs/apk/debug/app-debug.apk
 adb install -r android-tv/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb logcat -c
-trap 'adb logcat -d > .harness/android-tv-emulator/logcat.txt || true' EXIT
+collect_diagnostics() {
+  adb logcat -d > .harness/android-tv-emulator/logcat.txt || true
+  for name in 01-empty 02-home 03-home-next-focus 04-film-detail 05-library 06-collections 07-watchlist 08-settings; do
+    if ! adb exec-out run-as io.mycinema.tv cat "files/$name.png" > ".harness/android-tv-emulator/$name.png" 2>/dev/null; then
+      rm -f ".harness/android-tv-emulator/$name.png"
+    fi
+  done
+}
+trap collect_diagnostics EXIT
 adb shell am instrument -w -e disposableEmulator true io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee .harness/android-tv-emulator/instrumentation.txt
 adb logcat -d > .harness/android-tv-emulator/logcat.txt
 grep -q 'INSTRUMENTATION_RESULT: result=passed' .harness/android-tv-emulator/instrumentation.txt

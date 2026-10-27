@@ -1,0 +1,2 @@
+ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a  My-Cinema-TV-0.1.0-alpha.2-debug.apk
+3ef2ae3d8ca6f5005c111325fd743b0dbadfebfb82a9bdf38edbed266a27d194  BUILD.json

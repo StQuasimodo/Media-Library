@@ -6,6 +6,8 @@
 
 用户提供的[电视交接对话](https://chatgpt.com/share/6ae05284-fab0-83ec-9a2b-824a8f816dec)记录：长虹55D2S、Hi3751V553、Android 5.1.1 / API 22、32位armeabi-v7a。交接记录曾有Android4.4等推测，较新的二进制取证摘要明确写为API22；本轮以该摘要为目标，没有连接用户电视或重新取证固件。
 
+2026-10-27用户另附照片，直接可见55D2S系列、`ZLH85Gi-V1.00144-EMMC`、编译时间`2026-07-24 19:08:09`、TVOS版本30及TCON `V1.0-CEDS-55-20180801-V553`。照片没有显示Android版本、内存或CPU ABI；TVOS 30不能据此认定为Android API30。API22/armeabi-v7a仍属于交接记录中的兼容目标，未由这张照片独立确认。不归档照片中的MAC、条码等设备标识。
+
 - minSdk **21**，targetSdk 35；单APK、**v1签名**。当前纯Java与平台组件，无`.so`，适用于32位ARM，不需要64位系统。
 - 不使用系统WebView、Electron或要求API23+的界面框架。原生视图、SQLite、HTTPS、Android Keystore均按API21设计。
 - 深色令牌沿用Windows版；首页宽幅主视觉与横向海报、焦点联动、独立季背景、详情、专题、想看与设置按遥控器操作。
@@ -40,9 +42,19 @@ cd android-tv
 
 [Android TV API 22 preview工作流](../.github/workflows/android-tv.yml)构建后核对minSdk、v1签名、DEX035与无原生库；随后在API22 x86模拟器安装应用和独立测试APK，运行SQLite、Keystore与遥控器界面验证。测试数据只在测试APK中，正式应用首次启动为空收藏。模拟器通过不等于长虹固件、遥控器、中文输入法、真实网络/TMDB和解码已经验收。
 
-初期交付为`0.1.0-alpha.1` **debug开发预览**，签名有效但不是生产签名。工作流缓存开发签名以便连续测试，缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，不能承诺更换签名后覆盖升级。不要用开发签名作为长期正式发行方案。
+当前交付为`0.1.0-alpha.2` **debug开发预览**，签名有效但不是生产签名。alpha.1默认Keystore未被成功缓存，其签名无法恢复；**alpha.2不能直接覆盖alpha.1**。旧版已有收藏时请保留原安装，不要直接卸载；卸载会同时清除本机备份。
+
+alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立准备任务共享；[固定公开证书指纹](../android-tv/development-signing.sha256)为`0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44`，缓存缺失时拒绝生成替代签名。缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，并补齐可导出备份。不要用开发签名作为长期正式发行方案。
 
 ## 交付记录
+
+2026-10-27：[0.1.0-alpha.2开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.2)，[直接下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.2/My-Cinema-TV-0.1.0-alpha.2-debug.apk)。原始构建源码`0fbd2f9a1a1607fd2ca939bfe6383ca3ce762d65`，1,408,770字节，SHA-256 `ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a`。公开下载的三个资产与保留产物逐字节一致。
+
+[构建及基线验证](https://github.com/StQuasimodo/Media-Library/actions/runs/40479193401)、[720p/1080p最终回归](https://github.com/StQuasimodo/Media-Library/actions/runs/40481063751)通过。两个配置均为API22、1GiB RAM，实际应用堆上限分别96/64MiB；504条收藏、500个不同图片缓存键、九组界面业务、杀进程与内核重启后的持久化通过。矩阵APK与交付APK哈希相同。受控HTTPS服务完成成功导入链路，真实公共API仅验证无效Key的401，未使用真实账号。[详细验证与边界](TV-VALIDATION-2026-10-27.md) · [交付摘要](../artifacts/releases/tv-v0.1.0-alpha.2/summary.json) · [截图](GALLERY.md)。
+
+本轮修复季选择后焦点丢失、专题删除后编辑框残留及开发签名缓存路径；没有变更Windows版本或数据结构。512MiB整机RAM未验证，模拟器参数曾被自动提升，不能宣称已覆盖。
+
+以下为alpha.1历史交付记录，保留原始来源与哈希：
 
 2026-10-27：[0.1.0-alpha.1开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.1)，[直接下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.1/My-Cinema-TV-0.1.0-alpha.1-debug.apk)。构建源码`9725ff7bb83e46342843b543a48f5db7bc82f3bb`，原始APK为1,408,352字节，SHA-256 `6e204ffbc5ded844b4c5790834960427ed4257fac7e6849e2b8cf88176568e11`。
 
@@ -52,6 +64,6 @@ cd android-tv
 
 用户交接中的安装通道为 **信号源 → 媒体中心 → U盘 → APK**。首次安装后，在「设置」独立配置TMDB，回到影视库「添加作品」；剧集选择季后导入。方向键选择、确认进入、返回退回浏览，首页返回询问退出。
 
-待长虹实机验收：原厂安装器、中文输入法、遥控器/overscan、真实Key导入与缓存、杀进程/电视重启后持久化，以及后续媒体解码。测试没有连接或修改用户电视。开发签名和本机备份的限制见上文，长期beta使用前须补齐固定发布签名与可导出备份。
+待长虹实机验收：原厂安装器、中文输入法、遥控器/overscan、真实Key导入与缓存、真实电视重启后的持久化，以及后续媒体解码。模拟器杀进程与内核重启检查已在alpha.2通过。测试没有连接或修改用户电视。开发签名和本机备份的限制见上文，长期beta使用前须补齐固定发布签名与可导出备份。
 
 参考：[Android TV遥控器导航](https://developer.android.com/training/tv/start/navigation)、[播放器设备与版本支持](https://developer.android.com/media/media3/exoplayer/supported-devices)。播放器依赖以接入时的具体版本及其manifest为准，不预先承诺最新版支持API21。

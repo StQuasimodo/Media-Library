@@ -7,6 +7,7 @@
 | [USAGE.md](USAGE.md) | 安装、TMDB 配置、资源记录、备份与快捷键 | 首次使用应用 |
 | [VERSIONING.md](VERSIONING.md) | 应用版本、预览编号、Tag 与发布检查规则 | 打包或向用户分发前 |
 | [ANDROID-TV.md](ANDROID-TV.md) | API21/22原生电视端、独立收藏、遥控器与后续WebDAV/播放计划 | 开发或安装电视预览 |
+| [TV-VALIDATION-2026-10-27.md](TV-VALIDATION-2026-10-27.md) | alpha.2的720p/1080p、真实应用堆限制、界面及重启回归证据 | 判断电视预览通过了哪些测试 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
 | [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |
 | [QUARK-MATCHING.md](QUARK-MATCHING.md) | 自动目录匹配、资源规格识别、增量关联、升级与验收边界 | 使用1.2预览版自动整理网盘影视 |
@@ -39,7 +40,7 @@
 | 构建与界面 | Windows构建、包校验、真实Electron、受控自动匹配、无菜单复制快捷键、网页登录隔离和加密兼容检查通过 |
 | 当前截图 | [界面预览](GALLERY.md)，含Windows自动匹配、文件规格与系列筛选展示 |
 | Windows发行产物 | [1.2.0-beta.2 rev4修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
-| Android电视 | [0.1.0-alpha.1开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；API22模拟器Keystore、数据、遥控器及真实TMDB401通过；长虹实机与真实Key待验收 |
+| Android电视 | [0.1.0-alpha.2开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；API22的720p/1080p、96/64MiB应用堆、完整界面与进程/内核重启通过；长虹实机与真实Key待验收，不能覆盖alpha.1签名 |
 | 待验收 | 个人电脑完整升级、字体与缩放；真实TMDB带Key在线匹配；夸克真实账号目录与会话重启 |
 
 详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

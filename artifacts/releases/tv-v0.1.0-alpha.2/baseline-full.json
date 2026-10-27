@@ -1,0 +1,33 @@
+{
+  "apiLevel": 22,
+  "phase": "full",
+  "pid": 2931,
+  "realAccountVerified": false,
+  "physicalTelevisionVerified": false,
+  "controlledHttpsFixture": true,
+  "checks": [
+    "configuration UI validates via controlled HTTPS and persists encrypted synthetic credential",
+    "real UI search, season confirmation, HTTPS image downloads, rating, watch state and Unicode form edits",
+    "batch partial failure preserves completed seasons and personal data, retry imports remaining season",
+    "topic creation\/deletion through UI does not leave a stale edit dialog",
+    "year\/status filter combination and clear use actual visible library controls",
+    "resource dialog rejects unsafe protocol and preserves quality, codec, subtitles and audio labels",
+    "backup\/restore UI restores collection and creates safety copy without clearing metadata credential",
+    "network failure can be retried through UI without creating a partial collection",
+    "504-item library with 500 distinct poster cache keys: actual GridView remote scrolling and bitmap eviction path exercised"
+  ],
+  "systemTotalMemoryBytes": 1056206848,
+  "javaMaxMemoryBytes": 268435456,
+  "beforeCorpus": {
+    "pssKiB": 25518,
+    "javaUsedBytes": 3391532,
+    "javaMaxBytes": 268435456
+  },
+  "afterCorpus": {
+    "pssKiB": 42798,
+    "javaUsedBytes": 18750576,
+    "javaMaxBytes": 268435456
+  },
+  "distinctStressPosterPaths": 500,
+  "result": "passed"
+}

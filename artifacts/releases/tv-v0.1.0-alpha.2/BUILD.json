@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0-alpha.2",
+  "developmentBuild": true,
+  "minSdk": 21,
+  "targetSdk": 35,
+  "v1SignatureVerified": true,
+  "nativeLibraries": false,
+  "cpuAbiIndependent": true,
+  "source": "0fbd2f9a1a1607fd2ca939bfe6383ca3ce762d65",
+  "run": "40479193401",
+  "sha256": "ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a",
+  "bytes": 1408770,
+  "actualTelevisionVerified": false,
+  "signerSha256": "0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44"
+}

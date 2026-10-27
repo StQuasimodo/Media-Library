@@ -1,5 +1,13 @@
 # 验证与交付
 
+## Android TV 0.1.0-alpha.2（2026-10-27）
+
+[完整验证报告](TV-VALIDATION-2026-10-27.md)记录真实API22原生模拟器的720p/1080p回归：配置RAM均1GiB，实际应用堆分别96/64MiB，九组界面业务、504条收藏/500个图片缓存键、杀进程重开与内核重启全部通过。修复季勾选焦点、专题删除残留窗口和开发签名缓存。未将512MiB参数被自动提升的早期运行计为通过。
+
+[原始构建](https://github.com/StQuasimodo/Media-Library/actions/runs/40479193401)源码`0fbd2f9a1a1607fd2ca939bfe6383ca3ce762d65`；[最终内存矩阵](https://github.com/StQuasimodo/Media-Library/actions/runs/40481063751)测试源码`d26d8096bf1e9e96893109290738a10fd6e98251`。测试APK的应用产物与原始交付APK哈希相同；[发布流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40482819487)复用原始产物。发布后下载全部三个资产逐字节核对通过，Tag固定原构建，Windows Latest仍1.1.0。APK为1,408,770字节，SHA-256 `ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a`。
+
+[开发预览下载](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.2) · [交付摘要](../artifacts/releases/tv-v0.1.0-alpha.2/summary.json) · [公开发布元数据](../artifacts/releases/tv-v0.1.0-alpha.2/published-release.json) · [截图](GALLERY.md)。成功TMDB链路使用隔离HTTPS测试服务，公共API另测无效Key 401；真实Key与长虹硬件/输入法仍未验收。alpha.1签名未保存，alpha.2不能覆盖旧安装；数据与开发签名限制见[电视说明](ANDROID-TV.md)。
+
 ## Android TV 0.1.0-alpha.1（2026-10-27）
 
 原生Android电视开发预览，构建源码`9725ff7bb83e46342843b543a48f5db7bc82f3bb`，独立本地数据库v1，不更改Windows schema v4或应用版本。[完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40472208972)成功：JDK17/SDK35构建、Lint（0错误/6警告）、minSdk21、v1签名、DEX035及无原生库检查通过。APK在真正的API22 x86 Android模拟器安装启动，非网页模拟。

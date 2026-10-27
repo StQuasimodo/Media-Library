@@ -1,0 +1,14 @@
+{
+  "apiLevel": 22,
+  "phase": "reboot",
+  "pid": 2167,
+  "realAccountVerified": false,
+  "physicalTelevisionVerified": false,
+  "controlledHttpsFixture": true,
+  "checks": [
+    "offline reboot: collection, Unicode review, rating, Keystore credential and cached background retained"
+  ],
+  "systemTotalMemoryBytes": 1056206848,
+  "javaMaxMemoryBytes": 268435456,
+  "result": "passed"
+}

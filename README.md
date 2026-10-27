@@ -22,7 +22,7 @@
 
 [1.2.0-beta.2 rev4 修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)包含目录自动匹配、分季收藏、系列海报墙，以及深色下拉菜单与独立季背景修复；下载文件带 `rev4` 后缀。使用步骤见[夸克自动匹配](docs/QUARK-MATCHING.md)。
 
-[Android TV 0.1.0-alpha.1开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.1)：原生界面、minSdk21/v1签名，覆盖目标为Android5.1/API22老电视，独立管理收藏，已通过API22模拟器检查；长虹实机待验收，后续接入WebDAV与播放。安装与限制见[电视端说明](docs/ANDROID-TV.md)。
+[Android TV 0.1.0-alpha.2开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.2)：原生界面、minSdk21/v1签名，独立管理收藏；API22模拟器720p/1080p及96/64MiB应用堆回归通过。实机、真实TMDB Key、WebDAV与播放仍待验收或开发。安装及与alpha.1签名不兼容的限制见[电视端说明](docs/ANDROID-TV.md)。
 
 从源码开发需要 Node.js 22+ 和 pnpm 11：
 

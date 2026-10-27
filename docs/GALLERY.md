@@ -2,6 +2,20 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## Android TV 0.1.0-alpha.2
+
+以下为真实API22原生Activity操作截图，720p/96MiB和1080p/64MiB应用堆配置均通过；RAM均1GiB。合成收藏、海报、背景及凭据只用于隔离测试，不包含用户电视照片或真实账号数据。[完整验证报告](TV-VALIDATION-2026-10-27.md)。
+
+| 场景 | 720p / 96MiB | 1080p / 64MiB |
+|---|---|---|
+| 配置验证与加密保存后 | [查看](../artifacts/review-2026-10-27/tv-alpha2/720p-96m/r01-configured.png) | [查看](../artifacts/review-2026-10-27/tv-alpha2/1080p-64m/r01-configured.png) |
+| 搜索后的季选择 | [查看](../artifacts/review-2026-10-27/tv-alpha2/720p-96m/r02-season-picker.png) | [查看](../artifacts/review-2026-10-27/tv-alpha2/1080p-64m/r02-season-picker.png) |
+| 单季导入后的详情 | [查看](../artifacts/review-2026-10-27/tv-alpha2/720p-96m/r03-imported-detail.png) | [查看](../artifacts/review-2026-10-27/tv-alpha2/1080p-64m/r03-imported-detail.png) |
+| 勾选季后的焦点 | [查看](../artifacts/review-2026-10-27/tv-alpha2/720p-96m/r04-season-selection.png) | [查看](../artifacts/review-2026-10-27/tv-alpha2/1080p-64m/r04-season-selection.png) |
+| 504条收藏海报墙滚动 | [查看](../artifacts/review-2026-10-27/tv-alpha2/720p-96m/r08-stress-wall.png) | [查看](../artifacts/review-2026-10-27/tv-alpha2/1080p-64m/r08-stress-wall.png) |
+| 杀进程重开后本地浏览 | [查看](../artifacts/review-2026-10-27/tv-alpha2/720p-96m/r09-process-restart.png) | [查看](../artifacts/review-2026-10-27/tv-alpha2/1080p-64m/r09-process-restart.png) |
+| 模拟器内核重启后 | [查看](../artifacts/review-2026-10-27/tv-alpha2/720p-96m/r10-device-reboot.png) | [查看](../artifacts/review-2026-10-27/tv-alpha2/1080p-64m/r10-device-reboot.png) |
+
 ## Android TV 0.1.0-alpha.1
 
 以下为API22 Android模拟器中的真实原生Activity截图，含遥控器操作后的焦点状态；使用受控收藏、占位海报与合成蓝/橙背景，不代表真实账号或影视图片。[检查报告](../artifacts/releases/tv-v0.1.0-alpha.1/emulator-report.json)。这些数据只在独立测试APK中，交付的应用初始为空收藏。

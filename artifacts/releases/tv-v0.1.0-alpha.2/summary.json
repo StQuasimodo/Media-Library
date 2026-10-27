@@ -1,0 +1,49 @@
+{
+  "version": "0.1.0-alpha.2",
+  "buildSource": "0fbd2f9a1a1607fd2ca939bfe6383ca3ce762d65",
+  "regressionSource": "d26d8096bf1e9e96893109290738a10fd6e98251",
+  "buildRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40479193401",
+  "regressionRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40481063751",
+  "apkSha256": "ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a",
+  "apkBytes": 1408770,
+  "allProfilesTestedIdenticalApkBytes": true,
+  "apiLevel": 22,
+  "syntheticMetadataAndCredentialOnly": true,
+  "realTmdbUnauthorizedHttpsVerified": true,
+  "realAuthenticatedTmdbVerified": false,
+  "physicalTvVerified": false,
+  "ram512MiBVerified": false,
+  "signerSha256": "0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44",
+  "alpha1SignatureCompatible": false,
+  "profiles": [
+    {
+      "profile": "720p-96m",
+      "resolution": "1280x720",
+      "actualRamBytes": 1056206848,
+      "actualAppHeapBytes": 100663296,
+      "postScrollPssKiB": 42161,
+      "postScrollJavaUsedBytes": 17639124,
+      "businessScenarioGroups": 9,
+      "processRestartPassed": true,
+      "kernelRebootPassed": true,
+      "sameApkSha256": "ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a"
+    },
+    {
+      "profile": "1080p-64m",
+      "resolution": "1920x1080",
+      "actualRamBytes": 1056206848,
+      "actualAppHeapBytes": 67108864,
+      "postScrollPssKiB": 42825,
+      "postScrollJavaUsedBytes": 17913520,
+      "businessScenarioGroups": 9,
+      "processRestartPassed": true,
+      "kernelRebootPassed": true,
+      "sameApkSha256": "ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a"
+    }
+  ],
+  "releaseUrl": "https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.2",
+  "published": true,
+  "publishedAssetsByteIdentical": true,
+  "publishRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40482819487",
+  "latestStableUnchanged": "v1.1.0"
+}

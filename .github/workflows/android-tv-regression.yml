@@ -1,0 +1,98 @@
+name: Android TV emulator regression matrix
+on:
+  workflow_dispatch:
+    inputs:
+      apk_target:
+        description: Test the published APK unchanged, or current working APK after a fix
+        type: choice
+        options: [released, working]
+        default: released
+      release_tag:
+        type: string
+        default: tv-v0.1.0-alpha.1
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: api22-hd-1gb
+            skin: 1280x720
+            density: 160
+            ram: 1024M
+            heap: 96M
+          - profile: api22-fhd-512mb
+            skin: 1920x1080
+            density: 320
+            ram: 512M
+            heap: 64M
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TV_APK_TARGET: ${{ inputs.apk_target }}
+      TV_RELEASE_TAG: ${{ inputs.release_tag }}
+      TV_DENSITY: ${{ matrix.density }}
+      TV_PROFILE: ${{ matrix.profile }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: my-cinema-tv-development-signing-v1
+      - name: Build separate test APK and select original or working application
+        run: |
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          cd android-tv
+          ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest
+          cd ..
+          node scripts/prepare-tv-regression.mjs
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs .harness/tv-regression/target.apk > .harness/tv-regression/app-signature.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs android-tv/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk > .harness/tv-regression/test-signature.txt
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          cert=lambda path:re.search(r'certificate SHA-256 digest: (.+)',Path(path).read_text()).group(1)
+          assert cert('.harness/tv-regression/app-signature.txt')==cert('.harness/tv-regression/test-signature.txt'),'Cached signing identity must match original APK; do not re-sign it.'
+          PY
+      - name: Start isolated protocol fixture
+        run: |
+          python3 scripts/tv-regression-server.py prepare
+          sudo python3 scripts/tv-regression-server.py serve > .harness/tv-regression/fixture-server.log 2>&1 &
+          sudo chmod a+rw /dev/kvm
+      - name: Full UI, process restart, reboot and constrained profile checks
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 22
+          target: default
+          arch: x86
+          profile: Nexus 5
+          ram-size: ${{ matrix.ram }}
+          heap-size: ${{ matrix.heap }}
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin ${{ matrix.skin }} -dpi-device ${{ matrix.density }}
+          script: bash scripts/android-tv-regression.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tv-regression-${{ matrix.profile }}
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: |
+            .harness/tv-regression/*.json
+            .harness/tv-regression/*.jsonl
+            .harness/tv-regression/*.txt
+            .harness/tv-regression/*.png
+            .harness/tv-regression/*.log

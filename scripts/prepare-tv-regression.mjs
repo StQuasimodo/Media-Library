@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+const target=process.env.TV_APK_TARGET || 'released',tag=process.env.TV_RELEASE_TAG || 'tv-v0.1.0-alpha.1';
+assert.ok(['released','working'].includes(target));assert.match(tag,/^tv-v[0-9.]+-(?:alpha|beta|rc)\.[0-9]+$/);
+const root='.harness/tv-regression';mkdirSync(root,{recursive:true});const file=`${root}/target.apk`;
+const sha=file=>createHash('sha256').update(readFileSync(file)).digest('hex');
+const repo=process.env.GITHUB_REPOSITORY || 'StQuasimodo/Media-Library';
+let source=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),expected;
+if(target==='released'){
+  execFileSync('gh',['release','download',tag,'--repo',repo,'--pattern','*.apk','--pattern','BUILD.json','--dir',`${root}/released`]);
+  const build=JSON.parse(readFileSync(`${root}/released/BUILD.json`,'utf8'));
+  assert.match(build.source,/^[0-9a-f]{40}$/);
+  execFileSync('git',['diff','--exit-code',build.source,'HEAD','--','android-tv/app/src/main','android-tv/app/build.gradle']);
+  copyFileSync(`${root}/released/My-Cinema-TV-${build.version}-debug.apk`,file);
+  source=build.source;expected=build.sha256;assert.equal(sha(file),expected);
+}else copyFileSync('android-tv/app/build/outputs/apk/debug/app-debug.apk',file);
+const report={target,releaseTag:target==='released'?tag:null,appSource:source,testSource:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sha256:sha(file),releasedBytesVerified:target==='released'};
+writeFileSync(`${root}/target.json`,JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify(report));

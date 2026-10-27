@@ -1,4 +1,4 @@
-"""Fix the SDK's actual vm.heapSize key before a disposable API22 AVD boots."""
+"""Declare the supported AVD RAM floor; app growth limits are applied in the guest."""
 import json
 import os
 from pathlib import Path
@@ -10,7 +10,7 @@ assert 'android-22' in text
 heap = int(os.environ['TV_HEAP_MIB'])
 assert heap in [64, 96]
 lines = [line for line in text.splitlines() if not line.startswith(('hw.heapSize=', 'vm.heapSize=', 'hw.ramSize='))]
-config.write_text('\n'.join(lines) + f'\nhw.ramSize=1024\nvm.heapSize={heap}\n')
+config.write_text('\n'.join(lines) + '\nhw.ramSize=1024\nvm.heapSize=256\n')
 out = Path('.harness/tv-regression')
 out.mkdir(parents=True, exist_ok=True)
-(out / 'avd-request.json').write_text(json.dumps({'ramMiB': 1024, 'heapMiB': heap, 'profile': os.environ['TV_PROFILE']}, indent=2) + '\n')
+(out / 'avd-request.json').write_text(json.dumps({'ramMiB': 1024, 'appGrowthLimitMiB': heap, 'vmMaximumMiB': 256, 'profile': os.environ['TV_PROFILE']}, indent=2) + '\n')

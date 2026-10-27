@@ -4,6 +4,23 @@ case "$(adb get-serialno)" in emulator-*) ;; *) echo 'Disposable emulator requir
 test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = 22
 out=.harness/tv-regression
 mkdir -p "$out"
+configure_app_heap() {
+  # Modern emulator versions enforce a larger VM maximum. Limit normal apps
+  # through Android's own growth-limit property; do not alter/re-sign the APK.
+  adb root
+  adb wait-for-device
+  adb shell setprop dalvik.vm.heapgrowthlimit "${TV_HEAP_MIB}m"
+  adb shell setprop sys.boot_completed 0
+  adb shell stop
+  adb shell start
+  for attempt in $(seq 1 120); do
+    if test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1; then break; fi
+    sleep 1
+  done
+  test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+  adb shell getprop dalvik.vm.heapgrowthlimit > "$out/guest-heap-growth-limit.txt"
+}
+configure_app_heap
 adb shell wm size reset
 adb shell wm density "$TV_DENSITY"
 adb shell settings put secure immersive_mode_confirmations confirmed
@@ -52,6 +69,7 @@ for attempt in $(seq 1 120); do
   sleep 1
 done
 test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+configure_app_heap
 adb shell settings put secure immersive_mode_confirmations confirmed
 adb shell input keyevent 82
 adb shell cat /proc/sys/kernel/random/boot_id > "$out/boot-after.txt"

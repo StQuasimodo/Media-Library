@@ -6,4 +6,5 @@
     <item name="library_grid" type="id"/><item name="search_query" type="id"/>
     <item name="search_submit" type="id"/>
     <item name="cinema_backdrop" type="id"/>
+    <item name="resources_section" type="id"/>
 </resources>

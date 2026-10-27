@@ -68,6 +68,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        immersive();
         library=new Library(this);artwork=new Artwork(this);secrets=new SecretStore(this);
         language=getPreferences(0).getString("language","zh-CN");
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(SPACE);
@@ -84,6 +85,8 @@ public final class MainActivity extends Activity {
         show(screen,value);
     }
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putString("screen",screen);out.putString("value",value);out.putString("focused",focusedFilm);}
+    @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused)immersive();}
+    private void immersive(){getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);}
     @Override protected void onDestroy(){disposed=true;jobs.shutdownNow();if(artwork!=null)artwork.close();if(library!=null)library.close();super.onDestroy();}
     @Override public void onBackPressed(){if(!history.isEmpty()){Page page=history.pop();show(page.screen,page.value);}else if(!screen.equals("home"))top("home");else confirm("退出 My Cinema？","收藏已保存在电视本机。",this::finish);}
     private void top(String route){history.clear();query="";status="";series="";yearFilter=0;show(route,"");}
@@ -130,14 +133,14 @@ public final class MainActivity extends Activity {
     }
     private void home(){
         List<Library.Item> items=library.list("","","","","recent");if(items.isEmpty()){LinearLayout content=page("属于你的私人放映室","MY CINEMA");content.addView(text("搜索一部作品，开始建立电视上的收藏。",18,SECONDARY));content.addView(button("从TMDB添加作品",()->push("search","")));content.addView(button("手动添加",()->manual()));return;}
-        LinearLayout layout=column();body.addView(layout,new FrameLayout.LayoutParams(-1,-1));LinearLayout hero=column();hero.setPadding(dp(8),dp(20),dp(8),dp(10));
+        LinearLayout layout=column();body.addView(layout,new FrameLayout.LayoutParams(-1,-1));LinearLayout hero=column();hero.setGravity(Gravity.CENTER_VERTICAL);hero.setPadding(dp(8),dp(20),dp(8),dp(10));
         TextView title=text("",34,PRIMARY);title.setId(R.id.hero_title);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);title.setMaxLines(2);
         TextView metadata=text("",14,SECONDARY),overview=text("",16,PRIMARY);overview.setMaxLines(2);hero.addView(text("YOUR PRIVATE CINEMA",11,SECONDARY));hero.addView(title);hero.addView(metadata);hero.addView(overview);layout.addView(hero,new LinearLayout.LayoutParams(-1,0,1));
         HorizontalScrollView rail=new HorizontalScrollView(this);rail.setId(R.id.home_rail);rail.setClipToPadding(false);LinearLayout posters=row();posters.setPadding(dp(6),dp(10),dp(6),dp(10));rail.addView(posters);layout.addView(rail,new LinearLayout.LayoutParams(-1,dp(205)));
         Library.Item initial=items.get(0);for(Library.Item item:items)if(item.id().equals(focusedFilm))initial=item;
         final Library.Item selected=initial;
         Done<Library.Item> focus=item->{focusedFilm=item.id();title.setText(item.title());metadata.setText(meta(item)+"  ·  "+statusLabel(item.status()));overview.setText(Json.text(item.film,"overview"));artwork.background(backdrop,item.film);};focus.run(initial);
-        for(int i=0;i<Math.min(items.size(),24);i++){Library.Item item=items.get(i);FrameLayout card=poster(item,116);card.setFocusable(true);card.setFocusableInTouchMode(true);card.setBackground(focusBackground());LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(116),dp(174));lp.setMargins(dp(6),0,dp(6),0);posters.addView(card,lp);
+        for(int i=0;i<Math.min(items.size(),24);i++){Library.Item item=items.get(i);FrameLayout card=poster(item,116);card.setFocusable(true);card.setFocusableInTouchMode(true);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(116),dp(174));lp.setMargins(dp(6),0,dp(6),0);posters.addView(card,lp);
             StateListDrawable outline=new StateListDrawable();outline.addState(new int[]{android.R.attr.state_focused},surface(Color.TRANSPARENT,ACCENT));outline.addState(new int[]{},surface(Color.TRANSPARENT,0));card.setForeground(outline);
             card.setOnFocusChangeListener((view,hasFocus)->{view.animate().scaleX(hasFocus?1.04f:1).scaleY(hasFocus?1.04f:1).setDuration(150).start();if(hasFocus){focus.run(item);rail.smoothScrollTo(Math.max(0,view.getLeft()-dp(170)),0);}});card.setOnClickListener(v->push("film",item.id()));
             if(item.id().equals(selected.id()))card.post(card::requestFocus);
@@ -161,10 +164,10 @@ public final class MainActivity extends Activity {
     private void detail(String id){
         Library.Item item=library.get(id);artwork.background(backdrop,item.film);LinearLayout content=page(item.title(),item.film.optString("mediaType").equals("tv")?"SERIES":"FILM");
         View eyebrow=content.getChildAt(0),heading=content.getChildAt(1);heading.setId(R.id.detail_title);content.removeAllViews();LinearLayout header=row(),copy=column();header.setGravity(Gravity.CENTER_VERTICAL);FrameLayout poster=poster(item,116);LinearLayout.LayoutParams artParams=new LinearLayout.LayoutParams(dp(116),dp(174));artParams.setMargins(0,0,dp(24),dp(12));header.addView(poster,artParams);copy.addView(eyebrow);copy.addView(heading);copy.addView(text(Json.text(item.film,"originalTitle"),14,SECONDARY));copy.addView(text(meta(item)+"  ·  "+statusLabel(item.status()),15,SECONDARY));header.addView(copy,new LinearLayout.LayoutParams(0,-2,1));content.addView(header);
-        LinearLayout actions=row();actions.addView(button("编辑观影记录",()->editEntry(id)));actions.addView(button("加入专题",()->memberships(id)));actions.addView(button("更多操作",()->choose("作品操作",new String[]{"编辑影视资料","刷新TMDB资料","移除收藏"},n->{if(n==0)editFilm(id);if(n==1)refresh(id);if(n==2)confirm("移除《"+item.title()+"》？","本机的个人记录与资源记录会同时移除。",()->{library.remove(id);onBackPressed();});})));content.addView(actions);
+        LinearLayout actions=row();Button primary=button("查看资源",()->{View section=findViewById(R.id.resources_section);if(section!=null)section.requestFocus();});primary.setFocusableInTouchMode(true);StateListDrawable primaryStyle=new StateListDrawable();primaryStyle.addState(new int[]{android.R.attr.state_focused},surface(PRIMARY,ACCENT));primaryStyle.addState(new int[]{},surface(PRIMARY,0));primary.setBackground(primaryStyle);primary.setTextColor(SPACE);actions.addView(primary);actions.addView(button("编辑观影记录",()->editEntry(id)));actions.addView(button("加入专题",()->memberships(id)));actions.addView(button("更多操作",()->choose("作品操作",new String[]{"编辑影视资料","刷新TMDB资料","移除收藏"},n->{if(n==0)editFilm(id);if(n==1)refresh(id);if(n==2)confirm("移除《"+item.title()+"》？","本机的个人记录与资源记录会同时移除。",()->{library.remove(id);onBackPressed();});})));content.addView(actions);primary.post(primary::requestFocus);
         String reason=Json.text(item.entry,"favoriteReason"),review=Json.text(item.entry,"personalReview");if(!reason.isEmpty())content.addView(text("“"+reason+"”",20,PRIMARY));
         content.addView(text("关于这部作品",19,PRIMARY));content.addView(text(Json.text(item.film,"overview").isEmpty()?"暂无简介。":Json.text(item.film,"overview"),16,SECONDARY));if(!review.isEmpty()){content.addView(text("我的短评",19,PRIMARY));content.addView(text(review,16,PRIMARY));}
-        content.addView(text("夸克资源记录",19,PRIMARY));for(JSONObject resource:library.resources(id)){content.addView(button(Json.text(resource,"resourceName")+"  "+Json.text(resource,"qualityLabel")+"  "+Json.text(resource,"versionLabel"),()->resourceActions(id,resource)));}content.addView(button("添加资源记录",()->editResource(id,new JSONObject())));
+        TextView resources=text("夸克资源记录",19,PRIMARY);resources.setId(R.id.resources_section);resources.setFocusableInTouchMode(true);resources.setBackground(focusBackground());content.addView(resources);for(JSONObject resource:library.resources(id)){content.addView(button(Json.text(resource,"resourceName")+"  "+Json.text(resource,"qualityLabel")+"  "+Json.text(resource,"versionLabel"),()->resourceActions(id,resource)));}content.addView(button("添加资源记录",()->editResource(id,new JSONObject())));
     }
     private void refresh(String id){Library.Item old=library.get(id);if(!Json.text(old.film,"metadataSource").equals("tmdb")){toast("手动作品没有可刷新的TMDB资料。");return;}job("刷新资料…",()->library.refresh(id,artwork.cacheMetadata(tmdb().candidate(Json.text(old.film,"externalId"),Json.text(old.film,"mediaType")),old.film)),item->{show("film",id);toast("资料已刷新，个人记录保留。");});}
     private void editEntry(String id){Library.Item item=library.get(id);String[] states={"want","watching","watched","dropped"};

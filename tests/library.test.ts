@@ -97,6 +97,17 @@ describe('收藏条目的增删改', () => {
 });
 
 describe('外部元数据与个人数据隔离', () => {
+  it('图库确认没有合规海报时清除旧图，图库故障时保留离线缓存', async () => {
+    const original=candidate({mediaType:'tv',externalId:'1396:season:2'});
+    const {film,entry}=await app.library.importCandidate(original,{personalRating:9,personalReview:'保留个人记录'});
+    const unavailable={...original,posterUrl:null,backdropUrl:null,posterSelection:'unavailable' as const,backdropSelection:'unavailable' as const};
+    const kept=await app.library.applyExternalMetadata(film.id,unavailable);
+    expect(kept.posterPath).toBe(film.posterPath);expect(kept.backdropPath).toBe(film.backdropPath);
+    await app.library.applyExternalMetadata(film.id,{...unavailable,posterSelection:'resolved',backdropSelection:'resolved'});
+    app.restart();const detail=app.library.getFilmDetail(film.id);
+    expect(detail.film.posterPath).toBeNull();expect(detail.film.backdropPath).toBeNull();
+    expect(detail.entry.id).toBe(entry.id);expect(detail.entry.personalReview).toBe('保留个人记录');
+  });
   it('刷新季资料替换旧整剧背景，无剧照时清除旧背景，保留个人数据并持久化', async () => {
     const original=candidate({mediaType:'tv',externalId:'1396:season:2'});
     const {film,entry}=await app.library.importCandidate(original,{personalRating:9,personalReview:'私人短评'});

@@ -376,7 +376,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
       await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(backdropPath)})`);
       await shot(name);
     }
-    checks.push('separate season stills cached and displayed as different detail backdrops through real import/refresh/UI');
+    checks.push('different high-resolution show gallery variants cached and displayed for seasons through real import/refresh/UI');
     checks.push('independent TV seasons, real season endpoint import/refresh and missing-title manual creation through UI/IPC');
     await js('window.cinema.quarkWeb.disconnect()');
     assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`)).cloudResources.every((file:any)=>!file.active),true);
@@ -445,7 +445,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await route(`/film/${noStill.id}`,"!!document.querySelector('.film-title')");
     await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(noStill.posterPath)})`);
     await shot('23-season-poster-fallback');
-    checks.push('season without still falls back to its own cached poster instead of the whole-show backdrop');
+    checks.push('empty show backdrop gallery falls back to the selected English season poster');
     for(const title of ['影墙排序10','影墙排序2','影墙排序']) {
       const entry=await js(`window.cinema.library.createManual({title:${JSON.stringify(title)},mediaType:'movie'})`);extraFilmIds.push(entry.film.id);
     }

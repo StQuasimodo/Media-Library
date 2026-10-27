@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { CredentialStore } from '../electron/main/services/credentials';
 
 export function installQuarkSyncFixture(profile: string) {
-  // Distinct synthetic stills let screenshots catch accidental reuse of one
+  // Distinct synthetic gallery backgrounds let screenshots catch accidental reuse of one
   // season's image. These are test swatches, not actual TMDB artwork.
   const stills=new Map<string,Buffer>();
   for(const [name,color] of [['/season1-still.png',[120,75,35]],['/season2-still.png',[35,85,150]]] as const) {
@@ -51,6 +51,13 @@ export function installQuarkSyncFixture(profile: string) {
     const movie={id:603,media_type:'movie',title:'黑客帝国',original_title:'The Matrix',belongs_to_collection:{id:234,name:'黑客帝国系列'},release_date:'1999-03-31',overview:'受控匹配测试资料',poster_path:null,backdrop_path:null,genres:[]};
     const tv={id:603,media_type:'tv',name:'暗黑',original_name:'Dark',first_air_date:'2017-12-01',overview:'受控剧集匹配测试资料',poster_path:'/sync-fixture.png',backdrop_path:'/sync-fixture-bg.png',genres:[],episode_run_time:[50]};
     const breaking={id:1396,media_type:'tv',name:'绝命毒师',original_name:'Breaking Bad',first_air_date:'2008-01-20',overview:'受控整剧简介',poster_path:'/breaking.jpg',backdrop_path:'/breaking-bg.jpg',genres:[],seasons:[0,1,2,3,4,5].map(number=>({season_number:number,name:number===0?'特别篇':`第${number}季`,air_date:`${number===0?2009:2007+number}-01-01`,episode_count:[9,7,13,13,13,16][number],overview:number===2?'':`第${number}季受控简介`,poster_path:number===2?null:'/breaking-season.jpg'}))};
+    if(url.pathname.endsWith('/images')) {
+      const path=url.pathname.replace('/3','').replace(/\/images$/,'');
+      const poster=path==='/tv/603/season/1'?'/season-fixture.png':path==='/tv/603/season/2'?'/season2-fixture.png':
+        path==='/tv/603'?'/sync-fixture.png':path.includes('/tv/1396/season/')?'/breaking-season.jpg':'/breaking.jpg';
+      return Response.json({posters:[{file_path:poster,iso_639_1:'en',width:1000,height:1500}],
+        backdrops:path==='/tv/603'?['/season1-still.png','/season2-still.png'].map(file_path=>({file_path,iso_639_1:null,width:1920,height:1080})):[]});
+    }
     if(url.pathname.endsWith('/tv/1396'))return Response.json(breaking);
     const seasonMatch=/\/tv\/1396\/season\/([0-5])$/.exec(url.pathname);
     if(seasonMatch){if(Number(seasonMatch[1])===failedSeason)return Response.json({}, {status:503});const season=breaking.seasons[Number(seasonMatch[1])];return Response.json({...season,episodes:[{runtime:48}]});}

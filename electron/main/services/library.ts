@@ -372,12 +372,14 @@ export class LibraryService {
     const film = this.repo.getFilm(filmId);
     if (!film) throw new AppError('NOT_FOUND', '作品不存在。');
 
-    let posterPath = film.posterPath;
+    let posterPath = candidate.posterSelection === 'resolved' && candidate.posterUrl === null ? null : film.posterPath;
     const season = film.metadataSource === 'tmdb' && film.externalId
       ? parseTmdbIdentity(film.externalId, film.mediaType)?.season : null;
-    // A successful season response with no still is authoritative. Clear the
-    // old whole-show backdrop so HeroBackdrop can fall back to this season's poster.
-    let backdropPath = season != null && candidate.backdropUrl === null ? null : film.backdropPath;
+    // Clear disallowed old art only after a successful gallery check. A failed
+    // gallery request/download must not destroy the offline cache.
+    const clearBackdrop = candidate.backdropSelection === 'resolved' ||
+      (candidate.backdropSelection === undefined && season != null);
+    let backdropPath = clearBackdrop && candidate.backdropUrl === null ? null : film.backdropPath;
     if (candidate.posterUrl) {
       try {
         posterPath = await this.images.store(candidate.posterUrl, 'poster');

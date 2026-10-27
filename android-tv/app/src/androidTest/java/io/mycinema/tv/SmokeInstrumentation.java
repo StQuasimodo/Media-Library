@@ -59,6 +59,10 @@ public final class SmokeInstrumentation extends Instrumentation {
             SecretStore secret=new SecretStore(context);String fake="synthetic-tv-key-not-a-real-credential";secret.save(fake);check(new SecretStore(context).read().equals(fake),"API 22 RSA/AES/HMAC credential roundtrip");
             byte[] encrypted=TmdbClient.read(new java.io.FileInputStream(new File(context.getFilesDir(),"metadata-credential.bin")),16384);check(!new String(encrypted,StandardCharsets.ISO_8859_1).contains(fake),"credential is not plaintext");checks.add("real API 22 Android Keystore hybrid encryption survives store recreation");
             TmdbClient tmdb=new TmdbClient((path,params)->{
+                if(path.endsWith("/images")){
+                    if(path.contains("/season/"))return Json.object("{\"posters\":[{\"file_path\":\"/s2-en.jpg\",\"iso_639_1\":\"en\",\"width\":1000,\"height\":1500}]}");
+                    return Json.object("{\"posters\":[],\"backdrops\":[{\"file_path\":\"/a-art.jpg\",\"iso_639_1\":null,\"width\":1920,\"height\":1080},{\"file_path\":\"/b-art.jpg\",\"iso_639_1\":null,\"width\":1920,\"height\":1080}]}");
+                }
                 if(path.equals("/tv/1396"))return Json.object("{\"id\":1396,\"name\":\"绝命毒师\",\"original_name\":\"Breaking Bad\",\"overview\":\"整剧简介\",\"first_air_date\":\"2008-01-20\",\"backdrop_path\":\"/whole.jpg\",\"seasons\":[{\"season_number\":1},{\"season_number\":2}]}");
                 if(path.equals("/tv/1396/season/2"))return Json.object("{\"season_number\":2,\"air_date\":\"2009-03-08\",\"overview\":\"第二季简介\",\"poster_path\":\"/s2.jpg\",\"episodes\":[{\"runtime\":48},{\"still_path\":\"/s2-still.jpg\"}]}");
                 if(path.equals("/tv/1396/season/1"))return Json.object("{\"season_number\":1,\"air_date\":\"2008-01-20\",\"overview\":\"\",\"episodes\":[]}");
@@ -66,8 +70,14 @@ public final class SmokeInstrumentation extends Instrumentation {
                 throw new IllegalArgumentException("unexpected test endpoint");
             },"zh-CN");
             JSONObject second=tmdb.candidate("1396:season:2","tv"),first=tmdb.candidate("1396:season:1","tv");
-            check(second.optInt("year")==2009&&Json.text(second,"backdropUrl").endsWith("/s2-still.jpg"),"season-specific year and later available still");check(first.isNull("backdropUrl")&&first.isNull("overview"),"missing season data does not inherit whole-show data");check(tmdb.search("绝命毒师","tv").size()==1,"search normalization");check(Json.array(tmdb.seasonList("1396"),"seasons").length()==2,"season list");
-            boolean rejected=false;try{tmdb.candidate("1396:season:2","movie");}catch(IllegalArgumentException error){rejected=true;}check(rejected,"season identity rejected for movie");checks.add("controlled TMDB search, season identity, season-specific year/still and missing-artwork semantics");
+            check(second.optInt("year")==2009&&Json.text(second,"backdropUrl").endsWith("/b-art.jpg"),"season year and high-resolution show gallery variant");check(Json.text(first,"backdropUrl").endsWith("/a-art.jpg")&&first.isNull("overview"),"season variants do not substitute the series overview");check(tmdb.search("绝命毒师","tv").size()==1,"search normalization");check(Json.array(tmdb.seasonList("1396"),"seasons").length()==2,"season list");
+            boolean rejected=false;try{tmdb.candidate("1396:season:2","movie");}catch(IllegalArgumentException error){rejected=true;}check(rejected,"season identity rejected for movie");checks.add("controlled TMDB search, season identity, season-specific year, gallery artwork and missing-overview semantics");
+            check(Json.text(second,"posterUrl").endsWith("/s2-en.jpg"),"season poster uses classified English gallery art");
+            JSONArray mixed=Json.array(Json.object("{\"posters\":[{\"file_path\":\"/traditional.jpg\",\"iso_639_1\":\"zh\",\"iso_3166_1\":\"TW\",\"width\":1000,\"height\":1500},{\"file_path\":\"/unknown.jpg\",\"iso_639_1\":\"zh\",\"width\":1000,\"height\":1500},{\"file_path\":\"/english.jpg\",\"iso_639_1\":\"en\",\"width\":1000,\"height\":1500}]}"),"posters");
+            check(ArtworkPolicy.poster(mixed).equals("/english.jpg"),"Traditional and unclassified Chinese posters excluded");
+            mixed.put(Json.object("{\"file_path\":\"/simplified.jpg\",\"iso_639_1\":\"zh\",\"iso_3166_1\":\"CN\",\"width\":1000,\"height\":1500}"));
+            check(ArtworkPolicy.poster(mixed).equals("/simplified.jpg"),"explicit mainland Chinese artwork preferred");
+            checks.add("poster script/region filtering and high-resolution textless season gallery selection");
             Library library=new Library(context);String blue=artwork(Color.rgb(35,75,120),"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),orange=artwork(Color.rgb(150,85,35),"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
             Json.put(first,"backdropPath",blue);Json.put(second,"backdropPath",orange);Library.Item tv2=library.saveCandidate(second),tv1=library.saveCandidate(first);
             List<String> movies=new ArrayList<>();for(int n:new int[]{10,2,1}){JSONObject film=record("测试电影"+n,String.valueOf(900+n),"movie",n);Json.put(film,"backdropPath",n==1?blue:orange);Library.Item saved=library.saveCandidate(film);movies.add(saved.id());}

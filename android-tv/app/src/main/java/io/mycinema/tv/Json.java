@@ -21,7 +21,7 @@ final class Json {
     static String text(JSONObject value, String key) {
         Object item=value.opt(key); return item instanceof String ? (String)item : "";
     }
-    static JSONArray array(JSONObject value, String key) { JSONArray result=value.optJSONArray(key); return result==null ? new JSONArray() : result; }
+    static JSONArray array(JSONObject value, String key) { JSONArray result=value==null?null:value.optJSONArray(key); return result==null ? new JSONArray() : result; }
     static String now() {
         SimpleDateFormat format=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         format.setTimeZone(TimeZone.getTimeZone("UTC")); return format.format(new Date());

@@ -164,6 +164,9 @@ export interface MetadataSearchResult {
 }
 
 export interface MetadataCandidate extends MetadataSearchResult {
+  /** Resolved means the gallery was checked, including an authoritative no-match. */
+  posterSelection?: 'resolved' | 'unavailable';
+  backdropSelection?: 'resolved' | 'unavailable';
   series?: FilmSeries | null;
   backdropUrl: string | null;
   tagline: string | null;

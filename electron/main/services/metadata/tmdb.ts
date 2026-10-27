@@ -10,6 +10,7 @@ import type {
 import { AppError } from '../../errors';
 import { parseTmdbIdentity } from '../../../../src/shared/tmdbIdentity';
 import type { Logger } from '../logger';
+import { selectBackdrop, selectPoster, type TmdbImages } from './artwork';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
@@ -99,6 +100,39 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export class TmdbProvider {
+  private galleries = new Map<string, { expires: number; value: Promise<TmdbImages | null> }>();
+  private galleryRetryAt = 0;
+
+  private async images(path: string, config: TmdbConfig): Promise<TmdbImages | null> {
+    const key = `${config.apiKey}:${path}`;
+    const cached = this.galleries.get(key);
+    if (cached && cached.expires > Date.now()) return cached.value;
+    if (Date.now() < this.galleryRetryAt) return null;
+    if (this.galleries.size >= 128) this.galleries.delete(this.galleries.keys().next().value!);
+    const value = this.request<TmdbImages>(`${path}/images`, { ...config, language: 'en-US' },
+      { include_image_language: 'zh,en,null' }).then(payload => {
+        if (!Array.isArray(payload.posters) && !Array.isArray(payload.backdrops)) throw new Error('Invalid image gallery');
+        return payload;
+      }).catch(() => {
+        this.galleries.delete(key);
+        this.galleryRetryAt = Date.now() + 30_000;
+        return null;
+      });
+    this.galleries.set(key, { expires: Date.now() + 120_000, value });
+    return value;
+  }
+
+  private async withPosters<T>(items: T[], path: (item: T) => string, assign: (item: T, url: string | null) => void, config: TmdbConfig): Promise<void> {
+    let index = 0;
+    const worker = async () => {
+      while (index < items.length) {
+        const item = items[index++];
+        const gallery = await this.images(path(item), config);
+        assign(item, posterUrl(selectPoster(gallery?.posters)));
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, items.length) }, worker));
+  }
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
   private readonly hosts: string[];
@@ -161,13 +195,16 @@ export class TmdbProvider {
         originalTitle: (mediaType === 'movie' ? item.original_title : item.original_name) ?? null,
         year: parseYear(mediaType === 'movie' ? item.release_date : item.first_air_date),
         overview: item.overview?.trim() ? item.overview.trim() : null,
-        posterUrl: posterUrl(item.poster_path),
+        posterUrl: null,
         popularity: typeof item.popularity === 'number' ? item.popularity : 0,
       });
     }
 
     results.sort((a, b) => b.popularity - a.popularity);
-    return results;
+    const visible = results.slice(0, 40);
+    await this.withPosters(visible, item => `/${item.mediaType}/${item.externalId}`,
+      (item, url) => { item.posterUrl = url; }, config);
+    return visible;
   }
 
   private collections = new Map<string, Promise<Array<{id:number;release_date?:string}>>>();
@@ -196,7 +233,8 @@ export class TmdbProvider {
 
   async seasons(seriesId: string): Promise<MetadataSeasonList> {
     if (!/^\d+$/.test(seriesId)) throw new AppError('VALIDATION','剧集标识无效。');
-    const payload=await this.request<RawDetail>(`/tv/${seriesId}`,this.requireConfig());
+    const config = this.requireConfig();
+    const payload=await this.request<RawDetail>(`/tv/${seriesId}`,config);
     if (!payload.name || !Array.isArray(payload.seasons)) throw new AppError('BAD_RESPONSE','TMDB 未返回有效的季列表，请重试或手动建档。');
     const seen=new Set<number>();
     const seasons=payload.seasons.flatMap(season=>{
@@ -205,8 +243,10 @@ export class TmdbProvider {
       seen.add(number);
       return [{number,name:season.name?.trim() || (number===0?'特别篇':`第${number}季`),
         year:parseYear(season.air_date),episodeCount:Number.isInteger(season.episode_count) && season.episode_count!>=0 ? season.episode_count! : null,
-        overview:season.overview?.trim() || null,posterUrl:posterUrl(season.poster_path)}];
+        overview:season.overview?.trim() || null,posterUrl:null as string | null}];
     }).sort((a,b)=>a.number-b.number);
+    await this.withPosters(seasons, season => `/tv/${seriesId}/season/${season.number}`,
+      (season, url) => { season.posterUrl = url; }, config);
     return {seriesId,title:payload.name,seasons};
   }
 
@@ -226,14 +266,16 @@ export class TmdbProvider {
         catch (error) { this.logger?.warn(`TMDB season overview fallback failed: ${String(error)}`); }
       }
       const label = identity.season === 0 ? '特别篇' : `第${identity.season}季`;
-      // TMDB seasons have posters, but no season-level backdrop. Use a still
-      // from this season instead of borrowing the same whole-show artwork.
-      const still = season.episodes?.find(episode => typeof episode.still_path === 'string' && episode.still_path.trim())?.still_path;
+      const [seasonImages, showImages] = await Promise.all([
+        this.images(path, config), this.images(`/tv/${identity.id}`, config),
+      ]);
       return { ...series, externalId, title: `${series.title} · ${label}`,
         originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
         year: parseYear(season.air_date), overview: overview || null,
-        posterUrl: posterUrl(season.poster_path),
-        backdropUrl: backdropUrl(still),
+        posterUrl: posterUrl(selectPoster(seasonImages?.posters)),
+        posterSelection: Array.isArray(seasonImages?.posters) ? 'resolved' : 'unavailable',
+        backdropUrl: backdropUrl(selectBackdrop(showImages?.backdrops, identity.season)),
+        backdropSelection: Array.isArray(showImages?.backdrops) ? 'resolved' : 'unavailable',
         runtime: season.episodes?.find(episode => typeof episode.runtime === 'number' && episode.runtime > 0)?.runtime ?? series.runtime };
     }
     return this.fetchCandidate(externalId, mediaType, config.apiKey, config.language);
@@ -277,6 +319,7 @@ export class TmdbProvider {
           ? payload.episode_run_time[0]
           : null;
 
+    const images = await this.images(`/${mediaType}/${externalId}`, { apiKey, language });
     return {
       source: 'tmdb',
       series: mediaType === 'movie' ? await this.seriesFromMovie(externalId,payload,{apiKey,language}) : undefined,
@@ -287,8 +330,10 @@ export class TmdbProvider {
         (mediaType === 'movie' ? payload.original_title : payload.original_name) ?? null,
       year: parseYear(mediaType === 'movie' ? payload.release_date : payload.first_air_date),
       overview: overview || null,
-      posterUrl: posterUrl(payload.poster_path),
-      backdropUrl: backdropUrl(payload.backdrop_path),
+      posterUrl: posterUrl(selectPoster(images?.posters)),
+      backdropUrl: backdropUrl(selectBackdrop(images?.backdrops)),
+      posterSelection: Array.isArray(images?.posters) ? 'resolved' : 'unavailable',
+      backdropSelection: Array.isArray(images?.backdrops) ? 'resolved' : 'unavailable',
       tagline: payload.tagline?.trim() ? payload.tagline.trim() : null,
       runtime: runtime && runtime > 0 ? runtime : null,
       genres: Array.isArray(payload.genres)

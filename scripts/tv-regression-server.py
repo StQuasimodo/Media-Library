@@ -92,7 +92,15 @@ def serve(root, log):
             series = {'id': 1396, 'name': '绝命毒师', 'original_name': 'Breaking Bad', 'first_air_date': '2008-01-20', 'overview': '受控整剧简介', 'poster_path': '/whole-poster.png', 'backdrop_path': '/whole-still.png', 'genres': [{'name': '剧情'}], 'seasons': [
                 {'season_number': n, 'name': f'第{n}季', 'air_date': f'{2007+n}-01-20', 'episode_count': 7 if n == 1 else 13, 'overview': f'受控第{n}季简介'} for n in [1, 2, 3]]}
             movie = {'id': 603, 'title': '黑客帝国', 'original_title': 'The Matrix', 'release_date': '1999-03-31', 'overview': '受控电影简介', 'runtime': 136, 'poster_path': '/movie-poster.png', 'backdrop_path': '/movie-still.png', 'genres': [{'name': '科幻'}]}
-            if path == '/configuration':
+            if path.endswith('/images'):
+                base = path.removesuffix('/images')
+                n = int(base.rsplit('/', 1)[1]) if '/season/' in base else None
+                poster = f'/s{n}-poster.png' if n is not None else '/movie-poster.png' if base.startswith('/movie/') else '/whole-poster.png'
+                self.reply({'posters': [
+                    {'file_path': '/traditional-poster.png', 'iso_639_1': 'zh', 'width': 1000, 'height': 1500},
+                    {'file_path': poster, 'iso_639_1': 'en', 'width': 1000, 'height': 1500}],
+                    'backdrops': [{'file_path': f'/s{i}-still.png', 'iso_639_1': None, 'width': 1920, 'height': 1080} for i in [1, 2, 3]] if n is None else []})
+            elif path == '/configuration':
                 self.reply({'images': {'secure_base_url': 'https://image.tmdb.org/t/p/'}})
             elif path == '/search/tv':
                 self.reply({'results': [series] if query.get('query', [''])[0].lower() in ['breaking bad', '绝命毒师'] else []})

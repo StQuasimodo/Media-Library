@@ -37,6 +37,7 @@ describe('TMDB 搜索', () => {
     const fetchImpl = (async (input: string | URL | Request) => {
       const url = String(input);
       calls.push(url);
+      if (new URL(url).pathname.endsWith('/images')) return jsonResponse({posters:[{file_path:'/poster.jpg',iso_639_1:'en',width:1000,height:1500}],backdrops:[]});
       return jsonResponse({
         page: 1,
         results: [
@@ -130,7 +131,7 @@ describe('TMDB 搜索', () => {
     }).search({ query: 'x', mediaType: 'movie' });
 
     expect(results).toHaveLength(1);
-    expect(seen.length).toBe(2);
+    expect(seen.length).toBe(3); // Optional English poster gallery uses the working host.
     expect(seen[1]).toContain('api.themoviedb.org');
   });
 
@@ -159,6 +160,31 @@ describe('TMDB 搜索', () => {
 });
 
 describe('TMDB 详情', () => {
+  it('所有预览与候选采用图片语言筛选，不回退到默认繁体海报；复用图库请求',async()=>{
+    const paths:string[]=[];
+    const fetchImpl=(async(input:string|URL|Request)=>{
+      const url=new URL(String(input));paths.push(url.pathname);
+      if(url.pathname.endsWith('/images')){
+        expect(url.searchParams.get('include_image_language')).toBe('zh,en,null');
+        return jsonResponse({posters:[{file_path:'/traditional.jpg',iso_639_1:'zh',width:1000,height:1500}],backdrops:[]});
+      }
+      if(url.pathname.includes('/search/'))return jsonResponse({results:[{id:1,title:'测试',poster_path:'/traditional.jpg'}]});
+      return jsonResponse({id:1,title:'测试',overview:'简介',poster_path:'/traditional.jpg'});
+    }) as typeof fetch;
+    const tmdb=provider(fetchImpl);
+    expect((await tmdb.search({query:'测试',mediaType:'movie'}))[0].posterUrl).toBeNull();
+    expect(await tmdb.getCandidate('1','movie')).toMatchObject({posterUrl:null,posterSelection:'resolved'});
+    expect(paths.filter(path=>path.endsWith('/images'))).toHaveLength(1);
+  });
+  it('图库网络错误不采用未知语言海报或剧照，并标记不可用以保留已有缓存',async()=>{
+    const fetchImpl=(async(input:string|URL|Request)=>{
+      const path=new URL(String(input)).pathname;
+      if(path.endsWith('/images'))throw new TypeError('network unavailable');
+      if(path.includes('/season/'))return jsonResponse({season_number:1,overview:'季简介',poster_path:'/unknown.jpg',episodes:[{still_path:'/arbitrary-still.jpg'}]});
+      return jsonResponse({name:'剧集',overview:'简介',poster_path:'/unknown.jpg',backdrop_path:'/default.jpg'});
+    }) as typeof fetch;
+    expect(await provider(fetchImpl).getCandidate('1396:season:1','tv')).toMatchObject({posterUrl:null,backdropUrl:null,posterSelection:'unavailable',backdropSelection:'unavailable'});
+  });
   it('读取整剧季列表，保留特别篇、年份与集数，排除无效和重复季',async()=>{
     const fetchImpl=(async()=>jsonResponse({name:'绝命毒师',seasons:[
       {season_number:2,name:'第2季',air_date:'2009-03-08',episode_count:13},
@@ -181,17 +207,22 @@ describe('TMDB 详情', () => {
   it('按季读取独立年份、海报和简介，保留可刷新的季标识',async()=>{
     const fetchImpl=(async(input:string|URL|Request)=>{
       const url=new URL(String(input));
+      if(url.pathname.endsWith('/season/2/images'))return jsonResponse({posters:[{file_path:'/season2.jpg',iso_639_1:'en',width:1000,height:1500}]});
+      if(url.pathname.endsWith('/images'))return jsonResponse({posters:[],backdrops:[{file_path:'/show-art.jpg',iso_639_1:null,width:1920,height:1080}]});
       if(url.pathname.endsWith('/tv/603/season/2'))return jsonResponse({season_number:2,air_date:'2019-06-21',overview:'第二季简介',poster_path:'/season2.jpg',episodes:[{runtime:55,still_path:null},{still_path:'/season2-still.jpg'}]});
       return jsonResponse({id:603,name:'暗黑',original_name:'Dark',first_air_date:'2017-12-01',overview:'整剧简介',backdrop_path:'/series.jpg',genres:[{name:'悬疑'}]});
     }) as typeof fetch;
     const detail=await provider(fetchImpl).getCandidate('603:season:2','tv');
     expect(detail).toMatchObject({externalId:'603:season:2',title:'暗黑 · 第2季',year:2019,overview:'第二季简介',runtime:55,genres:['悬疑']});
-    expect(detail.posterUrl).toContain('/season2.jpg');expect(detail.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/season2-still.jpg');
+    expect(detail.posterUrl).toContain('/season2.jpg');expect(detail.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/show-art.jpg');
     await expect(provider(fetchImpl).getCandidate('603:season:2','movie')).rejects.toMatchObject({code:'VALIDATION'});
   });
-  it('不同季使用各自剧照，无剧照时留空以回退本季海报，整剧背景不变',async()=>{
+  it('各季从同剧高清横版图库分配不同背景，不采用单集剧照',async()=>{
     const fetchImpl=(async(input:string|URL|Request)=>{
-      const match=/\/season\/(\d+)$/.exec(new URL(String(input)).pathname);
+      const path=new URL(String(input)).pathname;
+      if(path.endsWith('/tv/1396/images'))return jsonResponse({posters:[],backdrops:['a','b'].map(name=>({file_path:`/${name}-art.jpg`,iso_639_1:null,width:1920,height:1080}))});
+      if(path.endsWith('/images'))return jsonResponse({posters:[{file_path:'/season-en.jpg',iso_639_1:'en',width:1000,height:1500}]});
+      const match=/\/season\/(\d+)$/.exec(path);
       if(match) {
         const n=Number(match[1]);
         return jsonResponse({season_number:n,overview:'本季简介',poster_path:`/s${n}.jpg`,
@@ -203,14 +234,15 @@ describe('TMDB 详情', () => {
     const first=await tmdb.getCandidate('1396:season:1','tv');
     const second=await tmdb.getCandidate('1396:season:2','tv');
     const third=await tmdb.getCandidate('1396:season:3','tv');
-    expect(first.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/s1-episode1.jpg');
-    expect(second.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/s2-episode1.jpg');
-    expect(third.backdropUrl).toBeNull();expect(third.posterUrl).toContain('/s3.jpg');
-    expect((await tmdb.getCandidate('1396','tv')).backdropUrl).toContain('/whole-show.jpg');
+    expect(first.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/a-art.jpg');
+    expect(second.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/b-art.jpg');
+    expect(third.backdropUrl).toBe(first.backdropUrl);expect(third.posterUrl).toContain('/season-en.jpg');
+    expect((await tmdb.getCandidate('1396','tv')).backdropUrl).toBe(first.backdropUrl);
   });
   it('解析电影详情字段', async () => {
     const fetchImpl = (async (input: string | URL | Request) => {
       const url = String(input);
+      if(new URL(url).pathname.endsWith('/images'))return jsonResponse({posters:[],backdrops:[{file_path:'/matrix-backdrop.jpg',iso_639_1:null,width:1920,height:1080}]});
       if (url.includes('/movie/603')) {
         return jsonResponse({
           id: 603,
@@ -257,6 +289,7 @@ describe('TMDB 详情', () => {
     let calls = 0;
     const fetchImpl = (async (input: string | URL | Request) => {
       const url = String(input);
+      if(new URL(url).pathname.endsWith('/images'))return jsonResponse({posters:[],backdrops:[]});
       calls += 1;
       if (url.includes('language=en-US')) {
         return jsonResponse({ id: 1, title: 'X', overview: 'English synopsis' });

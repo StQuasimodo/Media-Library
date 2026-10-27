@@ -41,7 +41,11 @@ final class Artwork {
         for(String kind:new String[]{"poster","backdrop"}){
             String url=Json.text(candidate,kind+"Url"),old=previous==null?"":Json.text(previous,kind+"Path");
             String path=null;if(!url.isEmpty()){try{path=store(url,kind);}catch(Exception ignored){path=old.isEmpty()?null:old;}}
-            else if(previous!=null&&!(kind.equals("backdrop")&&Json.text(candidate,"externalId").contains(":season:")))path=old.isEmpty()?null:old;
+            else if(previous!=null){
+                String selection=Json.text(candidate,kind+"Selection");
+                boolean clear=selection.equals("resolved")||(selection.isEmpty()&&kind.equals("backdrop")&&Json.text(candidate,"externalId").contains(":season:"));
+                if(!clear)path=old.isEmpty()?null:old;
+            }
             Json.put(result,kind+"Path",path);
         }return result;
     }

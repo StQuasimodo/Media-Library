@@ -51,6 +51,9 @@ final class Library extends SQLiteOpenHelper {
         }
     }
     synchronized List<Item> list(String query,String status,String collection,String series,String sort){
+        return list(query,status,collection,series,sort,0);
+    }
+    synchronized List<Item> list(String query,String status,String collection,String series,String sort,int year){
         List<Item> items=new ArrayList<>();String term=query.toLowerCase(LocaleCompat.ROOT);
         Set<String> membership=new HashSet<>();
         if(!collection.isEmpty())try(Cursor c=getReadableDatabase().rawQuery("SELECT film_id FROM members WHERE collection_id=?",new String[]{collection})){while(c.moveToNext())membership.add(c.getString(0));}
@@ -60,14 +63,18 @@ final class Library extends SQLiteOpenHelper {
                 if(!status.isEmpty()&&!status.equals(item.status()))continue;
                 if(!collection.isEmpty()&&!membership.contains(item.id()))continue;
                 if(!series.isEmpty()&&!series.equals(item.seriesKey()))continue;
+                if(year>0&&item.film.optInt("year",0)!=year)continue;
                 String haystack=item.title()+" "+Json.text(item.film,"originalTitle")+" "+Json.text(item.film,"overview")+" "+Json.text(item.entry,"favoriteReason")+" "+Json.text(item.entry,"personalReview");
                 if(!term.isEmpty()&&!haystack.toLowerCase(LocaleCompat.ROOT).contains(term))continue;
                 items.add(item);
             }
         }
         Comparator<Item> compare=(a,b)->Json.text(b.entry,"collectedAt").compareTo(Json.text(a.entry,"collectedAt"));
-        if("title".equals(sort))compare=(a,b)->a.title().compareToIgnoreCase(b.title());
-        if("year".equals(sort))compare=(a,b)->Integer.compare(b.film.optInt("year"),a.film.optInt("year"));
+        if("collected_asc".equals(sort))compare=(a,b)->Json.text(a.entry,"collectedAt").compareTo(Json.text(b.entry,"collectedAt"));
+        if("title".equals(sort)||"title_asc".equals(sort))compare=(a,b)->a.title().compareToIgnoreCase(b.title());
+        if("title_desc".equals(sort))compare=(a,b)->b.title().compareToIgnoreCase(a.title());
+        if("year".equals(sort)||"year_desc".equals(sort))compare=(a,b)->Integer.compare(b.film.optInt("year"),a.film.optInt("year"));
+        if("year_asc".equals(sort))compare=(a,b)->Integer.compare(a.film.optInt("year"),b.film.optInt("year"));
         if("rating".equals(sort))compare=(a,b)->Double.compare(b.entry.optDouble("personalRating",-1),a.entry.optDouble("personalRating",-1));
         Collections.sort(items,compare);
         LinkedHashMap<String,List<Item>> groups=new LinkedHashMap<>();
@@ -144,6 +151,10 @@ final class Library extends SQLiteOpenHelper {
                 ContentValues v=values(Json.text(row,"id"),row);
                 if(table.equals("films")){String external=Json.text(row,"externalId");v.put("external_key",external.isEmpty()?null:Json.text(row,"mediaType")+":"+external);if(Json.text(row,"title").trim().isEmpty())throw new IllegalArgumentException("备份片名无效。");}
                 if(table.equals("entries")||table.equals("resources"))v.put("film_id",Json.text(row,"filmId"));
+                if(table.equals("entries")){
+                    String state=Json.text(row,"watchStatus");if(!state.equals("want")&&!state.equals("watching")&&!state.equals("watched")&&!state.equals("dropped"))throw new IllegalArgumentException("备份观影状态无效。");
+                    if(!row.isNull("personalRating")){double rating=row.optDouble("personalRating",-1);if(Double.isNaN(rating)||rating<0||rating>10)throw new IllegalArgumentException("备份评分无效。");}
+                }
                 if(table.equals("collections"))v.put("name",Json.text(row,"name"));db.insertOrThrow(table,null,v);
             }
             JSONArray members=Json.array(data,"members");for(int i=0;i<members.length();i++){JSONObject m=members.optJSONObject(i);if(m==null)throw new IllegalArgumentException("专题关系无效。");ContentValues v=new ContentValues();v.put("collection_id",Json.text(m,"collectionId"));v.put("film_id",Json.text(m,"filmId"));db.insertOrThrow("members",null,v);}

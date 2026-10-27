@@ -25,6 +25,10 @@ gh(['run','download',runId,'--repo',repo,'--name',`my-cinema-tv-${version}`,'--d
 const build=JSON.parse(readFileSync(join(output,'BUILD.json'),'utf8'));
 assert.equal(build.source,source);assert.equal(build.run,runId);assert.equal(build.version,version);
 assert.equal(build.minSdk,21);assert.equal(build.v1SignatureVerified,true);assert.equal(build.nativeLibraries,false);
+if(version!=='0.1.0-alpha.1'){
+  const signer=execFileSync('git',['show',`${source}:android-tv/development-signing.sha256`],{encoding:'utf8'}).trim();
+  assert.equal(build.signerSha256,signer,'Retained APK must use the pinned development signer.');
+}
 assert.ok(gradle.includes(`versionName '${build.version}'`));
 const apk=`My-Cinema-TV-${build.version}-debug.apk`,tag=`tv-v${build.version}`;
 const files=[apk,'BUILD.json','SHA256SUMS.txt'];

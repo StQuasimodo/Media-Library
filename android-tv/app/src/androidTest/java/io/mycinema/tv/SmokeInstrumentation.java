@@ -44,6 +44,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();try{
             context=getTargetContext();check("true".equals(arguments.getString("disposableEmulator")),"fixture must be explicitly selected");check(BuildConfig.DEBUG,"only debug application may run fixtures");check(android.os.Build.VERSION.SDK_INT==22,"must run on actual API 22 runtime");
+            if("true".equals(arguments.getString("regression"))){new RegressionScenario(this,arguments).run();return;}
             if("true".equals(arguments.getString("networkProbe"))){
                 JSONObject report=new JSONObject();boolean unauthorized=false;String reason="";
                 try{java.util.Map<String,String> params=new java.util.HashMap<>();params.put("language","zh-CN");TmdbClient.request("mycinema-tv-public-invalid-key-probe","/configuration",params);}

@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Black-box accessibility and remote events against an unmodified installed APK. */
-public final class RegressionInstrumentation extends Instrumentation {
+final class RegressionScenario {
+    private final Instrumentation driver;
     private Context context;
     private MainActivity activity;
     private Library library;
@@ -35,7 +36,15 @@ public final class RegressionInstrumentation extends Instrumentation {
     private final JSONArray checks=new JSONArray();
     private static final String KEY="tv-fixture-regression-key";
     interface Condition { boolean ready() throws Exception; }
-    @Override public void onCreate(Bundle arguments){super.onCreate(arguments);args=arguments;start();}
+    RegressionScenario(Instrumentation driver,Bundle arguments){this.driver=driver;args=arguments;}
+    private Context getTargetContext(){return driver.getTargetContext();}
+    private android.app.UiAutomation getUiAutomation(){return driver.getUiAutomation();}
+    private void waitForIdleSync(){driver.waitForIdleSync();}
+    private void runOnMainSync(Runnable work){driver.runOnMainSync(work);}
+    private void sendKeyDownUpSync(int key){driver.sendKeyDownUpSync(key);}
+    private void setInTouchMode(boolean touch){driver.setInTouchMode(touch);}
+    private Activity startActivitySync(Intent intent){return driver.startActivitySync(intent);}
+    private void finish(int result,Bundle data){driver.finish(result,data);}
     private void check(boolean value,String message){if(!value)throw new AssertionError(message);}
     private void waitFor(Condition condition,String label) throws Exception {long until=System.currentTimeMillis()+25000;while(System.currentTimeMillis()<until){if(condition.ready())return;Thread.sleep(70);}throw new AssertionError("Timed out: "+label);}
     private void idle() throws Exception {waitForIdleSync();Thread.sleep(180);}
@@ -81,7 +90,7 @@ public final class RegressionInstrumentation extends Instrumentation {
         memory("beforeCorpus");Library.Item template=external("603");for(int i=0;i<500;i++){JSONObject row=new JSONObject();Json.put(row,"title","压力收藏 "+i);Json.put(row,"mediaType","movie");Json.put(row,"year",2020);Json.put(row,"posterPath",template.film.opt("posterPath"));Json.put(row,"backdropPath",template.film.opt("backdropPath"));library.saveCandidate(row);}nav(R.id.nav_library);check(((GridView)activity.findViewById(R.id.library_grid)).getAdapter().getCount()==504,"large library count");for(int n=0;n<40;n++){sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);if(n%8==0)idle();}idle();memory("afterCorpus");shot("r08-stress-wall");checks.put("504-item library: actual GridView remote scrolling and bounded bitmap memory path exercised");
         JSONObject marker=new JSONObject();Json.put(marker,"count",count());Json.put(marker,"filmId",first.id());Json.put(marker,"pid",Process.myPid());write("regression-marker.json",marker);mode("offline");
     }
-    @Override public void onStart(){Bundle finish=new Bundle();String phase=args.getString("phase","full");try{
+    void run(){Bundle finish=new Bundle();String phase=args.getString("phase","full");try{
         context=getTargetContext();check("true".equals(args.getString("disposableEmulator"))&&BuildConfig.DEBUG,"only explicitly selected disposable debug target");check(android.os.Build.VERSION.SDK_INT==22,"actual API 22 runtime");AccessibilityServiceInfo info=getUiAutomation().getServiceInfo();info.flags|=AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS|AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;getUiAutomation().setServiceInfo(info);
         Json.put(report,"apiLevel",22);Json.put(report,"phase",phase);Json.put(report,"pid",Process.myPid());Json.put(report,"realAccountVerified",false);Json.put(report,"physicalTelevisionVerified",false);Json.put(report,"controlledHttpsFixture",true);Json.put(report,"checks",checks);
         ActivityManager.MemoryInfo memory=new ActivityManager.MemoryInfo();((ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE)).getMemoryInfo(memory);Json.put(report,"systemTotalMemoryBytes",memory.totalMem);Json.put(report,"javaMaxMemoryBytes",Runtime.getRuntime().maxMemory());

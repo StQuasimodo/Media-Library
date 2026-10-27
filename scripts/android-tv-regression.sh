@@ -38,7 +38,7 @@ PY
 adb push .harness/tv-fixture-private/hosts /system/etc/hosts
 adb shell chmod 644 /system/etc/hosts
 run_phase() {
-  adb shell am instrument -w -e disposableEmulator true -e phase "$1" io.mycinema.tv.test/io.mycinema.tv.RegressionInstrumentation | tee "$out/$1-instrumentation.txt"
+  adb shell am instrument -w -e disposableEmulator true -e regression true -e phase "$1" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/$1-instrumentation.txt"
   grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/$1-instrumentation.txt"
 }
 run_phase full

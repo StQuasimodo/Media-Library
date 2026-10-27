@@ -23,16 +23,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - profile: api22-hd-1gb
+          - profile: api22-hd-1gb-96m
             skin: 1280x720
             density: 160
             ram: 1024M
             heap: 96M
-          - profile: api22-fhd-512mb
+            heap_mib: 96
+          - profile: api22-fhd-1gb-64m
             skin: 1920x1080
             density: 320
-            ram: 512M
+            ram: 1024M
             heap: 64M
+            heap_mib: 64
     env:
       GH_TOKEN: ${{ github.token }}
       TV_APK_TARGET: ${{ inputs.apk_target }}
@@ -41,6 +43,7 @@ jobs:
       TV_PROFILE: ${{ matrix.profile }}
       TV_PIN_DEVELOPMENT_SIGNING: '1'
       TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
+      TV_HEAP_MIB: ${{ matrix.heap_mib }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -88,6 +91,7 @@ jobs:
           profile: Nexus 5
           ram-size: ${{ matrix.ram }}
           heap-size: ${{ matrix.heap }}
+          pre-emulator-launch-script: python3 scripts/configure-tv-avd.py
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin ${{ matrix.skin }} -dpi-device ${{ matrix.density }}
           script: bash scripts/android-tv-regression.sh

@@ -34,6 +34,7 @@ SQLite (better-sqlite3)  +  图片缓存目录  +  日志
 |---|---|
 | 应用 | `app:info` · `app:openExternal` · `app:openFolder` · `app:relaunch` |
 | 收藏库 | `library:home` · `library:stats` · `library:list` · `library:years` · `library:detail` · `library:createManual` · `library:updateFilm` · `library:updateEntry` · `library:removeFilm` · `library:importCandidate` |
+| 全部刷新 | `library:refreshAll` · `library:refreshStatus` · `library:cancelRefresh`（仅可信应用顶层页面） |
 | 专题 | `collections:list` · `collections:detail` · `collections:create` · `collections:update` · `collections:remove` · `collections:addFilm` · `collections:removeFilm` · `collections:reorder` |
 | 夸克网页登录 | `quark-web:status` · `quark-web:connect` · `quark-web:finishLogin` · `quark-web:check` · `quark-web:list` · `quark-web:disconnect` |
 | 夸克只读目录 | `quark:status` · `quark:chooseTool` · `quark:browse` · `quark:selectFolder` · `quark:scan` · `quark:cancel` |
@@ -196,3 +197,10 @@ Schema v4新增films.series_json可空列。SQL NULL代表未知，JSON null代�
 shared/series统一识别整剧身份、明确标题序号与官方系列。组锚点沿用当前列表排序，组内按序号升序。影视库提供系列筛选与默认开启的聚合开关，专题详情复用聚合函数。数据会进入原有SQLite备份和JSON导出。
 
 手动编辑保留同名既有系列身份，仅修改序号时不会拆出原系列；series.customOrder标记手动顺序，刷新外部资料不覆盖它。手工关联不作为推断其他同名作品的依据，避免重分类带动无关条目。
+
+
+## 影视库全部刷新（1.2.0）
+
+`services/libraryRefresh.ts`由AppRuntime持有单个后台任务，先调用既有QuarkSync/官方工具目录读取，再对库内作品快照逐部调用MetadataService.refreshFilm。使用既有图片缓存、身份匹配和增量事务，不新增数据库表或改变账号存储。新增三个IPC只接受可信应用顶层页面；重复启动复用当前任务。来源未配置、手动收藏、单部错误与全局凭据/网络异常分别统计，图片不完整单独报告，失败明细最多50项。
+
+AppState统一轮询进度，路由切换继续，完成后invalidate各页数据。停止/关闭上下文会取消任务；每次异步读取后、缓存完成后与写库前核对取消及原上下文，防止迟到写入。运行期间拒绝恢复数据库、改Key、切换账号/目录和编辑元数据等冲突；个人字段不会被外部资料覆盖。任务状态只存在进程内，退出不自动恢复未完成任务，已有成功更新留在SQLite。

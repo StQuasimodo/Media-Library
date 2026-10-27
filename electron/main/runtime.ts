@@ -13,6 +13,7 @@ import { MetadataService } from './services/metadataService';
 import { TmdbProvider } from './services/metadata/tmdb';
 import { QuarkLibrary } from './services/quark/library';
 import { QuarkSync } from './services/quark/sync';
+import { LibraryRefresh } from './services/libraryRefresh';
 
 export interface CoreContext {
   db: SqlDatabase;
@@ -46,6 +47,7 @@ export class AppRuntime {
   readonly backup: BackupService;
   readonly quark: QuarkLibrary;
   readonly quarkSync: QuarkSync;
+  readonly refresh: LibraryRefresh;
 
   constructor(
     readonly paths: AppPaths,
@@ -53,6 +55,7 @@ export class AppRuntime {
   ) {
     this.quark = new QuarkLibrary(paths.userData);
     this.quarkSync = new QuarkSync(() => ({db:this.db,repo:this.repo,library:this.library,metadata:this.metadata}));
+    this.refresh = new LibraryRefresh(() => ({repo:this.repo,metadata:this.metadata}), this.quarkSync, this.quark);
     this.logger = new Logger(paths.logFile, { console: options.loggerConsole ?? false });
     this.credentials = new CredentialStore(paths.credentialsFile, options.secretBox);
     this.images = new ImageCache({ root: paths.imagesDir, fetchImpl: options.fetchImpl });
@@ -155,6 +158,7 @@ export class AppRuntime {
   }
 
   private close(): void {
+    this.refresh.cancel();
     try {
       this.core?.metadata.dispose();
       this.core?.db.close();

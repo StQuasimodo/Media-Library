@@ -378,8 +378,6 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     }
     checks.push('different high-resolution show gallery variants cached and displayed for seasons through real import/refresh/UI');
     checks.push('independent TV seasons, real season endpoint import/refresh and missing-title manual creation through UI/IPC');
-    await js('window.cinema.quarkWeb.disconnect()');
-    assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`)).cloudResources.every((file:any)=>!file.active),true);
     checks.push('controlled Quark/TMDB: select folder through UI, recurse, match, confirm, real import/cache/SQLite, typed IDs, increment, missing files, failed scan and session isolation (not live account)');
     async function openTvSeasons() {
       await js("document.querySelector('[aria-label=添加影视作品]').click()");
@@ -486,6 +484,38 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     const manualOrder=await js(`window.cinema.metadata.refresh(${JSON.stringify(data.films[1].film.id)})`);
     assert.equal(manualOrder.series.key,'tmdb:collection:234');assert.equal(manualOrder.series.order,2);
     checks.push('editing only installment order retains the official series association and survives external metadata refresh');
+
+    const preservedBefore=await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`);
+    const totalBefore=await js('window.cinema.library.stats().then(value=>value.totalFilms)');
+    cloudFixture.addRefreshResource();cloudFixture.setRefreshFailure(true);
+    await route('/library',"!!document.querySelector('[aria-label=刷新全部影视资料和夸克信息]')");
+    await js("(()=>{const input=document.querySelector('[aria-label=搜索影视库]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'影墙排序2');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await waitFor("document.querySelector('.result-count')?.textContent==='1 部'");
+    await js("document.querySelector('[aria-label=刷新全部影视资料和夸克信息]').click()");
+    await waitFor("document.querySelector('[aria-label=刷新全部影视资料和夸克信息]').disabled");
+    await route('/watchlist',"!!document.querySelector('.gallery-heading')");
+    await waitFor('window.cinema.library.refreshStatus().then(value=>value.finishedAt && !value.busy)');
+    const bulk=await js('window.cinema.library.refreshStatus()');
+    assert.equal(bulk.total,totalBefore);assert.equal(bulk.completed,totalBefore);assert.equal(bulk.failed,1);
+    assert.equal(bulk.quark.state,'updated');assert.equal(bulk.errors[0].title,'搏击俱乐部');
+    const preservedAfter=await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`);
+    for(const field of ['id','collectedAt','watchStatus','watchedAt','personalRating','favoriteReason','personalReview','collectionIds','createdAt','updatedAt'])
+      assert.deepEqual(preservedAfter.entry[field],preservedBefore.entry[field]);
+    assert.ok(preservedAfter.cloudResources.some((file:any)=>file.fileId==='sync-refresh' && file.technical.resolution==='2160p' && file.technical.videoCodec==='H.265 / HEVC'));
+    await route('/library',"!!document.querySelector('[aria-label=全部刷新进度]')");
+    await waitFor("document.querySelector('[aria-label=全部刷新进度]').textContent.includes('失败 1 部')");
+    await js("document.querySelector('[aria-label=全部刷新进度] details summary').click()");
+    await shot('24-library-refresh-result');
+    cloudFixture.setRefreshFailure(false);
+    await js("document.querySelector('[aria-label=刷新全部影视资料和夸克信息]').click()");
+    await waitFor(`window.cinema.library.refreshStatus().then(value=>value.id>${bulk.id} && value.finishedAt && !value.busy)`);
+    const retried=await js('window.cinema.library.refreshStatus()');
+    assert.equal(retried.failed,0);assert.equal(retried.total,totalBefore);assert.ok(retried.updated>0);assert.ok(retried.skipped>0);
+    assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(data.films[1].film.id)})`)).film.series.order,2);
+    assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(data.films[1].film.id)})`)).entry.personalRating,9);
+    checks.push('library toolbar refresh covers all films under a one-result filter, reads incremental Quark technical data, survives route changes, preserves personal data/manual series, reports one failure and retries successfully');
+    await js('window.cinema.quarkWeb.disconnect()');
+    assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`)).cloudResources.every((file:any)=>!file.active),true);
 
 
 

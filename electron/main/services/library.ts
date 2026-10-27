@@ -368,7 +368,10 @@ export class LibraryService {
   }
 
   /** Applies refreshed external metadata while leaving every personal field untouched. */
-  async applyExternalMetadata(filmId: string, candidate: MetadataCandidate): Promise<Film> {
+  async applyExternalMetadata(filmId: string, candidate: MetadataCandidate, assertActive: () => void = () => {}, onImageWarning?: (message: string) => void): Promise<Film> {
+    assertActive();
+    const imageWarnings: string[] = [];
+    if (candidate.posterSelection === 'unavailable' || candidate.backdropSelection === 'unavailable') imageWarnings.push('图片库暂时不可用，保留已有缓存。');
     const film = this.repo.getFilm(filmId);
     if (!film) throw new AppError('NOT_FOUND', '作品不存在。');
 
@@ -385,6 +388,7 @@ export class LibraryService {
         posterPath = await this.images.store(candidate.posterUrl, 'poster');
       } catch {
         // Keep the existing cached poster when the refresh download fails.
+        imageWarnings.push('海报下载失败，保留已有缓存。');
       }
     }
     if (candidate.backdropUrl) {
@@ -392,10 +396,14 @@ export class LibraryService {
         backdropPath = await this.images.store(candidate.backdropUrl, 'backdrop');
       } catch {
         // Same for the backdrop.
+        imageWarnings.push('背景下载失败，保留已有缓存。');
       }
     }
 
-    return this.repo.updateFilm(filmId, {
+    assertActive();
+    const current = this.repo.getFilm(filmId);
+    if (!current) throw new AppError('NOT_FOUND', '作品不存在。');
+    const refreshed = this.repo.updateFilm(filmId, {
       title: candidate.title,
       originalTitle: candidate.originalTitle,
       year: candidate.year,
@@ -406,9 +414,11 @@ export class LibraryService {
       originalLanguage: candidate.originalLanguage,
       posterPath,
       backdropPath,
-      series: film.series && (film.series.customOrder || film.series.key.startsWith('manual:')) ? film.series : candidate.series,
+      series: current.series && (current.series.customOrder || current.series.key.startsWith('manual:')) ? current.series : candidate.series,
       metadataUpdatedAt: now(),
     });
+    if (imageWarnings.length) onImageWarning?.(imageWarnings.join(''));
+    return refreshed;
   }
 
   updateEntry(entryId: string, patch: EntryPatch): CollectionEntry {

@@ -29,7 +29,7 @@ export function installQuarkSyncFixture(profile: string) {
     'sync-show':[directory('sync-season','Season 1')],
     'sync-season':[video('sync-e1','S01E01.mkv'),video('sync-e2','S01E02.mkv')],
   };
-  let failure=false,searches=0,failedSeason:number|null=null;
+  let failure=false,searches=0,failedSeason:number|null=null,refreshFailure=false;
   const store=session.fromPartition('persist:mycinema-quark-web');
   Object.defineProperty(store,'fetch',{configurable:true,value:async(input: string | URL | Request)=>{
     const url=new URL(String(input));
@@ -59,6 +59,7 @@ export function installQuarkSyncFixture(profile: string) {
         backdrops:path==='/tv/603'?['/season1-still.png','/season2-still.png'].map(file_path=>({file_path,iso_639_1:null,width:1920,height:1080})):[]});
     }
     if(url.pathname.endsWith('/tv/1396'))return Response.json(breaking);
+    if(url.pathname.endsWith('/movie/550'))return refreshFailure ? Response.json({}, {status:404}) : Response.json({id:550,title:'搏击俱乐部',original_title:'Fight Club',overview:'全部刷新受控资料',runtime:139,genres:[]});
     const seasonMatch=/\/tv\/1396\/season\/([0-5])$/.exec(url.pathname);
     if(seasonMatch){if(Number(seasonMatch[1])===failedSeason)return Response.json({}, {status:503});const season=breaking.seasons[Number(seasonMatch[1])];return Response.json({...season,episodes:[{runtime:48}]});}
     if(url.pathname.includes('/search/')) {
@@ -79,5 +80,7 @@ export function installQuarkSyncFixture(profile: string) {
     incremental:()=>{tree['sync-season'][0].file_name='Dark.S01E01.1080p.mkv';tree['sync-season'].push(video('sync-e3','S01E03.mkv'));},
     removeSecond:()=>{tree['sync-season']=tree['sync-season'].filter(file=>file.fid!=='sync-e2');},
     setFailure:(value:boolean)=>{failure=value;},
+    setRefreshFailure:(value:boolean)=>{refreshFailure=value;},
+    addRefreshResource:()=>{tree['sync-season'].push(video('sync-refresh','Dark.S01E04.2160p.HEVC.mkv'));},
   };
 }

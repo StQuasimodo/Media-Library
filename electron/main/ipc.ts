@@ -26,6 +26,11 @@ function trustedQuarkPage(event: IpcMainInvokeEvent) {
  * bridge as a stable `{ok:false,error}` envelope instead of an opaque string.
  */
 export function registerIpc(runtime: AppRuntime): void {
+  const refreshChannels = new Set(['library:refreshAll', 'library:refreshStatus', 'library:cancelRefresh']);
+  const refreshConflicts = new Set([
+    'data:restore', 'metadata:refresh', 'metadata:resolveSeries', 'metadata:saveKey', 'metadata:clearKey',
+    'library:updateFilm', 'quark:chooseTool', 'quark:browse', 'quark:selectFolder', 'quark:scan',
+  ]);
   const handle = <T>(channel: string, handler: (...args: any[]) => T | Promise<T>): void => {
     ipcMain.handle(channel, async (_event, ...args: unknown[]) => {
       if (!runtime.ready) {
@@ -38,6 +43,8 @@ export function registerIpc(runtime: AppRuntime): void {
         };
       }
       try {
+        if (refreshChannels.has(channel) && !trustedQuarkPage(_event)) throw new AppError('VALIDATION', '页面无权刷新收藏及夸克信息。');
+        if (refreshConflicts.has(channel)) runtime.refresh.assertIdle();
         const data = await handler(...(args as never[]));
         return { ok: true, data };
       } catch (error) {
@@ -103,6 +110,9 @@ export function registerIpc(runtime: AppRuntime): void {
   /* ------------------------------------------------------------ */
 
   handle('library:home', () => runtime.library.getHome());
+  handle('library:refreshAll', () => runtime.refresh.start());
+  handle('library:refreshStatus', () => runtime.refresh.status());
+  handle('library:cancelRefresh', () => runtime.refresh.cancel());
 
   handle('library:stats', () => runtime.library.getStats());
 
@@ -215,6 +225,7 @@ export function registerIpc(runtime: AppRuntime): void {
     ipcMain.handle(`quark-web:${action}`, async (event, id: unknown) => {
       if (!trustedQuarkPage(event)) return { ok: false, error: { code: 'VALIDATION', message: '页面无权访问夸克连接。' } };
       try {
+        if(action!=='status') runtime.refresh.assertIdle();
         if(action!=='status') runtime.quarkSync.assertIdle();
         if(action==='connect' && !webQuark.status().loginOpen) runtime.quarkSync.resetConnection();
         const data = action === 'list' ? await webQuark.list(assertString(id, '文件夹')) : await webQuark[action]();
@@ -236,11 +247,14 @@ export function registerIpc(runtime: AppRuntime): void {
       if(typeof ignored!=='boolean') throw new AppError('VALIDATION','忽略设置无效。');
       return runtime.quarkSync.ignore(assertString(key,'资源分组'),ignored);
     },
-    cancel:()=>runtime.quarkSync.cancel(),
+    cancel:()=>{ if(runtime.refresh.busy) runtime.refresh.cancel(); else runtime.quarkSync.cancel(); },
   };
   for(const [action,handler] of Object.entries(syncHandlers)) ipcMain.handle(`quark-sync:${action}`,async(event,...args)=>{
     if(!trustedQuarkPage(event)) return {ok:false,error:{code:'VALIDATION',message:'页面无权访问夸克目录匹配。'}};
-    try { return {ok:true,data:await handler(...args)}; }
+    try {
+      if(action!=='status' && action!=='cancel') runtime.refresh.assertIdle();
+      return {ok:true,data:await handler(...args)};
+    }
     catch(error) { return {ok:false,error:toSerializedError(error)}; }
   });
 
@@ -258,7 +272,7 @@ export function registerIpc(runtime: AppRuntime): void {
     return runtime.quark.selectFolder(assertString(folderId, '文件夹'), recursive, autoRead);
   });
   handle('quark:scan', () => runtime.quark.scan());
-  handle('quark:cancel', () => runtime.quark.cancel());
+  handle('quark:cancel', () => { if(runtime.refresh.busy) runtime.refresh.cancel(); else runtime.quark.cancel(); });
 
   handle('resources:create', (input: unknown) =>
     runtime.library.createResource((input ?? {}) as ResourceInput),

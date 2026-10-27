@@ -9,6 +9,7 @@ import { consumeSearchFocus } from '../lib/shortcuts';
 import { EmptyState, ErrorState, PosterCard, SkeletonGrid } from '../components/primitives';
 import { Icon } from '../components/icons';
 import { PageHeading } from '../components/PageHeading';
+import { LibraryRefreshButton, LibraryRefreshNotice } from '../components/LibraryRefresh';
 
 const SORT_OPTIONS: Array<{ value: LibrarySort; label: string }> = [
   { value: 'collected_desc', label: '最近收藏' },
@@ -160,9 +161,11 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
         <select className="select" aria-label="按系列筛选" value={effectiveSeriesKey} onChange={event=>{const key=event.target.value;setSeriesKey(key);setSeriesAnchor(source.find(entry=>identities.get(entry.id)?.key===key)?.id ?? '');}}><option value="">全部系列</option>{seriesOptions.map(series=><option key={series.key} value={series.key}>{series.title}</option>)}</select>
         <label className="setting-help row gap-2"><input type="checkbox" aria-label="同系列聚合" checked={grouped} onChange={event=>{setGrouped(event.target.checked);try{localStorage.setItem('mycinema.groupSeries',String(event.target.checked));}catch{}}}/> 同系列聚合</label>
         <span className="toolbar-spacer" />
+        <LibraryRefreshButton />
         <span className="result-count">{entries.loading ? '…' : `${list.length} 部`}</span>
 
       </div>
+      <LibraryRefreshNotice />
 
       <p className="setting-help">{resolvingSeries ? '正在补充已有电影的系列信息…' : grouped ? '同系列相邻，系列内部按序号升序；系列之间沿用所选排序。' : '可按系列筛选收藏，或开启同系列聚合。'}</p>
 

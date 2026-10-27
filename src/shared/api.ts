@@ -27,6 +27,7 @@ import type {
 import type { QuarkWebStatus, QuarkWebDirectory } from './quarkWeb';
 import type { QuarkBrowse, QuarkStatus } from './quark';
 import type { QuarkMatchQuery, QuarkSyncStatus } from './quarkSync';
+import type { LibraryRefreshStatus } from './libraryRefresh';
 
 export interface AppInfo {
   appVersion: string;
@@ -86,6 +87,9 @@ export interface CinemaApi {
     relaunch(): Promise<void>;
   };
   library: {
+    refreshAll(): Promise<LibraryRefreshStatus>;
+    refreshStatus(): Promise<LibraryRefreshStatus>;
+    cancelRefresh(): Promise<LibraryRefreshStatus>;
     home(): Promise<HomePayload>;
     stats(): Promise<LibraryStats>;
     list(query: LibraryQuery): Promise<CollectionEntry[]>;

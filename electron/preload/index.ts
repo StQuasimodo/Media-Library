@@ -3,6 +3,7 @@ import type { AppInfo, BackupValidation, CinemaApi } from '../../src/shared/api'
 import type { QuarkWebStatus, QuarkWebDirectory } from '../../src/shared/quarkWeb';
 import type { QuarkBrowse, QuarkStatus } from '../../src/shared/quark';
 import type { QuarkSyncStatus } from '../../src/shared/quarkSync';
+import type { LibraryRefreshStatus } from '../../src/shared/libraryRefresh';
 import type {
   AppSettings,
   BackupResult,
@@ -90,6 +91,9 @@ const api: CinemaApi = {
     relaunch: () => invoke<void>('app:relaunch'),
   },
   library: {
+    refreshAll: () => invoke<LibraryRefreshStatus>('library:refreshAll'),
+    refreshStatus: () => invoke<LibraryRefreshStatus>('library:refreshStatus'),
+    cancelRefresh: () => invoke<LibraryRefreshStatus>('library:cancelRefresh'),
     home: () => invoke<HomePayload>('library:home'),
     stats: () => invoke<LibraryStats>('library:stats'),
     list: (query: LibraryQuery) => invoke<CollectionEntry[]>('library:list', query),

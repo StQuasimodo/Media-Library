@@ -87,13 +87,15 @@ export class MetadataService {
   }
 
   /** Re-fetches external metadata for a stored film; personal fields stay untouched. */
-  async refreshFilm(filmId: string): Promise<Film> {
+  async refreshFilm(filmId: string, assertActive: () => void = () => {}, onImageWarning?: (message: string) => void): Promise<Film> {
+    assertActive();
     const film = this.repo.getFilm(filmId);
     if (!film) throw new AppError('NOT_FOUND', '作品不存在。');
     if (film.metadataSource !== 'tmdb' || !film.externalId) {
       throw new AppError('VALIDATION', '这部作品是手动添加的，没有可刷新的外部资料。');
     }
     const candidate = await this.provider.getCandidate(film.externalId, film.mediaType);
-    return this.library.applyExternalMetadata(filmId, candidate);
+    assertActive();
+    return this.library.applyExternalMetadata(filmId, candidate, assertActive, onImageWarning);
   }
 }

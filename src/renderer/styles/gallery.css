@@ -100,6 +100,11 @@
 .library-toolbar { padding: 18px 0; margin-bottom: 32px; border-top: 1px solid var(--line-soft); }
 .library-toolbar .select, .gallery-heading .select { background-color: transparent; border-color: transparent; font-size: 12px; }
 .library-toolbar .search-field .input { background: transparent; border-color: transparent; border-radius: 0; border-bottom-color: var(--line-soft); }
+.library-refresh-notice { margin: -12px 0 24px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+.library-refresh-notice p { margin: 8px 0 0; overflow-wrap: anywhere; }
+.library-refresh-notice progress { width: 160px; height: 5px; accent-color: var(--accent); }
+.library-refresh-notice ul { padding-left: 20px; font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.library-refresh-notice li + li { margin-top: 8px; }
 .poster-grid { grid-template-columns: repeat(auto-fill, minmax(188px,1fr)); gap: 32px 24px; }
 .poster-grid.is-compact { grid-template-columns: repeat(auto-fill, minmax(148px,1fr)); gap: 26px 20px; }
 .poster-frame { border-radius: 5px; }

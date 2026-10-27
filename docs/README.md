@@ -6,6 +6,7 @@
 |---|---|---|
 | [USAGE.md](USAGE.md) | 安装、TMDB 配置、资源记录、备份与快捷键 | 首次使用应用 |
 | [VERSIONING.md](VERSIONING.md) | 应用版本、预览编号、Tag 与发布检查规则 | 打包或向用户分发前 |
+| [ANDROID-TV.md](ANDROID-TV.md) | API21/22原生电视端、独立收藏、遥控器与后续WebDAV/播放计划 | 开发或安装电视预览 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
 | [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |
 | [QUARK-MATCHING.md](QUARK-MATCHING.md) | 自动目录匹配、资源规格识别、增量关联、升级与验收边界 | 使用1.2预览版自动整理网盘影视 |

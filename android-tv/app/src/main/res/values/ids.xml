@@ -1,0 +1,9 @@
+<resources>
+    <item name="nav_home" type="id"/><item name="nav_library" type="id"/>
+    <item name="nav_collections" type="id"/><item name="nav_watchlist" type="id"/>
+    <item name="nav_settings" type="id"/><item name="home_rail" type="id"/>
+    <item name="hero_title" type="id"/><item name="detail_title" type="id"/>
+    <item name="library_grid" type="id"/><item name="search_query" type="id"/>
+    <item name="search_submit" type="id"/>
+    <item name="cinema_backdrop" type="id"/>
+</resources>

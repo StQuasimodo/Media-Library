@@ -4,6 +4,8 @@
 
 ## 版本编号
 
+Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独立Android电视端以`android-tv/app/build.gradle`的versionName/versionCode为来源，初始`0.1.0-alpha.1` / 1，Tag使用`tv-v<versionName>`，避免与Windows Tag混淆；每个向用户分发的新APK递增versionCode，保持应用ID与正式签名身份。电视开发预览与签名限制见[电视说明](ANDROID-TV.md)。
+
 `package.json` 的 `version` 是应用版本的唯一来源。安装包、免安装 ZIP、应用「关于」与 GitHub Tag 必须一致，Tag 使用 `v<version>`。`1.1.0` 正式版使用 schema v2；`1.2.0-beta.1` 新增云端资源关联，使用 schema v3，升级前自动保存一致快照。
 
 | 变更 | 编号 | 示例 |

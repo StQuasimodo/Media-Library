@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CinemaTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#8AB4FF</item>
+        <item name="android:windowBackground">#101216</item>
+        <item name="android:colorBackground">#171A21</item>
+        <item name="android:textColorPrimary">#E9ECF2</item>
+        <item name="android:textColorSecondary">#9299A6</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

@@ -20,7 +20,9 @@
 
 [下载 Windows 安装包与免安装版](https://github.com/StQuasimodo/Media-Library/releases/latest)。安装与首次配置见[使用指南](docs/USAGE.md)。
 
-[1.2.0-beta.2 rev3 修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)包含目录自动匹配、搜索后选择季、系列分类和海报墙自动聚合；本次下载文件带 `rev3` 后缀，使用步骤见[夸克自动匹配](docs/QUARK-MATCHING.md)。
+[1.2.0-beta.2 rev4 修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)包含目录自动匹配、分季收藏、系列海报墙，以及深色下拉菜单与独立季背景修复；下载文件带 `rev4` 后缀。使用步骤见[夸克自动匹配](docs/QUARK-MATCHING.md)。
+
+Android电视端正在开发：原生界面、minSdk21，目标覆盖Android5.1/API22老电视，独立管理收藏；后续计划接入WebDAV与播放。范围、构建与验证状态见[电视端说明](docs/ANDROID-TV.md)。
 
 从源码开发需要 Node.js 22+ 和 pnpm 11：
 

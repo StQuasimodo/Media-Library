@@ -48,7 +48,7 @@ final class TmdbClient {
                 return Json.object(new String(read(connection.getInputStream(),4*1024*1024),StandardCharsets.UTF_8));
             }catch(IllegalArgumentException error){throw error;}
             catch(SocketTimeoutException error){if(attempt==1)throw new IllegalStateException("连接TMDB超时，请检查电视网络。");}
-            catch(Exception error){if(attempt==1)throw new IllegalStateException("无法连接TMDB，请检查电视网络、时间与证书。");}
+            catch(Exception error){if(attempt==1)throw new IllegalStateException("无法连接TMDB，请检查电视网络、时间与证书。",error);}
             finally{if(connection!=null)connection.disconnect();}
         }
         throw new IllegalStateException("无法连接TMDB。");

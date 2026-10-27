@@ -44,6 +44,15 @@ public final class SmokeInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();try{
             context=getTargetContext();check("true".equals(arguments.getString("disposableEmulator")),"fixture must be explicitly selected");check(BuildConfig.DEBUG,"only debug application may run fixtures");check(android.os.Build.VERSION.SDK_INT==22,"must run on actual API 22 runtime");
+            if("true".equals(arguments.getString("networkProbe"))){
+                JSONObject report=new JSONObject();boolean unauthorized=false;String reason="";
+                try{java.util.Map<String,String> params=new java.util.HashMap<>();params.put("language","zh-CN");TmdbClient.request("mycinema-tv-public-invalid-key-probe","/configuration",params);}
+                catch(IllegalArgumentException error){unauthorized=error.getMessage()!=null&&error.getMessage().contains("凭据无效");reason=error.getClass().getSimpleName();}
+                catch(Exception error){reason=error.getClass().getSimpleName()+":"+(error.getCause()==null?"":error.getCause().getClass().getSimpleName());}
+                Json.put(report,"apiLevel",22);Json.put(report,"realTmdbUnauthorizedResponseVerified",unauthorized);Json.put(report,"actualAccountMetadataVerified",false);Json.put(report,"probe","public HTTPS configuration with deliberately invalid non-secret key");Json.put(report,"diagnosticClass",reason);
+                try(FileOutputStream file=new FileOutputStream(new File(context.getFilesDir(),"tv-network-report.json"))){file.write(report.toString(2).getBytes(StandardCharsets.UTF_8));}
+                result.putString("result",unauthorized?"passed":"failed");finish(unauthorized?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);return;
+            }
             context.deleteDatabase("my-cinema-tv.db");new SecretStore(context).clear();launch();
             check(activity.findViewById(R.id.home_rail)==null,"empty install must not contain demo collection");shot("01-empty");main(activity::finish);idle();checks.add("fresh API 22 launch has no demo collection");
             SecretStore secret=new SecretStore(context);String fake="synthetic-tv-key-not-a-real-credential";secret.save(fake);check(new SecretStore(context).read().equals(fake),"API 22 RSA/AES/HMAC credential roundtrip");

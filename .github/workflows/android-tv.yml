@@ -46,7 +46,7 @@ jobs:
           arch: x86
           profile: Nexus 5
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
           script: bash scripts/android-tv-smoke.sh
       - name: Prepare installable development preview
         run: |

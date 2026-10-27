@@ -16,6 +16,9 @@ jobs:
     env:
       TV_PIN_DEVELOPMENT_SIGNING: '1'
       TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
+      TV_APK_TARGET: working
+      TV_PROFILE: api22-hd-1gb
+      TV_DENSITY: '160'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -55,6 +58,11 @@ jobs:
           python3 scripts/verify-android-tv.py
       - name: Enable emulator acceleration
         run: sudo chmod a+rw /dev/kvm
+      - name: Prepare full UI protocol fixture without application hooks
+        run: |
+          node scripts/prepare-tv-regression.mjs
+          python3 scripts/tv-regression-server.py prepare
+          sudo python3 scripts/tv-regression-server.py serve > .harness/tv-regression/fixture-server.log 2>&1 &
       - name: Install, launch and exercise actual API 22
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -62,9 +70,13 @@ jobs:
           target: default
           arch: x86
           profile: Nexus 5
+          ram-size: 1024M
+          heap-size: 96M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
-          script: bash scripts/android-tv-smoke.sh
+          script: |
+            bash scripts/android-tv-smoke.sh
+            bash scripts/android-tv-regression.sh
       - name: Prepare installable development preview
         run: |
           mkdir -p android-tv/release
@@ -87,3 +99,8 @@ jobs:
             .harness/android-tv-package/*
             .harness/android-tv-emulator/*
             android-tv/app/build/reports/lint-results-debug.*
+            .harness/tv-regression/*.json
+            .harness/tv-regression/*.jsonl
+            .harness/tv-regression/*.txt
+            .harness/tv-regression/*.png
+            .harness/tv-regression/*.log

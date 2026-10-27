@@ -1,0 +1,37 @@
+name: Publish verified Android TV preview
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Successful Android TV API 22 preview run retaining the original APK
+        required: true
+        type: string
+      build_source:
+        description: Exact 40-character source SHA recorded by that build
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: android-tv-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TV_BUILD_RUN: ${{ inputs.build_run_id }}
+      TV_BUILD_SOURCE: ${{ inputs.build_source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate verified run and download original files
+        run: node scripts/publish-tv-preview.mjs

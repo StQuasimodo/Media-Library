@@ -2,6 +2,21 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## Android TV 0.1.0-alpha.1
+
+以下为API22 Android模拟器中的真实原生Activity截图，含遥控器操作后的焦点状态；使用受控收藏、占位海报与合成蓝/橙背景，不代表真实账号或影视图片。[检查报告](../artifacts/releases/tv-v0.1.0-alpha.1/emulator-report.json)。这些数据只在独立测试APK中，交付的应用初始为空收藏。
+
+| 场景 | 截图 |
+|---|---|
+| 首次启动为空收藏 | [查看](../artifacts/review-2026-10-27/tv-alpha1/01-empty.png) |
+| 首页主视觉与横向海报轨 | [查看](../artifacts/review-2026-10-27/tv-alpha1/02-home.png) |
+| 方向键移动焦点后的标题/背景联动 | [查看](../artifacts/review-2026-10-27/tv-alpha1/03-home-next-focus.png) |
+| 详情与内容操作初始焦点 | [查看](../artifacts/review-2026-10-27/tv-alpha1/04-film-detail.png) |
+| 海报墙与系列自然排序 | [查看](../artifacts/review-2026-10-27/tv-alpha1/05-library.png) |
+| 专题 | [查看](../artifacts/review-2026-10-27/tv-alpha1/06-collections.png) |
+| 想看 | [查看](../artifacts/review-2026-10-27/tv-alpha1/07-watchlist.png) |
+| 独立电视设置 | [查看](../artifacts/review-2026-10-27/tv-alpha1/08-settings.png) |
+
 ## beta.2 rev4 展开菜单与分季背景
 
 以下截图来自真实Windows Electron窗口，TMDB/目录为受控响应；海报为占位图片，蓝/橙背景为合成测试剧照，用于验证不同季不会复用背景，红色背景用于验证本季海报回退，不代表真实影视图片。[原始报告](../artifacts/releases/v1.2.0-beta.2/rev4/quark-sync-desktop-report.json)。

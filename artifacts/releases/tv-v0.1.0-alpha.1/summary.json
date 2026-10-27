@@ -1,0 +1,46 @@
+{
+  "version": "0.1.0-alpha.1",
+  "source": "9725ff7bb83e46342843b543a48f5db7bc82f3bb",
+  "buildRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40472208972",
+  "publishRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/40473455634",
+  "buildConclusion": "success",
+  "publishConclusion": "success",
+  "originalTagSourceVerified": true,
+  "originalRetainedBytesPreserved": true,
+  "publishedDigestsMatchDownloadedBytes": true,
+  "minSdk": 21,
+  "api22EmulatorVerified": true,
+  "v1SignatureVerified": true,
+  "dexVersion": "035",
+  "nativeLibraries": false,
+  "developmentSigning": true,
+  "sqliteSchema": 1,
+  "realKeystoreVerified": true,
+  "realTmdbUnauthorizedHttpsVerified": true,
+  "authenticatedTmdbImportVerified": false,
+  "physicalTelevisionVerified": false,
+  "allWindowsFeaturesPorted": false,
+  "webdavImplemented": false,
+  "videoPlaybackImplemented": false,
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.1",
+  "assets": [
+    {
+      "name": "BUILD.json",
+      "size": 401,
+      "digest": "sha256:5dee689b550b47bcd54134c9c7bc1235c641bca3b84e06f7f3ed34e596671d53",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.1/BUILD.json"
+    },
+    {
+      "name": "My-Cinema-TV-0.1.0-alpha.1-debug.apk",
+      "size": 1408352,
+      "digest": "sha256:6e204ffbc5ded844b4c5790834960427ed4257fac7e6849e2b8cf88176568e11",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.1/My-Cinema-TV-0.1.0-alpha.1-debug.apk"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 180,
+      "digest": "sha256:22206cb3af89f7f542899d5f384902f68741603b32c3c78586050e571ce6a602",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.1/SHA256SUMS.txt"
+    }
+  ]
+}

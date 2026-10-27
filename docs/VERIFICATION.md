@@ -1,5 +1,17 @@
 # 验证与交付
 
+## Android TV 0.1.0-alpha.1（2026-10-27）
+
+原生Android电视开发预览，构建源码`9725ff7bb83e46342843b543a48f5db7bc82f3bb`，独立本地数据库v1，不更改Windows schema v4或应用版本。[完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40472208972)成功：JDK17/SDK35构建、Lint（0错误/6警告）、minSdk21、v1签名、DEX035及无原生库检查通过。APK在真正的API22 x86 Android模拟器安装启动，非网页模拟。
+
+独立测试APK验证空库首启、真实Keystore RSA/AES/HMAC加密与存储重建、受控TMDB搜索/季资料/缺图语义、真实SQLite的导入去重、个人数据保留、系列1/2/10排序、专题资源关系、备份恢复事务失败回滚及数据库关闭重开；实际方向键更新首页标题/背景、确认进入详情、内容操作初始焦点、返回浏览，以及影视库/专题/想看/设置页面通过。另用故意无效、非秘密的Key访问真实TMDB，确认收到401，真实Key成功导入仍未验证。图片为测试占位/合成背景，没有把在线图片加载或真实网盘账号标成通过。
+
+早期流程遇到SDK旧tools包移除、API22截图的虚拟/物理尺寸限制，以及首个方向键仅取得焦点的问题；均已修复。最终截图也移除了模拟器手机系统的一次性全屏教学覆盖，未修改用户设备。
+
+APK为debug签名开发预览，大小1,408,352字节，SHA-256为`6e204ffbc5ded844b4c5790834960427ed4257fac7e6849e2b8cf88176568e11`。发布通过GitHub runner复用原始已验证字节，本地上传接口401没有重新打包或替换产物；Tag固定在构建源码。开发签名、应用私有备份与实机验收限制详见[电视说明](ANDROID-TV.md)。WebDAV、网盘目录自动匹配、视频播放尚未实现/移植到电视。
+
+[开发预览下载](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.1) · [构建身份](../artifacts/releases/tv-v0.1.0-alpha.1/BUILD.json) · [签名检查](../artifacts/releases/tv-v0.1.0-alpha.1/apk-signature.txt) · [模拟器报告](../artifacts/releases/tv-v0.1.0-alpha.1/emulator-report.json) · [真实401报告](../artifacts/releases/tv-v0.1.0-alpha.1/network-report.json) · [截图](GALLERY.md)。长虹55D2S实机安装、中文输入、真实Key、升级/电视重启与解码仍待验收。
+
 ## beta.2 rev4 修订：展开菜单与分季背景（2026-10-27）
 
 修订源码`04467141826a858397fe8bafb341e05349266de2`，应用版本仍为`1.2.0-beta.2`、schema v4。[Windows完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40422141453)成功：13文件/145项测试、类型检查、构建、真实Electron窗口、DPAPI旧版凭据兼容、包内容及实际NSIS安装器选择检查通过。原Tag及此前17项发布资产的ID、大小和哈希均保持不变；新增6项rev4资产已从公开Release下载，大小、SHA-256与独立校验文件及BUILD记录一致。Latest仍为1.1.0。

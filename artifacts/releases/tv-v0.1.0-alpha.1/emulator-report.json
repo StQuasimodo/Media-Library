@@ -1,0 +1,16 @@
+{
+  "result": "passed",
+  "apiLevel": 22,
+  "emulatorOnly": true,
+  "actualTelevisionVerified": false,
+  "actualAccountMetadataVerified": false,
+  "syntheticCredentialOnly": true,
+  "checks": [
+    "fresh API 22 launch has no demo collection",
+    "real API 22 Android Keystore hybrid encryption survives store recreation",
+    "controlled TMDB search, season identity, season-specific year\/still and missing-artwork semantics",
+    "real SQLite imports, duplicate protection, personal data, series sorting, topics, resources, atomic restore and reopen persistence",
+    "real D-pad right updates hero, center opens detail, detail starts on content action, Back returns to browsing",
+    "native library, topics, watchlist and settings render on API 22"
+  ]
+}

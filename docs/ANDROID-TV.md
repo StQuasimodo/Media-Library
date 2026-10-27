@@ -44,6 +44,14 @@ cd android-tv
 
 ## 交付记录
 
-开发中，尚未记录APK构建/API22模拟器成功或长虹实机验证结果。
+2026-10-27：[0.1.0-alpha.1开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.1)，[直接下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.1/My-Cinema-TV-0.1.0-alpha.1-debug.apk)。构建源码`9725ff7bb83e46342843b543a48f5db7bc82f3bb`，原始APK为1,408,352字节，SHA-256 `6e204ffbc5ded844b4c5790834960427ed4257fac7e6849e2b8cf88176568e11`。
+
+[完整构建/API22验证](https://github.com/StQuasimodo/Media-Library/actions/runs/40472208972)通过：Lint为0错误/6项警告，APK签名/DEX/兼容声明检查、API22真实Keystore与SQLite重开、受控TMDB语义、遥控器焦点/确认/返回及各主页面检查均通过。真实TMDB HTTPS请求收到无效测试Key的401响应，证明该模拟器能到达API；不等于真实Key成功搜索导入。
+
+首次初始化因已移除的SDK tools包中断；后续修复API22虚拟尺寸截图限制、触摸模式的初始焦点及全屏/详情焦点。早期通过的构建未作为本次交付来源，最终以以上固定源码和原始产物为准。截图来自API22模拟器，使用受控收藏、占位海报及合成背景；APK本身不含这些数据。[界面预览](GALLERY.md) · [构建身份](../artifacts/releases/tv-v0.1.0-alpha.1/BUILD.json) · [模拟器报告](../artifacts/releases/tv-v0.1.0-alpha.1/emulator-report.json) · [真实401报告](../artifacts/releases/tv-v0.1.0-alpha.1/network-report.json)。
+
+用户交接中的安装通道为 **信号源 → 媒体中心 → U盘 → APK**。首次安装后，在「设置」独立配置TMDB，回到影视库「添加作品」；剧集选择季后导入。方向键选择、确认进入、返回退回浏览，首页返回询问退出。
+
+待长虹实机验收：原厂安装器、中文输入法、遥控器/overscan、真实Key导入与缓存、杀进程/电视重启后持久化，以及后续媒体解码。测试没有连接或修改用户电视。开发签名和本机备份的限制见上文，长期beta使用前须补齐固定发布签名与可导出备份。
 
 参考：[Android TV遥控器导航](https://developer.android.com/training/tv/start/navigation)、[播放器设备与版本支持](https://developer.android.com/media/media3/exoplayer/supported-devices)。播放器依赖以接入时的具体版本及其manifest为准，不预先承诺最新版支持API21。

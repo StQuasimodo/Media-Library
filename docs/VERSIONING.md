@@ -50,4 +50,6 @@ Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独�
 
 ## 交付文件
 
+Android电视开发预览可由[Publish verified Android TV preview](../.github/workflows/publish-tv-preview.yml)发布，输入通过完整API22流程的原始build_run_id与build_source。只下载并校验原始APK，不重新构建、移动Tag或覆盖资产；发布脚本提交与APK构建提交分别记录。开发签名限制见[电视端说明](ANDROID-TV.md)，正式beta前需固定私有签名。签名改变不属于普通覆盖升级。
+
 以 `1.1.0` 为例：`My-Cinema-1.1.0-Setup.exe`、`My-Cinema-1.1.0-portable-win64.zip`、Tag `v1.1.0`。`INSTALL.cmd` 和 `RUN-PORTABLE.cmd` 自动引用当前版本；SHA-256 必须来自本次实际打包产物。

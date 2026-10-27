@@ -30,15 +30,16 @@
 - 新增 IPC 通道、数据库迁移或目录变化时更新 ARCHITECTURE.md 的对应表格。
 - 每次交付前把真实执行结果（测试数量、构建产物、截图）写进 VERIFICATION.md，不写「预计」「应该」。
 
-## 当前状态（2026-10-26）
+## 当前状态（2026-10-27）
 
 | 项目 | 状态 |
 |---|---|
-| 版本 / 数据库 | beta.2 rev3修订，应用版本仍1.2.0-beta.2 / schema v4；正式版1.1.0 / schema v2 |
-| 自动化测试 | v1.2.0-beta.2：13个文件、142项通过，含系列分类、自然排序、目录增量及v2/v3→v4迁移 |
+| Windows版本 / 数据库 | beta.2 rev4修订，应用版本仍1.2.0-beta.2 / schema v4；正式版1.1.0 / schema v2 |
+| Windows自动化测试 | beta.2 rev4：13个文件、145项通过，含系列分类、自然排序、独立季背景、目录增量及v2/v3→v4迁移 |
 | 构建与界面 | Windows构建、包校验、真实Electron、受控自动匹配、无菜单复制快捷键、网页登录隔离和加密兼容检查通过 |
 | 当前截图 | [界面预览](GALLERY.md)，含Windows自动匹配、文件规格与系列筛选展示 |
-| Windows 发行产物 | [1.2.0-beta.2 rev3修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
+| Windows发行产物 | [1.2.0-beta.2 rev4修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
+| Android电视 | [0.1.0-alpha.1开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；API22模拟器Keystore、数据、遥控器及真实TMDB401通过；长虹实机与真实Key待验收 |
 | 待验收 | 个人电脑完整升级、字体与缩放；真实TMDB带Key在线匹配；夸克真实账号目录与会话重启 |
 
 详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

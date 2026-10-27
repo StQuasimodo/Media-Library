@@ -4,8 +4,10 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const gh=args=>execFileSync('gh',args,{encoding:'utf8'}).trim();
+async function retryRead(read){let failure;for(let attempt=0;attempt<10;attempt++){try{return read();}catch(error){failure=error;if(attempt<9)await delay(1000);}}throw failure;}
 const repo=process.env.GITHUB_REPOSITORY || 'StQuasimodo/Media-Library';
 const runId=process.env.TV_BUILD_RUN,source=process.env.TV_BUILD_SOURCE;
 assert.match(runId,/^[1-9][0-9]+$/);assert.match(source,/^[0-9a-f]{40}$/);
@@ -34,16 +36,16 @@ const refs=JSON.parse(gh(['api',`repos/${repo}/git/matching-refs/tags/${tag}`]))
 const original=refs.find(ref=>ref.ref===`refs/tags/${tag}`);if(original)assert.equal(original.object.sha,source);
 const releases=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`]));
 let release=releases.find(release=>release.tag_name===tag);
-if(release)assert.ok(release.draft || (release.prerelease && release.assets.length===3));
+if(release){assert.ok(release.draft || (release.prerelease && release.assets.length===3));if(release.draft)assert.equal(release.target_commitish,source);}
 const notes=join(output,'release-notes.md');
 writeFileSync(notes,readFileSync('docs/TV-RELEASE-NOTES.md','utf8')+`\n\n构建源码：${source}。\n原始构建：https://github.com/${repo}/actions/runs/${runId}\n`);
 if(!release){gh(['release','create',tag,'--repo',repo,'--target',source,'--title',`My Cinema TV ${build.version}（Android 5.1 开发预览）`,'--prerelease','--draft','--notes-file',notes]);
-  release=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`])).find(release=>release.tag_name===tag);}
+  release=await retryRead(()=>{const created=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`])).find(release=>release.tag_name===tag);assert.ok(created);return created;});}
 assert.ok(release);
 for(const name of files){const existing=release.assets.find(asset=>asset.name===name);if(existing)assert.equal(existing.digest,`sha256:${digest(name)}`);
   else {assert.ok(release.draft,'Published releases must not be amended by this script.');gh(['release','upload',tag,'--repo',repo,join(output,name)]);}}
 if(release.draft)gh(['release','edit',tag,'--repo',repo,'--draft=false','--prerelease','--latest=false']);
-const published=JSON.parse(gh(['api',`repos/${repo}/releases/tags/${tag}`]));assert.equal(published.draft,false);assert.equal(published.prerelease,true);
-for(const name of files){const asset=published.assets.find(asset=>asset.name===name);assert.ok(asset);assert.equal(asset.digest,`sha256:${digest(name)}`);}
-assert.equal(JSON.parse(gh(['api',`repos/${repo}/git/ref/tags/${tag}`])).object.sha,source);
+await retryRead(()=>{const published=JSON.parse(gh(['api',`repos/${repo}/releases/tags/${tag}`]));assert.equal(published.draft,false);assert.equal(published.prerelease,true);
+  for(const name of files){const asset=published.assets.find(asset=>asset.name===name);assert.ok(asset);assert.equal(asset.digest,`sha256:${digest(name)}`);}
+  assert.equal(JSON.parse(gh(['api',`repos/${repo}/git/ref/tags/${tag}`])).object.sha,source);});
 console.log(`Published ${tag}: retained APK ${build.sha256} from verified run ${runId}.`);

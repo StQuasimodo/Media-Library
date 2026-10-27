@@ -7,6 +7,9 @@ mkdir -p .harness/android-tv-emulator
 # framebuffer. The emulator itself is launched at 1280x720; do not override wm size.
 adb shell wm size reset
 adb shell wm density 160
+# Dismiss the emulator phone image's one-time, touch-only immersive tutorial.
+# This setting is applied only after the disposable emulator/API guards above.
+adb shell settings put secure immersive_mode_confirmations confirmed
 adb install -r android-tv/app/build/outputs/apk/debug/app-debug.apk
 adb install -r android-tv/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb logcat -c

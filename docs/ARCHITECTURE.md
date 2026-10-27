@@ -183,7 +183,7 @@ v3同时修正TMDB唯一索引为 `(metadata_source,media_type,external_id)`，�
 
 ### 1.2.0-beta.2 分季身份
 
-TMDB整剧继续用数字external_id；季条目使用`<seriesId>:season:<N>`，由shared/tmdbIdentity统一校验，仅允许tv类型。沿用schema v3已有文本字段与唯一索引，不需迁移。Provider将该身份路由到`/tv/{id}/season/{N}`并继承整剧类型；刷新走相同路由。rev4起背景使用该季episodes中首张可用still_path（w1280），不再继承整剧背景。缺少剧照返回null，HeroBackdrop回退本季海报；刷新季资料时明确无图会清除旧共用背景，下载失败则保留缓存。目录group_key在存在季号时纳入季号，电影/无季号分组身份稳定；旧文件关联、编辑查询和忽略选择保留。新增`quark-sync:createManual`复用可信页面IPC校验，手动建档与文件关联在同一SQLite事务完成。
+TMDB整剧继续用数字external_id；季条目使用`<seriesId>:season:<N>`，由shared/tmdbIdentity统一校验，仅允许tv类型。沿用schema v3已有文本字段与唯一索引，不需迁移。Provider将该身份路由到`/tv/{id}/season/{N}`并继承整剧类型；刷新走相同路由。beta.3起替换rev4的首张单集剧照规则：背景从整剧`images`横版图库筛选并按季分配，季海报从季图库筛选简体/大陆地区或英文，通用zh不自动采用。候选以posterSelection/backdropSelection区分图库确认无图与查询不可用，前者清除旧缓存路径，后者及下载失败保留缓存。规则、缓存和限制见[图片说明](ARTWORK.md)。目录group_key在存在季号时纳入季号，电影/无季号分组身份稳定；旧文件关联、编辑查询和忽略选择保留。新增`quark-sync:createManual`复用可信页面IPC校验，手动建档与文件关联在同一SQLite事务完成。
 
 ### beta.2 rev2 普通搜索分季导入
 

@@ -1,0 +1,14 @@
+{
+  "bashSyntaxPassed": true,
+  "mockBoundaryChecks": [
+    {
+      "deviceDisconnected": true,
+      "completedPhaseReportsPreserved": true
+    },
+    {
+      "deviceDisconnected": false,
+      "completedPhaseReportsPreserved": true
+    }
+  ],
+  "actualEmulatorDriverRetested": false
+}

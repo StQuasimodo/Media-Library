@@ -1,0 +1,25 @@
+{
+  "tag": "tv-v0.1.0-alpha.3",
+  "source": "e6ddcafa9283043d918f43cc08e2d1affcbf1fc9",
+  "prerelease": true,
+  "assets": [
+    {
+      "name": "BUILD.json",
+      "bytes": 487,
+      "sha256": "67a420bd07668a403c3ce288aa113cdd577b36a21d8c8584161a03948e07b9fd",
+      "originalBytesIdentical": true
+    },
+    {
+      "name": "My-Cinema-TV-0.1.0-alpha.3-debug.apk",
+      "bytes": 1411567,
+      "sha256": "83e074cba861a3dae1456a1763cee469e737b02f5c7f4a7df2424ce2b93e8bff",
+      "originalBytesIdentical": true
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 180,
+      "sha256": "b33c74e7903541b3ee7c0580419a27aeb60393f199d5f670c0765b74f20405e1",
+      "originalBytesIdentical": true
+    }
+  ]
+}

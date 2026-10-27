@@ -1,0 +1,4 @@
+215373b93eb4901a2fbe8460bc305fac8b9c88fa5c124d40b7276c51039b82b2  My-Cinema-1.2.0-beta.3-Setup.exe
+59b6e7c60638aa0e84fb1f0cced068e589e905601407a512cdea1bd3a60bfebb  My-Cinema-1.2.0-beta.3-portable-win64.zip
+d7c78d9e04129d059411541e93d4fd13fa3197c08d17cce8faa330779b6eb8f8  INSTALL.cmd
+0a77eccbde54140fcd03e8b37d2f4b07c17d51bf71981017e291aa3adc49ac49  RUN-PORTABLE.cmd

@@ -1,5 +1,11 @@
 # 验证与交付
 
+## beta.3 / TV alpha.3：横版背景与海报语言（2026-10-27）
+
+原始构建均为`e6ddcafa9283043d918f43cc08e2d1affcbf1fc9`。Windows真实窗口、14文件/155项测试、构建/安装器/凭据检查及电视API22完整操作、缓存、进程/内核重启通过；两端公开下载均与原始受测文件逐字节一致。背景不再取首张单集剧照，海报只接受明确简体/大陆地区信息或英文。已有收藏更新应用后通过「更多操作 → 刷新资料」换图，个人记录保留。
+
+[完整报告与限制](ARTWORK-VALIDATION-2026-10-27.md) · [选图规则](ARTWORK.md) · [Windows下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.3) · [电视下载](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.3)。Windows schema v4、电视schema1不变，Latest保持1.1.0；电视沿用alpha.2开发签名，不能覆盖alpha.1。图库/界面验证为受控数据，真实Key与长虹硬件仍待验收。
+
 ## Android TV 0.1.0-alpha.2（2026-10-27）
 
 [完整验证报告](TV-VALIDATION-2026-10-27.md)记录真实API22原生模拟器的720p/1080p回归：配置RAM均1GiB，实际应用堆分别96/64MiB，九组界面业务、504条收藏/500个图片缓存键、杀进程重开与内核重启全部通过。修复季勾选焦点、专题删除残留窗口和开发签名缓存。未将512MiB参数被自动提升的早期运行计为通过。

@@ -24,3 +24,5 @@ TMDB常见API图片记录只有`iso_639_1: zh`，没有文字体系或地区，�
 图库查询成功且没有合规候选时，刷新会清除原有图片路径；图库请求失败或选定图片下载失败时保留原缓存，便于离线浏览。不会删除收藏、清空个人记录或修改数据库结构。
 
 实现：[Windows选图](../electron/main/services/metadata/artwork.ts)、[TMDB提供器](../electron/main/services/metadata/tmdb.ts)、[电视选图](../android-tv/app/src/main/java/io/mycinema/tv/ArtworkPolicy.java)。测试覆盖语言/地区、尺寸、排序、重复去重、分季分配、错误回退及刷新持久化；真实账号与图片标记准确性仍须独立验收。
+
+公开参考：[《绝命毒师》横版图库](https://www.themoviedb.org/tv/1396-breaking-bad/images/backdrops)。本轮匿名检查三张w1280图片均返回200，并查看横版构图；这不等同于通过API认证，也不保证每一部作品都有足够候选。

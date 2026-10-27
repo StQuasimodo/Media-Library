@@ -2,6 +2,21 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## beta.3 / TV alpha.3 选图修复
+
+Windows与电视端改为高清横版图库，不再取本季首张单集剧照。以下是真实原生窗口截图，图片和图库响应为合成测试数据，用于验证选图、缓存及界面联动；真实账号资料与最终构图仍须独立验收。[选图规则](ARTWORK.md)。
+
+| 场景 | 截图 |
+|---|---|
+| Windows第一季的横版图库变体 | [查看](../artifacts/review-2026-10-27/beta3/21-season1-backdrop.png) |
+| Windows第二季的另一张图库变体 | [查看](../artifacts/review-2026-10-27/beta3/22-season2-backdrop.png) |
+| Windows图库无合适横版时回退合规季海报 | [查看](../artifacts/review-2026-10-27/beta3/23-season-poster-fallback.png) |
+| TV原生导入后的详情 | [查看](../artifacts/review-2026-10-27/tv-alpha3/r03-imported-detail.png) |
+| TV勾选季后的焦点保留 | [查看](../artifacts/review-2026-10-27/tv-alpha3/r04-season-selection.png) |
+| TV进程重开后的本地浏览 | [查看](../artifacts/review-2026-10-27/tv-alpha3/r09-process-restart.png) |
+
+另查阅了[《绝命毒师》公开横版图库](https://www.themoviedb.org/tv/1396-breaking-bad/images/backdrops)；[背景候选示例](https://image.tmdb.org/t/p/w1280/84XPpjGvxNyExjSuLQe0SzioErt.jpg)是TMDB公开图片，不是应用截图，也不代表已通过真实Key在线导入。[三张公开图片核对记录](../artifacts/review-2026-10-27/beta3/public-artwork-check.json)。
+
 ## Android TV 0.1.0-alpha.2
 
 以下为真实API22原生Activity操作截图，720p/96MiB和1080p/64MiB应用堆配置均通过；RAM均1GiB。合成收藏、海报、背景及凭据只用于隔离测试，不包含用户电视照片或真实账号数据。[完整验证报告](TV-VALIDATION-2026-10-27.md)。

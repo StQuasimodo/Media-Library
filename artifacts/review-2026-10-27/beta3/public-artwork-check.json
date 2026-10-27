@@ -1,0 +1,45 @@
+{
+  "source": "https://www.themoviedb.org/tv/1396-breaking-bad/images/backdrops",
+  "images": [
+    {
+      "url": "https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
+      "status": 200,
+      "bytes": 245997,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "sha256": "bc08403e9a5f3bd1c14384555513f13a856aaea4347947155760e21bb421fc9c",
+      "downloadedLocallyNotArchived": true
+    },
+    {
+      "url": "https://image.tmdb.org/t/p/w1280/sp1RSDvoVsbvDouQx1A75ebU35e.jpg",
+      "status": 200,
+      "bytes": 206128,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "sha256": "3424cbc6ece1c4297a30d5938929cb7bfb7d12f61cd115f44ab8bf06fb645041",
+      "downloadedLocallyNotArchived": true
+    },
+    {
+      "url": "https://image.tmdb.org/t/p/w1280/84XPpjGvxNyExjSuLQe0SzioErt.jpg",
+      "status": 200,
+      "bytes": 226954,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "sha256": "b952456a245874dc74de7776d01110e1f690aa1187dff26464f81aa3f44b3b56",
+      "downloadedLocallyNotArchived": true
+    }
+  ],
+  "chinesePosterRegionsSeen": [
+    "CN",
+    "HK",
+    "SG",
+    "TW"
+  ],
+  "apiAuthenticated": false
+}

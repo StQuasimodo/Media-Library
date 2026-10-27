@@ -17,7 +17,7 @@
 ## 首个预览的范围
 
 - 电视独立配置TMDB Key / Read Access Token；验证后加密保存。API21/22使用Keystore RSA包裹随机AES/HMAC密钥，不退回明文。凭据不可读时保留文件并提示重新配置。
-- 电影/剧集搜索、资料确认、选择单季/多季或整剧、手动建档、图片缓存；复用`<seriesId>:season:<N>`身份与电影/电视剧隔离规则。季背景取本季单集剧照，缺失则使用本季海报。
+- 电影/剧集搜索、资料确认、选择单季/多季或整剧、手动建档、图片缓存；复用`<seriesId>:season:<N>`身份与电影/电视剧隔离规则。alpha.3起背景改为高清横版图库变体，海报限定明确简体/大陆地区或英文，替代首张单集剧照规则；详见[图片说明](ARTWORK.md)。
 - SQLite本地收藏、个人评分/状态/收藏理由/短评、系列筛选与组内序号排序、自定义专题和资源记录、元数据刷新、删除及本机备份恢复。
 - 同一TMDB身份重复导入复用收藏；批量导入部分失败保留完成项，剩余季可重试；刷新不覆盖个人记录与手工系列。
 - 本机备份是收藏JSON，图片仍在应用图片目录，TMDB凭据不进入备份。恢复前另存当前收藏，关系校验/事务失败保留原库。卸载会清除应用私有数据；跨设备导出/图片打包后续补齐。
@@ -42,11 +42,15 @@ cd android-tv
 
 [Android TV API 22 preview工作流](../.github/workflows/android-tv.yml)构建后核对minSdk、v1签名、DEX035与无原生库；随后在API22 x86模拟器安装应用和独立测试APK，运行SQLite、Keystore与遥控器界面验证。测试数据只在测试APK中，正式应用首次启动为空收藏。模拟器通过不等于长虹固件、遥控器、中文输入法、真实网络/TMDB和解码已经验收。
 
-当前交付为`0.1.0-alpha.2` **debug开发预览**，签名有效但不是生产签名。alpha.1默认Keystore未被成功缓存，其签名无法恢复；**alpha.2不能直接覆盖alpha.1**。旧版已有收藏时请保留原安装，不要直接卸载；卸载会同时清除本机备份。
+当前交付为`0.1.0-alpha.3` **debug开发预览**，签名沿用alpha.2，支持从alpha.2覆盖升级。alpha.1默认Keystore未被成功缓存，其签名无法恢复；**alpha.2及后续不能直接覆盖alpha.1**。alpha.1已有收藏时请保留原安装，不要直接卸载；卸载会同时清除本机备份。开发签名不是生产签名。
 
 alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立准备任务共享；[固定公开证书指纹](../android-tv/development-signing.sha256)为`0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44`，缓存缺失时拒绝生成替代签名。缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，并补齐可导出备份。不要用开发签名作为长期正式发行方案。
 
 ## 交付记录
+
+2026-10-27：[0.1.0-alpha.3开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.3)，[直接下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.3/My-Cinema-TV-0.1.0-alpha.3-debug.apk)。构建源码`e6ddcafa9283043d918f43cc08e2d1affcbf1fc9`，1,411,567字节，SHA-256 `83e074cba861a3dae1456a1763cee469e737b02f5c7f4a7df2424ce2b93e8bff`。[原始构建及完整API22验证](https://github.com/StQuasimodo/Media-Library/actions/runs/40527056050)通过，发布后下载三个资产均与原产物逐字节一致。使用同剧高清横版图库及简体/英文海报筛选；已有收藏通过刷新换图，来源语言不明确时回退英文。[选图规则](ARTWORK.md) · [公开产物检查](../artifacts/releases/tv-v0.1.0-alpha.3/public-assets.json)。
+
+[720p/96MiB与1080p/64MiB矩阵](https://github.com/StQuasimodo/Media-Library/actions/runs/40527516571)均通过，所测APK与公开版本哈希相同。720p首次模拟器重启时失联，单独重试后通过；RAM均1GiB，没有验证512MiB整机RAM。[本轮完整报告](ARTWORK-VALIDATION-2026-10-27.md)。
 
 2026-10-27：[0.1.0-alpha.2开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.2)，[直接下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.2/My-Cinema-TV-0.1.0-alpha.2-debug.apk)。原始构建源码`0fbd2f9a1a1607fd2ca939bfe6383ca3ce762d65`，1,408,770字节，SHA-256 `ad849e0631b3ae1aa9ed1ce3479c9b3b10d086c50116aaadaeb5cf97a983118a`。公开下载的三个资产与保留产物逐字节一致。
 

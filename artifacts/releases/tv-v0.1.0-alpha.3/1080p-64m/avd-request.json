@@ -1,0 +1,6 @@
+{
+  "ramMiB": 1024,
+  "appGrowthLimitMiB": 64,
+  "vmMaximumMiB": 256,
+  "profile": "api22-fhd-1gb-64m"
+}

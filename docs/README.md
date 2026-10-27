@@ -10,6 +10,8 @@
 | [TV-VALIDATION-2026-10-27.md](TV-VALIDATION-2026-10-27.md) | alpha.2的720p/1080p、真实应用堆限制、界面及重启回归证据 | 判断电视预览通过了哪些测试 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
 | [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |
+| [ARTWORK.md](ARTWORK.md) | 横版背景品质、简体/英文海报、刷新与图片语言限制 | 图片不合适或需要更新已有收藏时 |
+| [ARTWORK-VALIDATION-2026-10-27.md](ARTWORK-VALIDATION-2026-10-27.md) | beta.3 / TV alpha.3的选图、真实窗口、安装包与模拟器证据 | 验收本轮图片修复时 |
 | [QUARK-MATCHING.md](QUARK-MATCHING.md) | 自动目录匹配、资源规格识别、增量关联、升级与验收边界 | 使用1.2预览版自动整理网盘影视 |
 | [QUARK-FOLDERS.md](QUARK-FOLDERS.md) | 官方工具授权、目录读取配置与待验收边界 | 连接指定夸克文件夹 |
 | [QUARK-AUTH-RESEARCH.md](QUARK-AUTH-RESEARCH.md) | 授权命令、Agent 与 Windows 限制、应用内账号连接方案 | 开发夸克账号连接之前 |
@@ -35,12 +37,12 @@
 
 | 项目 | 状态 |
 |---|---|
-| Windows版本 / 数据库 | beta.2 rev4修订，应用版本仍1.2.0-beta.2 / schema v4；正式版1.1.0 / schema v2 |
-| Windows自动化测试 | beta.2 rev4：13个文件、145项通过，含系列分类、自然排序、独立季背景、目录增量及v2/v3→v4迁移 |
+| Windows版本 / 数据库 | 1.2.0-beta.3 / schema v4；正式版1.1.0 / schema v2 |
+| Windows自动化测试 | beta.3：14个文件、155项通过，含图片语言/尺寸/分配与刷新、系列、目录增量及v2/v3→v4迁移 |
 | 构建与界面 | Windows构建、包校验、真实Electron、受控自动匹配、无菜单复制快捷键、网页登录隔离和加密兼容检查通过 |
 | 当前截图 | [界面预览](GALLERY.md)，含Windows自动匹配、文件规格与系列筛选展示 |
-| Windows发行产物 | [1.2.0-beta.2 rev4修订版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.2)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
-| Android电视 | [0.1.0-alpha.2开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；API22的720p/1080p、96/64MiB应用堆、完整界面与进程/内核重启通过；长虹实机与真实Key待验收，不能覆盖alpha.1签名 |
+| Windows发行产物 | [1.2.0-beta.3预览](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.3)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
+| Android电视 | [0.1.0-alpha.3开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；新选图、720p/96MiB与1080p/64MiB应用堆、完整操作/进程和内核重启通过；长虹实机与真实Key待验收，与alpha.2签名相同，不能覆盖alpha.1 |
 | 待验收 | 个人电脑完整升级、字体与缩放；真实TMDB带Key在线匹配；夸克真实账号目录与会话重启 |
 
 详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

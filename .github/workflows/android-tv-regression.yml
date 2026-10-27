@@ -5,15 +5,18 @@ on:
       apk_target:
         description: Test the published APK unchanged, or current working APK after a fix
         type: choice
-        options: [released, working]
-        default: released
+        options: [working, released]
+        default: working
       release_tag:
         type: string
-        default: tv-v0.1.0-alpha.1
+        default: tv-v0.1.0-alpha.2
 permissions:
   contents: read
 jobs:
+  signing:
+    uses: ./.github/workflows/tv-development-signing.yml
   regression:
+    needs: signing
     runs-on: ubuntu-latest
     timeout-minutes: 35
     strategy:
@@ -36,6 +39,8 @@ jobs:
       TV_RELEASE_TAG: ${{ inputs.release_tag }}
       TV_DENSITY: ${{ matrix.density }}
       TV_PROFILE: ${{ matrix.profile }}
+      TV_PIN_DEVELOPMENT_SIGNING: '1'
+      TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,12 +53,14 @@ jobs:
         with:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         with:
-          path: ~/.android/debug.keystore
-          key: my-cinema-tv-development-signing-v1
+          path: ~/.android/mycinema-tv-debug.keystore
+          key: my-cinema-tv-development-signing-v2
+          fail-on-cache-miss: true
       - name: Build separate test APK and select original or working application
         run: |
+          bash scripts/tv-dev-signing.sh
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
           cd android-tv
           ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest

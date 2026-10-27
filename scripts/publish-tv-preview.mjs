@@ -19,11 +19,12 @@ const checks=jobs.jobs.flatMap(job=>job.steps);
 for(const name of ['Build and lint native APK and separate instrumentation','Verify API 21 minimum, v1 signature and universal Java APK','Install, launch and exercise actual API 22'])
   assert.ok(checks.some(step=>step.name===name && step.conclusion==='success'),name);
 const output='.harness/tv-publish';mkdirSync(output,{recursive:true});
-gh(['run','download',runId,'--repo',repo,'--name','my-cinema-tv-0.1.0-alpha.1','--dir',output]);
-const build=JSON.parse(readFileSync(join(output,'BUILD.json'),'utf8'));
-assert.equal(build.source,source);assert.equal(build.run,runId);assert.equal(build.version,'0.1.0-alpha.1');
-assert.equal(build.minSdk,21);assert.equal(build.v1SignatureVerified,true);assert.equal(build.nativeLibraries,false);
 const gradle=execFileSync('git',['show',`${source}:android-tv/app/build.gradle`],{encoding:'utf8'});
+const version=/versionName '([0-9.]+-(?:alpha|beta|rc)\.[0-9]+)'/.exec(gradle)?.[1];assert.ok(version);
+gh(['run','download',runId,'--repo',repo,'--name',`my-cinema-tv-${version}`,'--dir',output]);
+const build=JSON.parse(readFileSync(join(output,'BUILD.json'),'utf8'));
+assert.equal(build.source,source);assert.equal(build.run,runId);assert.equal(build.version,version);
+assert.equal(build.minSdk,21);assert.equal(build.v1SignatureVerified,true);assert.equal(build.nativeLibraries,false);
 assert.ok(gradle.includes(`versionName '${build.version}'`));
 const apk=`My-Cinema-TV-${build.version}-debug.apk`,tag=`tv-v${build.version}`;
 const files=[apk,'BUILD.json','SHA256SUMS.txt'];

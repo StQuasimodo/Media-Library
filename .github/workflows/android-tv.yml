@@ -7,9 +7,15 @@ concurrency:
   group: android-tv-preview
   cancel-in-progress: false
 jobs:
+  signing:
+    uses: ./.github/workflows/tv-development-signing.yml
   android-tv:
+    needs: signing
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      TV_PIN_DEVELOPMENT_SIGNING: '1'
+      TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -21,10 +27,21 @@ jobs:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Keep the development signing identity across preview builds
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
-          path: ~/.android/debug.keystore
-          key: my-cinema-tv-development-signing-v1
+          path: ~/.android/mycinema-tv-debug.keystore
+          key: my-cinema-tv-development-signing-v2
+          fail-on-cache-miss: true
+      - name: Check restored signing identity and application version
+        id: app
+        run: |
+          bash scripts/tv-dev-signing.sh
+          python3 - <<'PY'
+          import os,re
+          from pathlib import Path
+          version=re.search(r"versionName '([^']+)'",Path('android-tv/app/build.gradle').read_text()).group(1)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('version='+version+'\n')
+          PY
       - name: Install compile SDK
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build and lint native APK and separate instrumentation
@@ -33,7 +50,7 @@ jobs:
       - name: Verify API 21 minimum, v1 signature and universal Java APK
         run: |
           mkdir -p .harness/android-tv-package
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --min-sdk-version 21 android-tv/app/build/outputs/apk/debug/app-debug.apk | tee .harness/android-tv-package/signature.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs --min-sdk-version 21 android-tv/app/build/outputs/apk/debug/app-debug.apk | tee .harness/android-tv-package/signature.txt
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android-tv/app/build/outputs/apk/debug/app-debug.apk > .harness/android-tv-package/badging.txt
           python3 scripts/verify-android-tv.py
       - name: Enable emulator acceleration
@@ -51,13 +68,13 @@ jobs:
       - name: Prepare installable development preview
         run: |
           mkdir -p android-tv/release
-          cp android-tv/app/build/outputs/apk/debug/app-debug.apk android-tv/release/My-Cinema-TV-0.1.0-alpha.1-debug.apk
+          cp android-tv/app/build/outputs/apk/debug/app-debug.apk "android-tv/release/My-Cinema-TV-${{ steps.app.outputs.version }}-debug.apk"
           cp .harness/android-tv-package/report.json android-tv/release/BUILD.json
           cd android-tv/release
-          sha256sum My-Cinema-TV-0.1.0-alpha.1-debug.apk BUILD.json > SHA256SUMS.txt
+          sha256sum "My-Cinema-TV-${{ steps.app.outputs.version }}-debug.apk" BUILD.json > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: my-cinema-tv-0.1.0-alpha.1
+          name: my-cinema-tv-${{ steps.app.outputs.version }}
           if-no-files-found: error
           path: android-tv/release/*
       - uses: actions/upload-artifact@v4

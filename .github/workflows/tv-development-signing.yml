@@ -1,0 +1,26 @@
+name: Prepare pinned TV development signer
+on:
+  workflow_call:
+    outputs:
+      sha256:
+        description: Public certificate fingerprint, not private key material
+        value: ${{ jobs.signer.outputs.sha256 }}
+permissions:
+  contents: read
+jobs:
+  signer:
+    runs-on: ubuntu-latest
+    outputs:
+      sha256: ${{ steps.key.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/mycinema-tv-debug.keystore
+          key: my-cinema-tv-development-signing-v2
+      - id: key
+        run: bash scripts/tv-dev-signing.sh

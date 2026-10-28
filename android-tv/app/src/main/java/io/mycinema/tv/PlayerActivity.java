@@ -15,6 +15,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import org.json.JSONObject;
 import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.Dialog;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
@@ -54,10 +55,24 @@ public final class PlayerActivity extends Activity {
             handler.post(()->{if(session!=generation||player==null){if(ready!=null)ready.close();return;}relay=ready;
                 // Quark already has a scoped local transport. Do not add a second relay.
                 Media media=new Media(vlc,android.net.Uri.parse(endpoint==null?ready.url():endpoint.url.toString()));
-                try{if(endpoint!=null){String auth=endpoint.headers.get("Authorization");String decoded=new String(android.util.Base64.decode(auth.substring(6),android.util.Base64.NO_WRAP),java.nio.charset.StandardCharsets.UTF_8);int colon=decoded.indexOf(':');media.addOption(":http-user="+decoded.substring(0,colon));media.addOption(":http-pwd="+decoded.substring(colon+1));}media.setHWDecoderEnabled(true,false);player.setMedia(media);player.play();handler.postDelayed(timer,1000);}catch(Exception|LinkageError failure){failed=true;status.setText("播放器启动失败，请重新连接或更换电视支持的编码版本。");release();}finally{media.release();}
+                try{if(endpoint!=null)localLogin(endpoint,session);media.setHWDecoderEnabled(true,false);player.setMedia(media);player.play();handler.postDelayed(timer,1000);}catch(Exception|LinkageError failure){failed=true;status.setText("播放器启动失败，请重新连接或更换电视支持的编码版本。");release();}finally{media.release();}
             });pending=null;
         }catch(Exception failure){if(pending!=null)pending.close();handler.post(()->{if(session==generation&&player!=null){failed=true;status.setText("媒体源连接失败，请检查网络、夸克登录状态及所选文件夹后重试。");}});}});
     }catch(Exception|LinkageError error){failed=true;status.setText("播放器初始化失败，该设备可能不兼容。请返回并反馈设备型号。");release();}}
+    private void localLogin(MediaSources.Lease endpoint,int session){
+        if(!endpoint.url.host().equals("127.0.0.1")||!endpoint.url.scheme().equals("http"))throw new IllegalArgumentException("Local playback endpoint required");
+        String decoded=new String(android.util.Base64.decode(endpoint.headers.get("Authorization").substring(6),android.util.Base64.NO_WRAP),java.nio.charset.StandardCharsets.UTF_8);int colon=decoded.indexOf(':');String username=decoded.substring(0,colon),password=decoded.substring(colon+1);
+        // VLC3's HTTP module asks through its dialog API; media http-user/http-pwd options are ignored.
+        // The local server never redirects the player. Only its temporary credential is supplied here.
+        Dialog.setCallbacks(vlc,new Dialog.Callbacks(){private int attempts;
+            public void onDisplay(Dialog.LoginDialog dialog){if(session==generation&&++attempts<=2)dialog.postLogin(username,password,false);else dialog.dismiss();}
+            public void onDisplay(Dialog.ErrorMessage dialog){}
+            public void onDisplay(Dialog.QuestionDialog dialog){dialog.dismiss();}
+            public void onDisplay(Dialog.ProgressDialog dialog){dialog.dismiss();}
+            public void onCanceled(Dialog dialog){}
+            public void onProgressUpdate(Dialog.ProgressDialog dialog){}
+        });
+    }
     private Button button(String text,Runnable action){Button button=new Button(this);button.setText(text);button.setAllCaps(false);button.setTextSize(13);button.setOnClickListener(view->action.run());return button;}
     private void toggle(){if(player==null)return;if(player.isPlaying())player.pause();else{if(ended){ended=false;resumed=false;resume=0;player.setTime(0);}player.play();}}
     private void seek(long delta){if(player==null)return;if(!player.isSeekable()){status.setText("当前媒体源尚不支持定位，或仍在缓冲。");return;}long duration=player.getLength(),target=Math.max(0,player.getTime()+delta);player.setTime(duration>0?Math.min(target,Math.max(0,duration-1000)):target);controls.setVisibility(View.VISIBLE);}
@@ -67,7 +82,7 @@ public final class PlayerActivity extends Activity {
     @Override public boolean onKeyDown(int code,KeyEvent event){if(code==KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE){toggle();return true;}if(code==KeyEvent.KEYCODE_MENU){tracks();return true;}if(controls.getVisibility()!=View.VISIBLE){if(code==KeyEvent.KEYCODE_DPAD_LEFT){seek(-10000);return true;}if(code==KeyEvent.KEYCODE_DPAD_RIGHT){seek(10000);return true;}if(code==KeyEvent.KEYCODE_DPAD_CENTER||code==KeyEvent.KEYCODE_ENTER){toggle();controls.setVisibility(View.VISIBLE);return true;}if(code==KeyEvent.KEYCODE_DPAD_UP||code==KeyEvent.KEYCODE_DPAD_DOWN){controls.setVisibility(View.VISIBLE);toggle.requestFocus();return true;}}return super.onKeyDown(code,event);}
     @Override public void onBackPressed(){if(controls.getVisibility()==View.VISIBLE){controls.setVisibility(View.GONE);}else{controls.setVisibility(View.VISIBLE);new AlertDialog.Builder(this).setTitle("退出播放？").setMessage("进度会保存在电视本机。").setNegativeButton("继续播放",null).setPositiveButton("退出",(dialog,n)->finish()).show();}}
     private void save(){if(player!=null&&file!=null&&resumed&&!ended){long time=player.getTime();resume=time;catalog.progress(Json.text(file,"key"),time,player.getLength());}}
-    private void release(){generation++;if(connecting!=null){connecting.cancel(true);connecting=null;}handler.removeCallbacks(timer);if(relay!=null){relay.close();relay=null;}if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}if(vlc!=null){vlc.release();vlc=null;}}
+    private void release(){generation++;if(connecting!=null){connecting.cancel(true);connecting=null;}handler.removeCallbacks(timer);if(relay!=null){relay.close();relay=null;}if(vlc!=null)Dialog.setCallbacks(vlc,null);if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}if(vlc!=null){vlc.release();vlc=null;}}
     @Override protected void onStop(){save();release();super.onStop();}
     @Override protected void onDestroy(){release();connector.shutdownNow();if(catalog!=null)catalog.close();super.onDestroy();}
 }

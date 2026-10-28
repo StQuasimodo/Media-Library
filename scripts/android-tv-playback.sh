@@ -9,6 +9,7 @@ mkdir -p "$out"
 adb root
 timeout 60s adb wait-for-device
 adb remount
+adb shell mount -o remount,rw /system
 adb shell cat /system/etc/hosts > "$out/guest-hosts-before.txt"
 ca_name=$(cat .harness/tv-fixture-private/ca-name.txt)
 adb push .harness/tv-fixture-private/ca.pem "/system/etc/security/cacerts/$ca_name"

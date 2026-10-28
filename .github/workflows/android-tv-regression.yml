@@ -93,7 +93,7 @@ jobs:
           heap-size: ${{ matrix.heap }}
           pre-emulator-launch-script: python3 scripts/configure-tv-avd.py
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin ${{ matrix.skin }} -dpi-device ${{ matrix.density }}
+          emulator-options: -writable-system -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin ${{ matrix.skin }} -dpi-device ${{ matrix.density }}
           script: bash scripts/android-tv-regression.sh
       - uses: actions/upload-artifact@v4
         if: always()

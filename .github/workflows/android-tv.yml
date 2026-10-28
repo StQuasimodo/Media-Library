@@ -78,7 +78,7 @@ jobs:
           heap-size: 96M
           pre-emulator-launch-script: python3 scripts/configure-tv-avd.py
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
+          emulator-options: -writable-system -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
           script: |
             bash scripts/android-tv-smoke.sh
             bash scripts/android-tv-playback.sh

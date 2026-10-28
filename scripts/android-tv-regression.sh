@@ -49,6 +49,7 @@ adb exec-out run-as io.mycinema.tv cat files/tv-network-report.json > "$out/publ
 adb root
 wait_for_device
 adb remount
+adb shell mount -o remount,rw /system
 ca_name=$(cat .harness/tv-fixture-private/ca-name.txt)
 adb push .harness/tv-fixture-private/ca.pem "/system/etc/security/cacerts/$ca_name"
 adb shell chmod 644 "/system/etc/security/cacerts/$ca_name"

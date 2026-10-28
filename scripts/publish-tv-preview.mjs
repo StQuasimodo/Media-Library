@@ -33,6 +33,8 @@ if(build.nativeLibraries){
   const playback=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/report.json'),'utf8'));
   assert.equal(playback.result,'passed');assert.equal(playback.apiLevel,22);
   assert.ok(playback.decodedVideo>0&&playback.decodedAudio>0&&playback.displayedPictures>0,'Actual API22 playback must pass before distributing a decoder APK.');
+  const code=Number(/versionCode (\d+)/.exec(gradle)?.[1]);
+  if(code>=5){const dav=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/quark-dav-report.json'),'utf8'));assert.equal(dav.result,'passed');assert.equal(dav.buildRun,runId);assert.equal(dav.actualLocalWebDavServer,true);}
 }else assert.equal(build.nativeLibraries,false);
 if(version!=='0.1.0-alpha.1'){
   const signer=execFileSync('git',['show',`${source}:android-tv/development-signing.sha256`],{encoding:'utf8'}).trim();

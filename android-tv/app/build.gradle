@@ -8,8 +8,8 @@ android {
         minSdk 21
         ndk { abiFilters 'armeabi-v7a', 'x86' }
         targetSdk 35
-        versionCode 4
-        versionName '0.2.0-alpha.1'
+        versionCode 5
+        versionName '0.2.0-alpha.2'
         testInstrumentationRunner 'io.mycinema.tv.SmokeInstrumentation'
     }
     signingConfigs {

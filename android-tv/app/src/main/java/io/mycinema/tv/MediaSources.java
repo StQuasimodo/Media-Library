@@ -29,22 +29,23 @@ final class MediaSources {
     static final OkHttpClient HTTP=new OkHttpClient.Builder().connectTimeout(15,TimeUnit.SECONDS).readTimeout(25,TimeUnit.SECONDS)
         .followRedirects(false).followSslRedirects(false).build();
     static final class Entry {
-        final String source,id,name,parent;final boolean directory;final long size;
-        Entry(String source,String id,String name,String parent,boolean directory,long size){this.source=source;this.id=id;this.name=name;this.parent=parent;this.directory=directory;this.size=size;}
+        final String source,id,name,parent,davPath,davRoot;final boolean directory;final long size;
+        Entry(String source,String id,String name,String parent,boolean directory,long size){this(source,id,name,parent,directory,size,"","");}
+        Entry(String source,String id,String name,String parent,boolean directory,long size,String davPath,String davRoot){this.source=source;this.id=id;this.name=name;this.parent=parent;this.directory=directory;this.size=size;this.davPath=davPath;this.davRoot=davRoot;}
         boolean video(){return !directory&&name.toLowerCase(java.util.Locale.ROOT).matches(".*\\.(mkv|mp4|m4v|avi|mov|ts|m2ts|mts|wmv|webm|mpg|mpeg|flv)$");}
         String key(){return source+":"+id;}
-        JSONObject json(){JSONObject data=new JSONObject();Json.put(data,"source",source);Json.put(data,"fileId",id);Json.put(data,"name",name);Json.put(data,"parent",parent);Json.put(data,"size",size);Json.put(data,"key",key());return data;}
+        JSONObject json(){JSONObject data=new JSONObject();Json.put(data,"source",source);Json.put(data,"fileId",id);Json.put(data,"name",name);Json.put(data,"parent",parent);Json.put(data,"size",size);Json.put(data,"key",key());if(!davPath.isEmpty()){Json.put(data,"davPath",davPath);Json.put(data,"davRoot",davRoot);}return data;}
     }
     static final class Lease {
         final HttpUrl url;final Map<String,String> headers;
         Lease(HttpUrl url,Map<String,String> headers){this.url=url;this.headers=headers;}
     }
-    private final SecretStore quark,dav;
-    MediaSources(Context context){quark=new SecretStore(context,"quark","夸克");dav=new SecretStore(context,"webdav","WebDAV");}
+    private final SecretStore quark,dav;private final Context context;
+    MediaSources(Context context){this.context=context.getApplicationContext();quark=new SecretStore(context,"quark","夸克");dav=new SecretStore(context,"webdav","WebDAV");}
     boolean connected(String source){return store(source).exists();}
     SecretStore store(String source){if(source.equals("quark"))return quark;if(source.equals("webdav"))return dav;throw new IllegalArgumentException("媒体源无效。");}
-    void disconnect(String source){store(source).clear();}
-    String root(String source) throws Exception {return source.equals("quark")?"0":davUrl(Json.object(dav.read()).optString("url")).toString();}
+    void disconnect(String source){if(source.equals("quark"))CinemaApplication.dav(context).disable();store(source).clear();}
+    String root(String source) throws Exception {return source.equals("quark")?(CinemaApplication.dav(context).enabled()?CinemaApplication.dav(context).rootId():"0"):davUrl(Json.object(dav.read()).optString("url")).toString();}
     static HttpUrl davUrl(String value){
         HttpUrl url=HttpUrl.parse(value.trim());
         if(url==null||!url.username().isEmpty()||!url.password().isEmpty()||url.query()!=null||url.fragment()!=null)throw new IllegalArgumentException("请输入不含账号、查询参数的HTTP或HTTPS WebDAV目录地址。");
@@ -56,12 +57,12 @@ final class MediaSources {
         listDav(config,base.toString());dav.save(config.toString());
     }
     void saveQuark(String cookie) throws Exception {
-        validateCookie(cookie);listQuark(cookie,"0");quark.save(cookie);
+        validateCookie(cookie);listQuark(cookie,"0");quark.save(cookie);CinemaApplication.dav(context).disable();
     }
     private static void validateCookie(String cookie){if(cookie.isEmpty()||cookie.length()>20000||!cookie.matches("[\\x20-\\x7e]+"))throw new IllegalArgumentException("尚未取得可用的夸克登录状态。");}
     List<Entry> list(String source,String parent) throws Exception {
         if(!connected(source))throw new IllegalStateException("请先到设置连接媒体源。");
-        return source.equals("quark")?listQuark(quark.read(),parent):listDav(Json.object(dav.read()),parent);
+        return source.equals("quark")?(CinemaApplication.dav(context).enabled()?CinemaApplication.dav(context).list(parent):rawQuarkList(parent)):listDav(Json.object(dav.read()),parent);
     }
     private JSONObject quarkRequest(String cookie,HttpUrl url,RequestBody body) throws Exception {
         Request.Builder request=new Request.Builder().url(url).header("Cookie",cookie).header("Referer","https://pan.quark.cn/").header("User-Agent",UA);
@@ -74,11 +75,12 @@ final class MediaSources {
             for(Cookie renewal:Cookie.parseAll(url,response.headers()))if(renewal.name().equals("__puus")){
                 updated=updated.replaceAll("(?i)(^|;\\s*)__puus=[^;]*","").replaceAll("^;\\s*","");updated+=(updated.isEmpty()?"":"; ")+"__puus="+renewal.value();
             }
-            if(!updated.equals(cookie)&&quark.exists())quark.save(updated);
+            if(!updated.equals(cookie)&&quark.exists()&&quark.read().equals(cookie))quark.save(updated);
             return json;
         }
     }
     private static HttpUrl.Builder api(String path){return HttpUrl.parse("https://drive-pc.quark.cn/1/clouddrive/"+path).newBuilder().addQueryParameter("pr","ucpro").addQueryParameter("fr","pc");}
+    List<Entry> rawQuarkList(String parent) throws Exception {return listQuark(quark.read(),parent);}
     private List<Entry> listQuark(String cookie,String parent) throws Exception {
         validateCookie(cookie);if(parent.isEmpty()||parent.length()>1024)throw new IllegalArgumentException("文件夹标识无效。");
         List<Entry> items=new ArrayList<>();Set<String> seen=new HashSet<>();int total=-1;
@@ -98,7 +100,7 @@ final class MediaSources {
         HttpUrl url=root.resolve(value);
         if(url==null||!sameOrigin(root,url)||!url.username().isEmpty()||!url.password().isEmpty()||url.query()!=null||url.fragment()!=null||!url.encodedPath().startsWith(root.encodedPath()))throw new IllegalStateException("WebDAV返回了配置目录以外的地址，已停止读取。");return url;
     }
-    private List<Entry> listDav(JSONObject config,String parent) throws Exception {
+    List<Entry> listDav(JSONObject config,String parent) throws Exception {
         HttpUrl root=davUrl(Json.text(config,"url")),folder=davChild(root,parent);
         String xml="<?xml version=\"1.0\"?><d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:displayname/></d:prop></d:propfind>";
         Request.Builder builder=new Request.Builder().url(folder).header("Depth","1").method("PROPFIND",RequestBody.create(MediaType.parse("application/xml; charset=utf-8"),xml));
@@ -137,6 +139,7 @@ final class MediaSources {
         if(!rootSeen)throw new IllegalStateException("WebDAV没有返回标准目录XML。");return result;
     }
     private static String UriName(HttpUrl url){List<String> segments=url.pathSegments();return segments.get(segments.size()-1).isEmpty()&&segments.size()>1?segments.get(segments.size()-2):segments.get(segments.size()-1);}
+    Lease resolveForPlayback(JSONObject file) throws Exception {return Json.text(file,"source").equals("quark")?CinemaApplication.dav(context).playback(file):resolve(file);}
     Lease resolve(JSONObject file) throws Exception {
         String source=Json.text(file,"source"),id=Json.text(file,"fileId");Map<String,String> headers=new LinkedHashMap<>();
         if(source.equals("webdav")){JSONObject config=Json.object(dav.read());HttpUrl url=davChild(davUrl(Json.text(config,"url")),id);if(!basic(config).isEmpty())headers.put("Authorization",basic(config));return new Lease(url,headers);}

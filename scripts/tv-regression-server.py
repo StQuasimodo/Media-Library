@@ -138,7 +138,7 @@ def serve(root, log):
             if self.server.server_port == 8765:
                 if uri.path == '/control':
                     mode = query.get('mode', ['normal'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     with lock:
@@ -152,7 +152,14 @@ def serve(root, log):
                 if '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
                     self.reply({},401)
                 else:
-                    self.reply({'status':200,'code':0,'data':{'list':[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4','file':True,'size':1024}]},'metadata':{'_total':1}})
+                    parent=query.get('pdir_fid',['0'])[0]
+                    rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
+                    if state['mode']=='bridge_tree':
+                        if parent=='0':rows=[{'fid':'tv-root','file_name':'影视 & 中文','file':False},{'fid':'outside','file_name':'不在挂载范围','file':False}]
+                        elif parent=='tv-root':rows=[{'fid':'season2','file_name':'第2季 #目录','file':False}]
+                        elif parent=='season2':rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.H264.AAC.中文 & #测试.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
+                        else:rows=[]
+                    self.reply({'status':200,'code':0,'data':{'list':rows},'metadata':{'_total':len(rows)}})
                 return
             path = uri.path.removeprefix('/3')
             with lock:

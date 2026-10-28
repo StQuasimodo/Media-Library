@@ -24,12 +24,14 @@ adb push .harness/tv-fixture-private/playback-hosts /system/etc/hosts
 adb shell chmod 644 /system/etc/hosts
 adb shell cat /system/etc/hosts > "$out/guest-hosts-after.txt"
 adb shell am force-stop io.mycinema.tv
-adb shell run-as io.mycinema.tv rm -f files/tv-playback-report.json files/p01-playing.png files/p02-sources.png
+adb shell run-as io.mycinema.tv rm -f files/tv-playback-report.json files/p01-playing.png files/p02-sources.png files/tv-quark-dav-report.json files/q01-quark-dav-playing.png
 collect() {
   timeout 15s adb logcat -d > "$out/logcat.txt" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-playback-report.json > "$out/report.json" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/p01-playing.png > "$out/p01-playing.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/p02-sources.png > "$out/p02-sources.png" || true
+  timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-quark-dav-report.json > "$out/quark-dav-report.json" || true
+  timeout 10s adb exec-out run-as io.mycinema.tv cat files/q01-quark-dav-playing.png > "$out/q01-quark-dav-playing.png" || true
   # The following collection regression probes the PUBLIC TMDB endpoint first.
   # Restore routing and clear this process's DNS/TLS cache before that probe.
   timeout 10s adb push .harness/tv-fixture-private/playback-hosts-original /system/etc/hosts || true
@@ -38,7 +40,7 @@ collect() {
   timeout 10s adb shell am force-stop io.mycinema.tv || true
 }
 trap collect EXIT
-timeout 180s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
+timeout 240s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/instrumentation.txt"
 collect
 python3 - <<'PY'
@@ -46,4 +48,6 @@ import json,os
 report=json.load(open('.harness/tv-playback/report.json'))
 assert report['result']=='passed' and report['apiLevel']==22
 assert report['buildRun']==os.environ['GITHUB_RUN_ID']
+bridge=json.load(open('.harness/tv-playback/quark-dav-report.json'))
+assert bridge['result']=='passed' and bridge['buildRun']==os.environ['GITHUB_RUN_ID']
 PY

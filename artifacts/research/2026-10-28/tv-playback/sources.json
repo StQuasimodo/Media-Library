@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-28",
+  "researchOnly": true,
+  "playbackCodeChanged": false,
+  "realQuarkAuthorizationVerified": false,
+  "realPlaybackVerified": false,
+  "physicalTelevisionVerified": false,
+  "requirement": "TV independently connects to Quark; no NAS or always-on PC",
+  "repositories": [
+    {
+      "repository": "androidx/media",
+      "source": "8c6678b657ede1e7883fc164ef73ed483c7796c3",
+      "url": "https://github.com/androidx/media/tree/8c6678b657ede1e7883fc164ef73ed483c7796c3"
+    },
+    {
+      "repository": "videolan/vlc-android",
+      "source": "7c19011e048bcd3f82fefff11d9f922969cecd5d",
+      "url": "https://github.com/videolan/vlc-android/tree/7c19011e048bcd3f82fefff11d9f922969cecd5d"
+    },
+    {
+      "repository": "mpv-android/mpv-android",
+      "source": "3cc4665ed1a38fcaa10b7f400219f21d022d06e9",
+      "url": "https://github.com/mpv-android/mpv-android/tree/3cc4665ed1a38fcaa10b7f400219f21d022d06e9"
+    },
+    {
+      "repository": "nova-video-player/aos-Video",
+      "source": "c4702dc1766a41c3525b16876d750006a702ef36",
+      "url": "https://github.com/nova-video-player/aos-Video/tree/c4702dc1766a41c3525b16876d750006a702ef36"
+    },
+    {
+      "repository": "moneytoo/Player",
+      "source": "b74285ca8a2fc6cf1ad604e34781a0a07b0384c0",
+      "url": "https://github.com/moneytoo/Player/tree/b74285ca8a2fc6cf1ad604e34781a0a07b0384c0"
+    },
+    {
+      "repository": "xbmc/xbmc",
+      "source": "1b9680bdbd81d1e03f56db069740a91f771eac7c",
+      "url": "https://github.com/xbmc/xbmc/tree/1b9680bdbd81d1e03f56db069740a91f771eac7c"
+    },
+    {
+      "repository": "Shield1st/tvmedia-public",
+      "source": "13d43eda1624bd0b95ed8728c20b2b715c74e669",
+      "url": "https://github.com/Shield1st/tvmedia-public/tree/13d43eda1624bd0b95ed8728c20b2b715c74e669"
+    },
+    {
+      "repository": "OpenListTeam/OpenList",
+      "source": "74320ca6dbde96e546b2e5183bae228a88139bd0",
+      "url": "https://github.com/OpenListTeam/OpenList/tree/74320ca6dbde96e546b2e5183bae228a88139bd0"
+    },
+    {
+      "repository": "quark-clouddrive/quarkclouddrive_offical",
+      "source": "a5830d99830c7e8bf46063ca90ac6deb1bbf1f3e",
+      "url": "https://github.com/quark-clouddrive/quarkclouddrive_offical/tree/a5830d99830c7e8bf46063ca90ac6deb1bbf1f3e"
+    }
+  ]
+}

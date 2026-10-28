@@ -1,0 +1,31 @@
+[
+  {
+    "artifact": "media3-exoplayer-1.8.1",
+    "url": "https://dl.google.com/dl/android/maven2/androidx/media3/media3-exoplayer/1.8.1/media3-exoplayer-1.8.1.aar",
+    "bytes": 1581024,
+    "minSdk": 21,
+    "armV7LibraryPresent": false,
+    "nativeLibraries": []
+  },
+  {
+    "artifact": "libvlc-all-3.7.7",
+    "url": "https://repo.maven.apache.org/maven2/org/videolan/android/libvlc-all/3.7.7/libvlc-all-3.7.7.aar",
+    "bytes": 92576688,
+    "minSdk": 17,
+    "armV7LibraryPresent": true,
+    "nativeLibraries": [
+      "jni/arm64-v8a/libc++_shared.so",
+      "jni/arm64-v8a/libvlc.so",
+      "jni/arm64-v8a/libvlcjni.so",
+      "jni/armeabi-v7a/libc++_shared.so",
+      "jni/armeabi-v7a/libvlc.so",
+      "jni/armeabi-v7a/libvlcjni.so",
+      "jni/x86/libc++_shared.so",
+      "jni/x86/libvlc.so",
+      "jni/x86/libvlcjni.so",
+      "jni/x86_64/libc++_shared.so",
+      "jni/x86_64/libvlc.so",
+      "jni/x86_64/libvlcjni.so"
+    ]
+  }
+]

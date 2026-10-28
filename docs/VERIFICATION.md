@@ -1,5 +1,9 @@
 # 验证与交付
 
+## 电视0.2.0-alpha.2：夸克转WebDAV（2026-10-28）
+
+[最终完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40653434168)通过，构建源码`9d33c9084633b8ac8c05984a0b185fbb08d4770f`。原生界面选择夸克文件夹，电视自身提供只读WebDAV，内置播放器通过该源真实解码/定位/续播，旧收藏与进程/内核重启回归通过。无需额外NAS或先有DAV服务；夸克上游仍使用受控协议，真实账号和长虹ARM未验收。[哈希、源码、截图和完整边界](TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md)。
+
 ## 电视0.2.0播放开发（2026-10-28）
 
 [最终API22完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40632642462)通过：LibVLC真实1080p H.264/AAC解码、内嵌轨道、定位后新帧/时钟、暂停和续播，以及收藏完整操作、进程和内核重启。APK构建源码`a60b04f3471486413939f32e5b9b1f9e65d7c813`，不是后续报告提交。夸克仍为受控协议测试，官方旧WebView扫码、真实账号取流及长虹硬解未验收。开发APK在Actions Artifact，未创建新Release。[报告、哈希和原生截图](TV-PLAYBACK-VALIDATION-2026-10-28.md)。

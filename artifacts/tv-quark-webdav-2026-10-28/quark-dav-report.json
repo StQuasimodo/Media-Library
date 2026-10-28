@@ -1,0 +1,18 @@
+{
+  "buildRun": "40653434168",
+  "apiLevel": 22,
+  "postSeekTimeMs": 22075,
+  "displayedPictures": 55,
+  "preExitTimeMs": 22075,
+  "durationMs": 45000,
+  "result": "passed",
+  "checks": [
+    "native account folder chooser and enable action generate the source without entering an existing WebDAV URL",
+    "TV hosts authenticated read-only WebDAV: OPTIONS,207 Depth0\/1, Unicode\/XML, bounded depth, writes405 and out-of-mount404",
+    "app directory and playback paths use the generated TV WebDAV; nested fid routes, HEAD length and byte-exact206 work",
+    "real LibVLC renders and seeks Quark-converted WebDAV; saved progress resumes after gateway URL\/credentials restart"
+  ],
+  "realQuarkAccountVerified": false,
+  "physicalTelevisionVerified": false,
+  "actualLocalWebDavServer": true
+}

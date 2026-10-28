@@ -8,7 +8,7 @@
 
 只导出选中目录及其子目录，支持OPTIONS、PROPFIND Depth0/1、GET、HEAD、Range206；写入/删除等操作拒绝。仅监听127.0.0.1，临时本机账号密码不等于夸克Cookie；在媒体源页可查看连接。应用退到后台后停止服务，回到应用按需重启，文件夹选择保留；不作为局域网或后台常驻服务。稳定文件ID和相对路径保存于媒体目录，临时端口、密码和CDN URL不写入收藏。
 
-此段为新实现，API22转换/播放验证尚待本轮CI；真实夸克账号及旧WebView扫码仍未验证。alpha.1的[旧验证报告](TV-PLAYBACK-VALIDATION-2026-10-28.md)不能代替转换服务验收。
+本机转换、界面选择与转换后播放已通过[API22完整验证](TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md)；真实夸克账号及旧WebView扫码仍未验证。alpha.1的[旧验证报告](TV-PLAYBACK-VALIDATION-2026-10-28.md)不能代替转换服务验收。
 
 ## 使用路径
 

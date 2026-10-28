@@ -1,0 +1,23 @@
+[
+  {
+    "run": 40651553450,
+    "source": "0e2080e5014acc7bdffcd037c306d33b2ddbd0b8",
+    "conclusion": "failure",
+    "reason": "Discovery/auth/scope/Range and actual converted playback/seek passed; gateway was stopped before Activity exit persisted progress. Test now waits for exit persistence first.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40651553450"
+  },
+  {
+    "run": 40652263156,
+    "source": "eeef8e4996b04172df41a5a2292a25b1d2739cf7",
+    "conclusion": "failure",
+    "reason": "Conversion and native seek/resume after gateway restart passed; modern emulator graphics context died during later kernel reboot. Not counted as an overall pass.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40652263156"
+  },
+  {
+    "run": 40653434168,
+    "source": "9d33c9084633b8ac8c05984a0b185fbb08d4770f",
+    "conclusion": "success",
+    "reason": "Pinned official emulator33.1.24/build11237101. Native folder UI, conversion/native playback and complete collection/process/kernel reboot passed.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40653434168"
+  }
+]

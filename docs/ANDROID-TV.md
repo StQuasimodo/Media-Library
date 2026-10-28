@@ -49,7 +49,11 @@ cd android-tv
 
 alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立准备任务共享；[固定公开证书指纹](../android-tv/development-signing.sha256)为`0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44`，缓存缺失时拒绝生成替代签名。缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，并补齐可导出备份。不要用开发签名作为长期正式发行方案。
 
-## 当前播放开发验证
+## 当前夸克转换开发验证
+
+`0.2.0-alpha.2` / code5加入电视本机夸克→WebDAV只读服务，不需要外部NAS/电脑或已有DAV地址。登录后选文件夹并启用，浏览/扫描/内置播放自动使用生成的源。[界面操作、完整API22验证、开发APK与边界](TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md)。真实夸克授权与长虹实机仍未验收，服务首版限本机前台使用。
+
+## 此前播放开发验证
 
 `0.2.0-alpha.1` / code4已通过[API22完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40632642462)，含LibVLC真实1080p解码、拖动/轨道/续播及收藏/重启回归。开发APK在该运行的Artifact中；还没有发布新的TV Release。真实夸克扫码、取流与长虹硬解仍未验证。[源码、哈希、实际截图与边界](TV-PLAYBACK-VALIDATION-2026-10-28.md)。以下保留已发布0.1.x的历史交付信息。
 

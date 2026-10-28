@@ -34,7 +34,10 @@ final class PlaybackScenario {
     private void write(JSONObject report) throws Exception {try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),"tv-playback-report.json"))){out.write(report.toString(2).getBytes(StandardCharsets.UTF_8));}}
     private static Library.Item film(String id,String name){JSONObject data=new JSONObject();Json.put(data,"id",id);Json.put(data,"title",name);Json.put(data,"originalTitle",name);Json.put(data,"externalId","1396:season:"+id);Json.put(data,"mediaType","tv");return new Library.Item(data,new JSONObject());}
     void run(){Bundle result=new Bundle();JSONObject report=new JSONObject();try{
-        check(android.os.Build.VERSION.SDK_INT==22,"API22 runtime required");String metadata=new SecretStore(context).read();MediaSources sources=new MediaSources(context);
+        check(android.os.Build.VERSION.SDK_INT==22,"API22 runtime required");
+        Json.put(report,"fixtureApiAddress",java.net.InetAddress.getByName("api.tmdb.org").getHostAddress());
+        Json.put(report,"fixtureQuarkAddress",java.net.InetAddress.getByName("drive-pc.quark.cn").getHostAddress());
+        check(Json.text(report,"fixtureApiAddress").equals("10.0.2.2")&&Json.text(report,"fixtureQuarkAddress").equals("10.0.2.2"),"controlled hosts must resolve inside disposable fixture before sending synthetic credentials");String metadata=new SecretStore(context).read();MediaSources sources=new MediaSources(context);
         boolean denied=false;try{sources.saveDav("https://api.tmdb.org/dav/","tv-test","incorrect");}catch(IllegalStateException expected){denied=true;}check(denied,"401 credentials rejected");
         sources.saveDav("https://api.tmdb.org/dav/","tv-test","fixture");List<MediaSources.Entry> files=sources.list("webdav",sources.root("webdav"));check(files.size()==1&&files.get(0).video(),"authenticated WebDAV PROPFIND");
         denied=false;try{sources.saveDav("https://api.tmdb.org/bad-dav/","tv-test","fixture");}catch(IllegalStateException expected){denied=true;}check(denied&&sources.root("webdav").equals("https://api.tmdb.org/dav/"),"unsafe href rejected and prior settings retained");

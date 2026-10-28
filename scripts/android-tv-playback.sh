@@ -4,6 +4,19 @@ case "$(adb get-serialno)" in emulator-*) ;; *) echo 'Disposable emulator requir
 test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = 22
 out=.harness/tv-playback
 mkdir -p "$out"
+# Kernel reboot in the collection regression may restore the system image.
+# Reapply only this disposable guest's fixture CA/hosts, never application TLS.
+adb root
+timeout 60s adb wait-for-device
+adb remount
+adb shell cat /system/etc/hosts > "$out/guest-hosts-before.txt"
+ca_name=$(cat .harness/tv-fixture-private/ca-name.txt)
+adb push .harness/tv-fixture-private/ca.pem "/system/etc/security/cacerts/$ca_name"
+adb shell chmod 644 "/system/etc/security/cacerts/$ca_name"
+adb push .harness/tv-fixture-private/hosts /system/etc/hosts
+adb shell chmod 644 /system/etc/hosts
+adb shell cat /system/etc/hosts > "$out/guest-hosts-after.txt"
+adb shell am force-stop io.mycinema.tv
 collect() {
   timeout 15s adb logcat -d > "$out/logcat.txt" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-playback-report.json > "$out/report.json" || true

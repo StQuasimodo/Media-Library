@@ -16,15 +16,24 @@ assert.equal(run.status,'completed');assert.equal(run.conclusion,'success');asse
 assert.equal(run.path,'.github/workflows/android-tv.yml');
 const jobs=JSON.parse(gh(['api',`repos/${repo}/actions/runs/${runId}/jobs`]));
 const checks=jobs.jobs.flatMap(job=>job.steps);
-for(const name of ['Build and lint native APK and separate instrumentation','Verify API 21 minimum, v1 signature and universal Java APK','Install, launch and exercise actual API 22'])
+for(const name of ['Build and lint native APK and separate instrumentation','Install, launch and exercise actual API 22'])
   assert.ok(checks.some(step=>step.name===name && step.conclusion==='success'),name);
+assert.ok(checks.some(step=>['Verify API 21 minimum, v1 signature and universal Java APK','Verify API 21 minimum, v1 signature and ARMv7/x86 decoder'].includes(step.name)&&step.conclusion==='success'),'APK compatibility verification');
 const output='.harness/tv-publish';mkdirSync(output,{recursive:true});
 const gradle=execFileSync('git',['show',`${source}:android-tv/app/build.gradle`],{encoding:'utf8'});
 const version=/versionName '([0-9.]+-(?:alpha|beta|rc)\.[0-9]+)'/.exec(gradle)?.[1];assert.ok(version);
 gh(['run','download',runId,'--repo',repo,'--name',`my-cinema-tv-${version}`,'--dir',output]);
 const build=JSON.parse(readFileSync(join(output,'BUILD.json'),'utf8'));
 assert.equal(build.source,source);assert.equal(build.run,runId);assert.equal(build.version,version);
-assert.equal(build.minSdk,21);assert.equal(build.v1SignatureVerified,true);assert.equal(build.nativeLibraries,false);
+assert.equal(build.minSdk,21);assert.equal(build.v1SignatureVerified,true);
+if(build.nativeLibraries){
+  assert.deepEqual(build.nativeAbis,['armeabi-v7a','x86']);assert.equal(build.player,'LibVLC 3.7.7');
+  const evidence=join(output,'evidence');
+  gh(['run','download',runId,'--repo',repo,'--name','android-tv-api22-evidence','--dir',evidence]);
+  const playback=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/report.json'),'utf8'));
+  assert.equal(playback.result,'passed');assert.equal(playback.apiLevel,22);
+  assert.ok(playback.decodedVideo>0&&playback.decodedAudio>0&&playback.displayedPictures>0,'Actual API22 playback must pass before distributing a decoder APK.');
+}else assert.equal(build.nativeLibraries,false);
 if(version!=='0.1.0-alpha.1'){
   const signer=execFileSync('git',['show',`${source}:android-tv/development-signing.sha256`],{encoding:'utf8'}).trim();
   assert.equal(build.signerSha256,signer,'Retained APK must use the pinned development signer.');

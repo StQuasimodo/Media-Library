@@ -56,7 +56,7 @@ public final class MediaBrowserActivity extends Activity {
         scroll.setLayoutParams(new LinearLayout.LayoutParams(-1,-2));
         android.widget.ListView list=new android.widget.ListView(this);root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
         job("读取目录…",()->{
-            List<MediaSources.Entry> rows=source.equals("quark")&&selectingQuark?sources.rawQuarkList(parent):sources.list(source,parent),visible=new ArrayList<>();List<Library.Item> films=library.list("","","","","recent");
+            List<MediaSources.Entry> rows=source.equals("quark")&&selectingQuark?sources.rawQuarkList(parent):sources.list(source,parent),visible=new ArrayList<>();List<Library.Item> films=source.equals("quark")&&selectingQuark?java.util.Collections.emptyList():library.list("","","","","recent");
             for(MediaSources.Entry row:rows)if(row.directory||row.video()){MediaSources.interrupted();visible.add(row);if(row.video()&&!(source.equals("quark")&&selectingQuark))catalog.put(row,ResourceName.match(row.name,folder,films));}return visible;
         },rows->{String[] labels=new String[rows.size()];for(int i=0;i<rows.size();i++){MediaSources.Entry row=rows.get(i);labels[i]=(row.directory?"文件夹   ":"")+row.name;}
             list.setAdapter(new android.widget.ArrayAdapter<>(this,android.R.layout.simple_list_item_1,labels));

@@ -21,6 +21,7 @@ final class QuarkDavManager {
     void enable(String id,String name) throws Exception {
         if(id.isEmpty()||id.length()>1024||name.isEmpty()||name.length()>1024)throw new IllegalArgumentException("请选择有效的夸克文件夹。");
         new MediaSources(context).rawQuarkList(id); // Validate first; a failed selection keeps the prior mount.
+        MediaSources.interrupted();
         synchronized(this){if(!prefs.edit().putString("folderId",id).putString("folderName",name).putBoolean("enabled",true).commit())throw new IllegalStateException("无法保存夸克WebDAV文件夹。");stop();ensure();}
     }
     synchronized void disable(){stop();prefs.edit().clear().apply();}

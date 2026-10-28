@@ -85,6 +85,7 @@ jobs:
       - name: Full UI, process restart, reboot and constrained profile checks
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          emulator-build: 11237101
           api-level: 22
           target: default
           arch: x86

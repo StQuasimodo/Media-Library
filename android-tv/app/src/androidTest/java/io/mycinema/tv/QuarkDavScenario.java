@@ -4,6 +4,10 @@ import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.ListView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.videolan.libvlc.MediaPlayer;
@@ -35,13 +39,21 @@ final class QuarkDavScenario {
         request.method(method,method.equals("PROPFIND")||method.equals("DELETE")||method.equals("PUT")?RequestBody.create(null,new byte[0]):null);return MediaSources.HTTP.newCall(request.build()).execute();
     }
     private void mode(String mode) throws Exception {try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("http://10.0.2.2:8765/control?mode="+mode).build()).execute()){check(response.code()==200,"fixture mode");}}
+    private View label(View view,String wanted){if(view instanceof TextView&&((TextView)view).getText().toString().equals(wanted))return view;if(view instanceof ViewGroup)for(int n=0;n<((ViewGroup)view).getChildCount();n++){View result=label(((ViewGroup)view).getChildAt(n),wanted);if(result!=null)return result;}return null;}
+    private ListView folderList(View view){if(view instanceof ListView)return (ListView)view;if(view instanceof ViewGroup)for(int n=0;n<((ViewGroup)view).getChildCount();n++){ListView found=folderList(((ViewGroup)view).getChildAt(n));if(found!=null)return found;}return null;}
+    private boolean firstFolderContains(String name){ListView list=folderList(owner.getWindow().getDecorView());return list!=null&&list.getAdapter()!=null&&list.getAdapter().getCount()>0&&list.getAdapter().getItem(0).toString().contains(name);}
     private void write(JSONObject report) throws Exception {try(FileOutputStream file=new FileOutputStream(new File(context.getFilesDir(),"tv-quark-dav-report.json"))){file.write(report.toString(2).getBytes(StandardCharsets.UTF_8));}}
     void run() throws Exception {
         JSONObject report=new JSONObject();Json.put(report,"buildRun",run);Json.put(report,"apiLevel",android.os.Build.VERSION.SDK_INT);QuarkDavManager manager=CinemaApplication.dav(context);
         try{
             mode("bridge_tree");MediaSources sources=new MediaSources(context);sources.saveQuark("__puus=tv-playback-fixture");
             owner=(MediaBrowserActivity)test.startActivitySync(new Intent(context,MediaBrowserActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));test.waitForIdleSync();
-            manager.enable("tv-root","影视 & 中文");MediaSources.Lease endpoint=manager.endpoint();String base=endpoint.url.toString();check(endpoint.url.host().equals("127.0.0.1"),"loopback only");
+            test.runOnMainSync(()->{View button=label(owner.getWindow().getDecorView(),"选择夸克文件夹并生成WebDAV");check(button!=null&&button.performClick(),"conversion entry exists and can be selected");});
+            await(()->firstFolderContains("影视 & 中文"),"account folder chooser loads");test.runOnMainSync(()->{ListView list=folderList(owner.getWindow().getDecorView());list.performItemClick(list.getChildAt(0),0,list.getItemIdAtPosition(0));});
+            await(()->firstFolderContains("第2季 #目录"),"selected folder children load");test.runOnMainSync(()->{View button=label(owner.getWindow().getDecorView(),"将此文件夹转换为WebDAV影视源");check(button!=null&&button.performClick(),"enable chosen Quark folder through native UI");});
+            await(()->manager.enabled()&&manager.running()&&manager.rootId().equals("tv-root"),"UI generates local WebDAV without external address input");
+            checks.add("native account folder chooser and enable action generate the source without entering an existing WebDAV URL");
+            MediaSources.Lease endpoint=manager.endpoint();String base=endpoint.url.toString();check(endpoint.url.host().equals("127.0.0.1"),"loopback only");
             try(Response response=request(endpoint,"PROPFIND",base,"1",null,false)){check(response.code()==401,"authentication required");}
             try(Response response=request(endpoint,"OPTIONS",base,null,null,true)){check(response.code()==200&&"1".equals(response.header("DAV"))&&response.header("Allow").contains("PROPFIND"),"real WebDAV discovery");}
             try(Response response=request(endpoint,"PROPFIND",base,"0",null,true)){byte[] xml=response.body().bytes();check(response.code()==207&&MediaSources.parseDav(xml,endpoint.url,endpoint.url).isEmpty(),"Depth0 includes only self");}

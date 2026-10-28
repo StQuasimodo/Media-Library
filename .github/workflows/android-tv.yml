@@ -70,6 +70,7 @@ jobs:
       - name: Install, launch and exercise actual API 22
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          emulator-build: 11237101
           api-level: 22
           target: default
           arch: x86

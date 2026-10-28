@@ -28,7 +28,7 @@ def prepare(root):
     for command in commands:
         subprocess.run(command, check=True, capture_output=True)
     ext = root / 'extensions.cnf'
-    ext.write_text('subjectAltName=DNS:api.tmdb.org,DNS:api.themoviedb.org,DNS:image.tmdb.org\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n')
+    ext.write_text('subjectAltName=DNS:api.tmdb.org,DNS:api.themoviedb.org,DNS:image.tmdb.org,DNS:drive-pc.quark.cn\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n')
     subprocess.run(['openssl', 'x509', '-req', '-in', str(root / 'server.csr'), '-CA', str(root / 'ca.pem'), '-CAkey', str(root / 'ca.key'), '-CAcreateserial', '-days', '2', '-sha256', '-extfile', str(ext), '-out', str(root / 'server.pem')], check=True, capture_output=True)
     for name in ['ca.key', 'server.key']:
         (root / name).chmod(0o600)
@@ -37,7 +37,7 @@ def prepare(root):
 
 
 def serve(root, log):
-    state = {'mode': 'normal', 'requests': 0}
+    state = {'mode': 'normal', 'requests': 0, 'downloads': 0, 'ranges': 0, 'mediaRequests': 0}
     lock = threading.Lock()
     log.parent.mkdir(parents=True, exist_ok=True)
 
@@ -53,6 +53,85 @@ def serve(root, log):
             self.end_headers()
             self.wfile.write(body)
 
+        def do_PROPFIND(self):
+            if self.headers.get('Authorization') != 'Basic dHYtdGVzdDpmaXh0dXJl':
+                self.reply({},401)
+                return
+            path=urlparse(self.path).path
+            if path not in ['/dav/', '/bad-dav/']:
+                self.reply({},404)
+                return
+            href='https://example.invalid/stolen.mp4' if path == '/bad-dav/' else '/dav/Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
+            xml=('<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>'+href+'</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>1024</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>').encode()
+            self.send_response(207)
+            self.send_header('Content-Type','application/xml; charset=utf-8')
+            self.send_header('Content-Length',str(len(xml)))
+            self.end_headers()
+            self.wfile.write(xml)
+
+        def do_POST(self):
+            if urlparse(self.path).path == '/1/clouddrive/file/download':
+                if '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
+                    self.reply({},401)
+                    return
+                body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
+                if body.get('fids') != ['movie-file']:
+                    self.reply({},400)
+                    return
+                with lock:
+                    state['downloads']+=1
+                    number=state['downloads']
+                filename='expired.mp4' if number == 1 else 'movie.mp4'
+                self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+filename}]})
+            else:
+                self.reply({},404)
+
+        def do_HEAD(self):
+            self.do_GET()
+
+        def media(self,uri):
+            if uri.path.startswith('/dav/') and self.headers.get('Authorization') != 'Basic dHYtdGVzdDpmaXh0dXJl':
+                self.reply({},401)
+                return
+            if uri.path.startswith('/stream/') and '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
+                self.reply({},401)
+                return
+            if uri.path.endswith('/expired.mp4'):
+                self.reply({},403)
+                return
+            video=root/'sample.mp4'
+            size=video.stat().st_size
+            start,end=0,size-1
+            ranged=self.headers.get('Range','')
+            if ranged:
+                import re
+                match=re.fullmatch(r'bytes=(\d+)-(\d*)',ranged)
+                if not match:
+                    self.reply({},416)
+                    return
+                start=int(match[1]);end=min(int(match[2]) if match[2] else end,end)
+                if start>end:
+                    self.send_response(416);self.send_header('Content-Range',f'bytes */{size}');self.send_header('Content-Length','0');self.end_headers();return
+            with lock:
+                state['mediaRequests']+=1
+                if ranged:state['ranges']+=1
+            self.send_response(206 if ranged else 200)
+            self.send_header('Content-Type','video/mp4')
+            self.send_header('Accept-Ranges','bytes')
+            self.send_header('Content-Length',str(end-start+1))
+            if ranged:self.send_header('Content-Range',f'bytes {start}-{end}/{size}')
+            self.end_headers()
+            if self.command == 'HEAD':return
+            try:
+                with video.open('rb') as stream:
+                    stream.seek(start)
+                    remaining=end-start+1
+                    while remaining>0:
+                        chunk=stream.read(min(65536,remaining))
+                        if not chunk:break
+                        self.wfile.write(chunk);remaining-=len(chunk)
+            except (BrokenPipeError,ConnectionResetError,ssl.SSLEOFError):pass
+
         def do_GET(self):
             uri = urlparse(self.path)
             query = parse_qs(uri.query)
@@ -65,6 +144,15 @@ def serve(root, log):
                     with lock:
                         state['mode'] = mode
                 self.reply(dict(state))
+                return
+            if uri.path.startswith('/stream/') or uri.path.startswith('/dav/'):
+                self.media(uri)
+                return
+            if uri.path == '/1/clouddrive/file/sort':
+                if '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
+                    self.reply({},401)
+                else:
+                    self.reply({'status':200,'code':0,'data':{'list':[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4','file':True,'size':1024}]},'metadata':{'_total':1}})
                 return
             path = uri.path.removeprefix('/3')
             with lock:

@@ -1,0 +1,20 @@
+My Cinema TV embeds the unmodified VideoLAN LibVLC 3.7.7 Android library.
+Copyright (C) VideoLAN and its contributors. LGPL version 2.1 or later.
+https://code.videolan.org/videolan/libvlcjni
+https://code.videolan.org/videolan/vlc
+Published artifact: org.videolan.android:libvlc-all:3.7.7
+https://repo.maven.apache.org/maven2/org/videolan/android/libvlc-all/3.7.7/
+
+OkHttp 3.12.13 and Okio 1.15.0: Copyright Square, Inc. Apache License 2.0.
+https://github.com/square/okhttp/tree/parent-3.12.13
+https://github.com/square/okio/tree/okio-parent-1.15.0
+AndroidX libraries: Copyright The Android Open Source Project. Apache License 2.0.
+https://android.googlesource.com/platform/frameworks/support/
+Kotlin standard library: Copyright JetBrains s.r.o. and Kotlin contributors.
+Apache License 2.0. https://github.com/JetBrains/kotlin
+
+The application sources and build instructions are available at:
+https://github.com/StQuasimodo/Media-Library/tree/main/android-tv
+LibVLC remains in shared native libraries. No LibVLC source was modified.
+Users may rebuild My Cinema with a compatible replacement of these libraries.
+See docs/TV-PLAYBACK.md for dependency source and relinking instructions.

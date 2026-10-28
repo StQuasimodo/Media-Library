@@ -42,7 +42,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Native remote-first TV presentation; no WebView, account server, or desktop runtime. */
+/** Native remote-first TV presentation; collection storage is independent of playback. */
 public final class MainActivity extends Activity {
     static final int SPACE=0xff101216,CONTENT=0xff171a21,PRIMARY=0xffe9ecf2,SECONDARY=0xff9299a6,ACCENT=0xff8ab4ff;
     private Library library;
@@ -85,6 +85,7 @@ public final class MainActivity extends Activity {
         if(state!=null){screen=state.getString("screen","home");value=state.getString("value","");focusedFilm=state.getString("focused","");if(screen.equals("candidate")||screen.equals("seasons"))screen="home";}
         show(screen,value);
     }
+    @Override protected void onResume(){super.onResume();if(body!=null&&screen.equals("film"))show(screen,value);}
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putString("screen",screen);out.putString("value",value);out.putString("focused",focusedFilm);}
     @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused)immersive();}
     private void immersive(){getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);}
@@ -151,7 +152,7 @@ public final class MainActivity extends Activity {
         boolean watch=screen.equals("watchlist"),collection=screen.equals("collection");String collectionId=collection?value:"";
         String name=watch?"想看":collection?collectionName(collectionId):"全部收藏";
         LinearLayout layout=column();layout.setPadding(dp(4),dp(8),dp(4),0);body.addView(layout,new FrameLayout.LayoutParams(-1,-1));layout.addView(text(name,28,PRIMARY));
-        LinearLayout tools=row();tools.addView(button("搜索",()->input("搜索收藏",query,term->{query=term;show(screen,value);})));if(!watch)tools.addView(button(status.isEmpty()?"全部状态":statusLabel(status),()->choose("观看状态",new String[]{"全部状态","想看","观看中","已看完","暂不观看"},n->{status=new String[]{"","want","watching","watched","dropped"}[n];show(screen,value);})));tools.addView(button(yearFilter==0?"全部年份":String.valueOf(yearFilter),this::chooseYear));tools.addView(button(series.isEmpty()?"全部系列":"切换系列",this::chooseSeries));tools.addView(button("排序",()->choose("排序",new String[]{"最近收藏","最早收藏","标题 A→Z","标题 Z→A","年份新→旧","年份旧→新","评分高→低"},n->{sort=new String[]{"recent","collected_asc","title_asc","title_desc","year_desc","year_asc","rating"}[n];show(screen,value);})));tools.addView(button("添加作品",()->push("search","")));if(collection)tools.addView(button("编辑专题",()->editCollection(value)));layout.addView(tools);
+        LinearLayout tools=row();tools.addView(button("搜索",()->input("搜索收藏",query,term->{query=term;show(screen,value);})));if(!watch)tools.addView(button(status.isEmpty()?"全部状态":statusLabel(status),()->choose("观看状态",new String[]{"全部状态","想看","观看中","已看完","暂不观看"},n->{status=new String[]{"","want","watching","watched","dropped"}[n];show(screen,value);})));tools.addView(button(yearFilter==0?"全部年份":String.valueOf(yearFilter),this::chooseYear));tools.addView(button(series.isEmpty()?"全部系列":"切换系列",this::chooseSeries));tools.addView(button("排序",()->choose("排序",new String[]{"最近收藏","最早收藏","标题 A→Z","标题 Z→A","年份新→旧","年份旧→新","评分高→低"},n->{sort=new String[]{"recent","collected_asc","title_asc","title_desc","year_desc","year_asc","rating"}[n];show(screen,value);})));tools.addView(button("添加作品",()->push("search","")));tools.addView(button("媒体源",this::mediaSources));if(collection)tools.addView(button("编辑专题",()->editCollection(value)));layout.addView(tools);
         List<Library.Item> items=library.list(query,watch?"want":status,collectionId,series,sort,yearFilter);layout.addView(text(items.size()+" 部  ·  同系列按序号排列",12,SECONDARY));
         if(items.isEmpty()){layout.addView(text("没有符合条件的作品。",18,SECONDARY));layout.addView(button("清除筛选",()->{query="";status="";series="";yearFilter=0;show(screen,value);}));layout.addView(button("手动添加",this::manual));return;}
         GridView grid=new GridView(this);grid.setId(R.id.library_grid);grid.setFocusableInTouchMode(true);grid.setNumColumns(Math.max(3,getResources().getDisplayMetrics().widthPixels/dp(155)));grid.setHorizontalSpacing(dp(14));grid.setVerticalSpacing(dp(14));grid.setSelector(surface(0x208ab4ff,ACCENT));grid.setDrawSelectorOnTop(true);grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);grid.setPadding(dp(4),dp(6),dp(4),dp(6));
@@ -168,6 +169,11 @@ public final class MainActivity extends Activity {
         LinearLayout actions=row();Button primary=button("查看资源",()->{View section=findViewById(R.id.resources_section);if(section!=null)section.requestFocus();});primary.setFocusableInTouchMode(true);StateListDrawable primaryStyle=new StateListDrawable();primaryStyle.addState(new int[]{android.R.attr.state_focused},surface(PRIMARY,ACCENT));primaryStyle.addState(new int[]{},surface(PRIMARY,0));primary.setBackground(primaryStyle);primary.setTextColor(SPACE);actions.addView(primary);actions.addView(button("编辑观影记录",()->editEntry(id)));actions.addView(button("加入专题",()->memberships(id)));actions.addView(button("更多操作",()->choose("作品操作",new String[]{"编辑影视资料","刷新TMDB资料","移除收藏"},n->{if(n==0)editFilm(id);if(n==1)refresh(id);if(n==2)confirm("移除《"+item.title()+"》？","本机的个人记录与资源记录会同时移除。",()->{library.remove(id);onBackPressed();});})));content.addView(actions);primary.post(primary::requestFocus);
         String reason=Json.text(item.entry,"favoriteReason"),review=Json.text(item.entry,"personalReview");if(!reason.isEmpty())content.addView(text("“"+reason+"”",20,PRIMARY));
         content.addView(text("关于这部作品",19,PRIMARY));content.addView(text(Json.text(item.film,"overview").isEmpty()?"暂无简介。":Json.text(item.film,"overview"),16,SECONDARY));if(!review.isEmpty()){content.addView(text("我的短评",19,PRIMARY));content.addView(text(review,16,PRIMARY));}
+        try(MediaCatalog catalog=new MediaCatalog(this)){
+            List<JSONObject> files=catalog.forFilm(id);
+            if(!files.isEmpty()){content.addView(text("播放资源",19,PRIMARY));for(JSONObject file:files){String key=Json.text(file,"key"),label=Json.text(file,"name")+"  "+ResourceName.description(file);content.addView(button((catalog.position(key)>0?"续播  ":"播放  ")+label,()->startActivity(new Intent(this,PlayerActivity.class).putExtra("mediaKey",key))));}}
+        }
+        content.addView(button("关联夸克 / WebDAV 文件",this::mediaSources));
         TextView resources=text("夸克资源记录",19,PRIMARY);resources.setId(R.id.resources_section);resources.setFocusableInTouchMode(true);resources.setBackground(focusBackground());content.addView(resources);for(JSONObject resource:library.resources(id)){content.addView(button(Json.text(resource,"resourceName")+"  "+Json.text(resource,"qualityLabel")+"  "+Json.text(resource,"versionLabel"),()->resourceActions(id,resource)));}content.addView(button("添加资源记录",()->editResource(id,new JSONObject())));
     }
     private void refresh(String id){Library.Item old=library.get(id);if(!Json.text(old.film,"metadataSource").equals("tmdb")){toast("手动作品没有可刷新的TMDB资料。");return;}job("刷新资料…",()->library.refresh(id,artwork.cacheMetadata(tmdb().candidate(Json.text(old.film,"externalId"),Json.text(old.film,"mediaType")),old.film)),item->{show("film",id);toast("资料已刷新，个人记录保留。");});}
@@ -232,10 +238,12 @@ public final class MainActivity extends Activity {
         job("批量导入…",()->{List<Integer> completed=new ArrayList<>();String failure="";for(int n:requested){try{library.saveCandidate(artwork.cacheMetadata(tmdb().candidate(id+":season:"+n,"tv"),null));completed.add(n);}catch(Exception error){failure=message(error);break;}}return new Batch(completed,failure);},batch->{selectedSeasons.removeAll(batch.completed);show("seasons",id);toast("已处理 "+batch.completed.size()+" 季"+(batch.failure.isEmpty()?"。":"；"+batch.failure+" 已完成项保留，可重试剩余季。"));});
     }
     private static final class Batch{final List<Integer> completed;final String failure;Batch(List<Integer> completed,String failure){this.completed=completed;this.failure=failure;}}
+    private void mediaSources(){startActivity(new Intent(this,MediaBrowserActivity.class));}
     private void settings(){
         LinearLayout content=page("放映室设置","THE STUDIO");content.addView(text("电视本地收藏 · 独立管理",18,PRIMARY));content.addView(text("Android "+android.os.Build.VERSION.RELEASE+" / API "+android.os.Build.VERSION.SDK_INT+"  ·  My Cinema TV "+BuildConfig.VERSION_NAME,14,SECONDARY));
         content.addView(button(secrets.exists()?"TMDB配置：已保存 · 重新配置":"配置TMDB API Key",this::configureKey));if(secrets.exists())content.addView(button("清除TMDB配置",()->confirm("清除TMDB配置？","本地收藏和图片会保留。",()->{secrets.clear();show("settings","");})));
         content.addView(button("资料语言："+(language.equals("zh-CN")?"简体中文":"English"),()->{language=language.equals("zh-CN")?"en-US":"zh-CN";getPreferences(0).edit().putString("language",language).apply();show("settings","");}));
+        content.addView(button("媒体源 · 夸克 / WebDAV",this::mediaSources));
         content.addView(text("收藏与备份",19,PRIMARY));content.addView(button("创建本机备份",()->job("备份收藏…",()->{writeBackup("collection-backup.json",library.snapshot());return true;},done->toast("已保存本机收藏备份；不包含TMDB凭据。"))));
         content.addView(button("恢复上次本机备份",()->confirm("恢复收藏备份？","当前收藏会先另存为恢复前备份，TMDB配置保留。",()->job("恢复收藏…",()->{AtomicFile file=new AtomicFile(new File(getFilesDir(),"collection-backup.json"));if(!file.getBaseFile().isFile())throw new IllegalArgumentException("还没有创建本机备份。");JSONObject data=Json.object(new String(file.readFully(),StandardCharsets.UTF_8));writeBackup("before-restore.json",library.snapshot());library.restore(data);return true;},done->{show("settings","");toast("收藏已恢复。");}))));
         content.addView(text("使用遥控器方向键浏览，确认键选择，返回键退回上一页。收藏和图片保存在电视本机；卸载会清除应用数据。",14,SECONDARY));

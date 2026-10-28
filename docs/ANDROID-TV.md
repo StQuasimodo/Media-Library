@@ -8,8 +8,8 @@
 
 2026-10-27用户另附照片，直接可见55D2S系列、`ZLH85Gi-V1.00144-EMMC`、编译时间`2026-07-24 19:08:09`、TVOS版本30及TCON `V1.0-CEDS-55-20180801-V553`。照片没有显示Android版本、内存或CPU ABI；TVOS 30不能据此认定为Android API30。API22/armeabi-v7a仍属于交接记录中的兼容目标，未由这张照片独立确认。不归档照片中的MAC、条码等设备标识。
 
-- minSdk **21**，targetSdk 35；单APK、**v1签名**。当前纯Java与平台组件，无`.so`，适用于32位ARM，不需要64位系统。
-- 不使用系统WebView、Electron或要求API23+的界面框架。原生视图、SQLite、HTTPS、Android Keystore均按API21设计。
+- minSdk **21**，targetSdk 35；单APK、**v1签名**。0.1.x为纯Java；当前开发中的0.2.0-alpha.1加入LibVLC 3.7.7，APK包含armeabi-v7a与x86共享库，不需要64位系统。
+- 收藏界面不使用WebView、Electron或要求API23+的界面框架；新增的夸克授权页单独使用系统WebView加载官方登录。原生视图、SQLite、HTTPS、Android Keystore均按API21设计。
 - 深色令牌沿用Windows版；首页宽幅主视觉与横向海报、焦点联动、独立季背景、详情、专题、想看与设置按遥控器操作。
 - 返回键退回应用内上一页，首页返回询问退出；不接管Home键、不改默认桌面、不要求ADB或刷机。
 - 图片后台下载/采样解码，位图内存缓存上限8MiB，海报墙复用单元格，首页轨道最多24部。后续视频缓存会单独设置空间配额。
@@ -22,11 +22,11 @@
 - 同一TMDB身份重复导入复用收藏；批量导入部分失败保留完成项，剩余季可重试；刷新不覆盖个人记录与手工系列。
 - 本机备份是收藏JSON，图片仍在应用图片目录，TMDB凭据不进入备份。恢复前另存当前收藏，关系校验/事务失败保留原库。卸载会清除应用私有数据；跨设备导出/图片打包后续补齐。
 
-首个预览**尚未等同Windows全部功能**：夸克账号连接/目录自动匹配、跨设备图片包等仍待移植。影视库保留七种排序及年份/状态/系列筛选；开启系列聚合时组内序号优先。首版不播放、不下载视频，不显示没有实现的播放按钮。
+首个预览**尚未等同Windows全部功能**：夸克账号连接/目录自动匹配、跨设备图片包等仍待移植。影视库保留七种排序及年份/状态/系列筛选；开启系列聚合时组内序号优先。以上是已发布0.1.x的范围。当前0.2.0-alpha.1开发新增媒体源与播放，实际验证进度见[播放说明](TV-PLAYBACK.md)，不将源码实现等同真实账号验收。
 
 ## 后续播放阶段
 
-2026-10-28用户确认家里没有NAS或常开电脑，希望电视独立连接夸克。后续主线改为电视直连，WebDAV保留为可选来源；当前只完成[官方与GitHub调研](TV-PLAYBACK-RESEARCH-2026-10-28.md)，尚未接入播放代码。
+2026-10-28用户确认家里没有NAS或常开电脑，希望电视独立连接夸克。后续主线改为电视直连，WebDAV保留为可选来源；已完成[官方与GitHub调研](TV-PLAYBACK-RESEARCH-2026-10-28.md)，用户随后授权开始实现。[当前播放实现与验证状态](TV-PLAYBACK.md)。
 
 1. 先核实自有客户端可使用的夸克授权与取流方式，在API22验证电视扫码、目录读取与文件ID关联。官方Skill仍不作为电视运行时依赖；Windows Chromium登录不能代替旧电视WebView验收。
 2. 验证1080p H.264/AAC样片的HTTPS、Range拖动、重连、地址过期续接与字幕音轨。优先对比LibVLC 3.7.7与Media3 1.8.1；新版Media3需要API23，不能直接提高最低版本排除旧电视。
@@ -36,14 +36,14 @@
 
 ## 构建与验证
 
-JDK17、Android SDK35、build-tools35.0.0；Gradle8.11.1 Wrapper与分发SHA-256已固定。无第三方Android运行时依赖。
+JDK17、Android SDK35、build-tools35.0.0；Gradle8.11.1 Wrapper与分发SHA-256已固定。0.2.0起使用固定版本LibVLC 3.7.7与OkHttp 3.12.13；AndroidX及Kotlin为库的传递依赖。
 
 ```bash
 cd android-tv
 ./gradlew lintDebug assembleDebug assembleDebugAndroidTest
 ```
 
-[Android TV API 22 preview工作流](../.github/workflows/android-tv.yml)构建后核对minSdk、v1签名、DEX035与无原生库；随后在API22 x86模拟器安装应用和独立测试APK，运行SQLite、Keystore与遥控器界面验证。测试数据只在测试APK中，正式应用首次启动为空收藏。模拟器通过不等于长虹固件、遥控器、中文输入法、真实网络/TMDB和解码已经验收。
+[Android TV API 22 preview工作流](../.github/workflows/android-tv.yml)构建后核对minSdk、v1签名、DEX035与ARMv7/x86解码库；随后在API22 x86模拟器安装应用和独立测试APK，运行SQLite、Keystore与遥控器界面验证。测试数据只在测试APK中，正式应用首次启动为空收藏。模拟器通过不等于长虹固件、遥控器、中文输入法、真实网络/TMDB和解码已经验收。
 
 当前交付为`0.1.0-alpha.3` **debug开发预览**，签名沿用alpha.2，支持从alpha.2覆盖升级。alpha.1默认Keystore未被成功缓存，其签名无法恢复；**alpha.2及后续不能直接覆盖alpha.1**。alpha.1已有收藏时请保留原安装，不要直接卸载；卸载会同时清除本机备份。开发签名不是生产签名。
 

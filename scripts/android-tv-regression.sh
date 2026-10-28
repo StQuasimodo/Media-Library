@@ -56,7 +56,7 @@ adb pull /system/etc/hosts .harness/tv-fixture-private/hosts-original
 python3 - <<'PY'
 from pathlib import Path
 root=Path('.harness/tv-fixture-private')
-(root/'hosts').write_text((root/'hosts-original').read_text()+'\n10.0.2.2 api.tmdb.org api.themoviedb.org image.tmdb.org\n')
+(root/'hosts').write_text((root/'hosts-original').read_text()+'\n10.0.2.2 api.tmdb.org api.themoviedb.org image.tmdb.org drive-pc.quark.cn\n')
 PY
 adb push .harness/tv-fixture-private/hosts /system/etc/hosts
 adb shell chmod 644 /system/etc/hosts

@@ -1,0 +1,14 @@
+[
+  {
+    "run": "40670141053",
+    "source": "34aef63b2685d59acf051c02de2145026fa8be18",
+    "conclusion": "failure",
+    "detail": "Protocol byte recovery, bounded failure and unsafe continuation tests passed; direct native VLC returned local HTTP401 because media http-user/http-pwd options were ineffective in this build. No sustained playback or full regression pass claimed; no installable artifact distributed."
+  },
+  {
+    "run": "40670992547",
+    "source": "46a9bee450f2c6263267b2dd01dda4e821713a51",
+    "conclusion": "success",
+    "detail": "Use LibVLC supported login callback with temporary loopback credential, never cloud Cookie; complete build/lint, actual API22 native playback and collection/process/kernel reboot suite passed."
+  }
+]

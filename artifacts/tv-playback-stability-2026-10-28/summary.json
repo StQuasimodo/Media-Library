@@ -1,0 +1,52 @@
+{
+  "result": "passed",
+  "version": "0.2.0-alpha.3",
+  "source": "46a9bee450f2c6263267b2dd01dda4e821713a51",
+  "run": "40670992547",
+  "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40670992547",
+  "apk": {
+    "version": "0.2.0-alpha.3",
+    "developmentBuild": true,
+    "minSdk": 21,
+    "targetSdk": 35,
+    "v1SignatureVerified": true,
+    "nativeLibraries": true,
+    "cpuAbiIndependent": false,
+    "nativeAbis": [
+      "armeabi-v7a",
+      "x86"
+    ],
+    "player": "LibVLC 3.7.7",
+    "source": "46a9bee450f2c6263267b2dd01dda4e821713a51",
+    "run": "40670992547",
+    "sha256": "c088233ba4ebf07f9a30a50a3bfe8c4ddbfbfe92ec7ce771c4a43cd79fa30824",
+    "bytes": 48723912,
+    "actualTelevisionVerified": false,
+    "signerSha256": "0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44"
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 17
+  },
+  "localForwardingHops": 1,
+  "byteExactDropAndExpiryRecovery": true,
+  "maximumResumptionsPerRequest": 2,
+  "nativePlaybackAfterDropAndExpiry": true,
+  "manualReconnectResumes": true,
+  "continuousPlayback": {
+    "continuousPlaybackWallMs": 90024,
+    "continuousPlaybackAdvanceMs": 89999,
+    "continuousDisplayedPictures": 1350,
+    "startPssKiB": 157771,
+    "endPssKiB": 160689
+  },
+  "collectionProcessAndKernelRebootPassed": true,
+  "realQuarkAccountVerified": false,
+  "oldWebViewLoginVerified": false,
+  "physicalTelevisionVerified": false,
+  "fullLengthMovieVerified": false,
+  "newReleaseCreated": false,
+  "serverLoopbackOnly": true,
+  "serviceLifetimePolicy": "foreground_only",
+  "automaticBackgroundStopSeparatelyVerified": false
+}

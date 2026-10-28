@@ -23,7 +23,7 @@
 
 [1.2.0 正式版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0)包含目录自动匹配、分季收藏、系列海报墙及新选图规则。更新后在影视库点「全部刷新」统一更新资料与图片，操作见[使用指南](docs/USAGE.md)；网盘整理见[夸克自动匹配](docs/QUARK-MATCHING.md)。
 
-[Android TV 0.1.0-alpha.3开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.3)：原生界面、minSdk21/v1签名，独立管理收藏，同步新选图规则，已通过API22完整回归。实机、真实TMDB Key、WebDAV与播放仍待验收或开发。安装及与alpha.1签名不兼容的限制见[电视端说明](docs/ANDROID-TV.md)。0.2.0-alpha.2开发版可在电视本机将夸克文件夹转换为WebDAV并内置播放，无需NAS；[进展与实测边界](docs/TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md)。
+[Android TV 0.1.0-alpha.3开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.3)：原生界面、minSdk21/v1签名，独立管理收藏，同步新选图规则，已通过API22完整回归。实机、真实TMDB Key、WebDAV与播放仍待验收或开发。安装及与alpha.1签名不兼容的限制见[电视端说明](docs/ANDROID-TV.md)。0.2.0-alpha.3开发版支持本机夸克转WebDAV、单层内置播放和有限断流恢复，无需NAS；[进展与实测边界](docs/TV-PLAYBACK-STABILITY-2026-10-28.md)。
 
 从源码开发需要 Node.js 22+ 和 pnpm 11：
 

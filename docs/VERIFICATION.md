@@ -1,5 +1,9 @@
 # 验证与交付
 
+## 电视0.2.0-alpha.3：单层播放与断流恢复（2026-10-28）
+
+[完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40670992547)成功，构建源码`46a9bee450f2c6263267b2dd01dda4e821713a51`。LibVLC直接连接本机夸克WebDAV，实际断流并使地址过期后恢复播放；字节精确续接、两次上限、拒绝错误Range、重新连接/续播及收藏/进程/内核重启通过。1080p合成样片连续观测90,024ms，媒体时钟推进89,999ms、新增1,350显示帧，PSS起止157,771/160,689KiB。真实账号、老WebView、长虹硬解与整片播放仍未验收；APK在Actions，未创建新Release。[原始报告、哈希与首次401失败记录](TV-PLAYBACK-STABILITY-2026-10-28.md)。
+
 ## 电视0.2.0-alpha.2：夸克转WebDAV（2026-10-28）
 
 [最终完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40653434168)通过，构建源码`9d33c9084633b8ac8c05984a0b185fbb08d4770f`。原生界面选择夸克文件夹，电视自身提供只读WebDAV，内置播放器通过该源真实解码/定位/续播，旧收藏与进程/内核重启回归通过。无需额外NAS或先有DAV服务；夸克上游仍使用受控协议，真实账号和长虹ARM未验收。[哈希、源码、截图和完整边界](TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md)。

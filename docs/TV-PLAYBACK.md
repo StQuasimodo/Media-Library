@@ -34,4 +34,4 @@ API21仍为安装下限，ARMv7用于目标电视、x86用于模拟器；该预�
 
 LibVLC `org.videolan.android:libvlc-all:3.7.7`：未修改的Maven AAR，LGPL-2.1；[发布源](https://repo.maven.apache.org/maven2/org/videolan/android/libvlc-all/3.7.7/)、[JNI源码与构建](https://code.videolan.org/videolan/libvlcjni)、[VLC内核源码](https://code.videolan.org/videolan/vlc)。分发前仍须完整核对该AAR对应的JNI/内核及贡献模块源码和许可，不把调研中其他应用的GPL/AGPL代码复制进本项目。
 
-OkHttp3.12.13/Okio1.15.0及传递AndroidX/Kotlin依赖按其Apache-2.0许可。许可文本与说明打入`assets/licenses`，媒体源页提供入口。项目不限制用户为调试库修改进行逆向分析；应用代码可从仓库获取，用JDK17/SDK35按[构建说明](ANDROID-TV.md)重新构建。替换LibVLC时修改Gradle依赖为兼容替代AAR或本机构建版本，再重建APK、以自己的签名安装；不要覆盖原签名并冒充原作者版本，先保留本机数据。当前仍为开发验证，不自动发布为正式稳定电视版。
+OkHttp3.12.13/Okio1.15.0及传递AndroidX/Kotlin依赖按其Apache-2.0许可。许可文本与说明打入`assets/licenses`，媒体源页提供入口。项目不限制用户为调试库修改进行逆向分析；应用代码可从仓库获取，用JDK17/SDK36按[构建说明](ANDROID-TV.md)重新构建。替换LibVLC时修改Gradle依赖为兼容替代AAR或本机构建版本，再重建APK、以自己的签名安装；不要覆盖原签名并冒充原作者版本，先保留本机数据。当前仍为开发验证，不自动发布为正式稳定电视版。

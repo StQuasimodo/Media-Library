@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 
 android {
     namespace 'io.mycinema.tv'
-    compileSdk 35
+    compileSdk 36
     defaultConfig {
         applicationId 'io.mycinema.tv'
         minSdk 21

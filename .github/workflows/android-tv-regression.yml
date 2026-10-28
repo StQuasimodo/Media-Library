@@ -64,7 +64,7 @@ jobs:
       - name: Build separate test APK and select original or working application
         run: |
           bash scripts/tv-dev-signing.sh
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
           cd android-tv
           ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest
           cd ..

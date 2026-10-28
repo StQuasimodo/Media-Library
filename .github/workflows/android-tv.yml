@@ -47,7 +47,7 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('version='+version+'\n')
           PY
       - name: Install compile SDK
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
       - name: Build and lint native APK and separate instrumentation
         working-directory: android-tv
         run: ./gradlew --no-daemon lintDebug assembleDebug assembleDebugAndroidTest

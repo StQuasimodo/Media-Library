@@ -36,7 +36,7 @@
 
 ## 构建与验证
 
-JDK17、Android SDK35、build-tools35.0.0；Gradle8.11.1 Wrapper与分发SHA-256已固定。0.2.0起使用固定版本LibVLC 3.7.7与OkHttp 3.12.13；AndroidX及Kotlin为库的传递依赖。
+JDK17、Android SDK36、build-tools35.0.0；Gradle8.11.1 Wrapper与分发SHA-256已固定。0.2.0起使用固定版本LibVLC 3.7.7与OkHttp 3.12.13；AndroidX及Kotlin为库的传递依赖。
 
 ```bash
 cd android-tv

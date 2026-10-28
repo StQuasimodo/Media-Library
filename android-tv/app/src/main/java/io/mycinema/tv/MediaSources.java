@@ -125,7 +125,7 @@ final class MediaSources {
             }else if(event==XmlPullParser.END_TAG&&"DAV:".equals(parser.getNamespace())){
                 if(parser.getName().equals("propstat")){if(status.matches("HTTP/\\S+ 200.*")){valid=true;collection|=propCollection;if(!propDisplay.isEmpty())display=propDisplay;if(propSize>0)size=propSize;}inProp=false;}
                 if(parser.getName().equals("response")&&valid&&!href.isEmpty()){
-                    HttpUrl url=davChild(root,href);String path=url.encodedPath(),base=folder.encodedPath();if(path.equals(base)||path.equals(base.replaceAll("/$","")))continue;
+                    HttpUrl resolved=folder.resolve(href);if(resolved==null)throw new IllegalStateException("WebDAV文件地址无效。");HttpUrl url=davChild(root,resolved.toString());String path=url.encodedPath(),base=folder.encodedPath();if(path.equals(base)||path.equals(base.replaceAll("/$","")))continue;
                     if(!path.startsWith(base))throw new IllegalStateException("WebDAV目录层级异常。");String relative=path.substring(base.length()).replaceAll("/$","");if(relative.isEmpty()||relative.contains("/"))continue;
                     if(!seen.add(url.toString()))continue;
                     if(collection&&!url.encodedPath().endsWith("/"))url=url.newBuilder().addPathSegment("").build();String name=UriName(url);result.add(new Entry("webdav",url.toString(),display.isEmpty()?name:display,folder.toString(),collection,size));

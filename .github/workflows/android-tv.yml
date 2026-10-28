@@ -61,6 +61,8 @@ jobs:
         run: sudo chmod a+rw /dev/kvm
       - name: Prepare full UI protocol fixture without application hooks
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
           node scripts/prepare-tv-regression.mjs
           python3 scripts/tv-regression-server.py prepare
           bash scripts/prepare-tv-playback.sh

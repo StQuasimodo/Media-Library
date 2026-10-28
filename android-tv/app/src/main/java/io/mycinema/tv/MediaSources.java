@@ -58,7 +58,7 @@ final class MediaSources {
     void saveQuark(String cookie) throws Exception {
         validateCookie(cookie);listQuark(cookie,"0");quark.save(cookie);
     }
-    private static void validateCookie(String cookie){if(cookie.isEmpty()||cookie.length()>20000||cookie.contains("\r")||cookie.contains("\n"))throw new IllegalArgumentException("尚未取得可用的夸克登录状态。");}
+    private static void validateCookie(String cookie){if(cookie.isEmpty()||cookie.length()>20000||!cookie.matches("[\\x20-\\x7e]+"))throw new IllegalArgumentException("尚未取得可用的夸克登录状态。");}
     List<Entry> list(String source,String parent) throws Exception {
         if(!connected(source))throw new IllegalStateException("请先到设置连接媒体源。");
         return source.equals("quark")?listQuark(quark.read(),parent):listDav(Json.object(dav.read()),parent);

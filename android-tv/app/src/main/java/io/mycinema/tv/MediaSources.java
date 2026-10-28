@@ -93,7 +93,7 @@ final class MediaSources {
         throw new IllegalStateException("夸克目录超过读取上限或分页不完整，请选择较小目录。");
     }
     static boolean sameOrigin(HttpUrl a,HttpUrl b){return a.scheme().equals(b.scheme())&&a.host().equals(b.host())&&a.port()==b.port();}
-    private static String basic(JSONObject config){return "Basic "+Base64.encodeToString((Json.text(config,"user")+":"+Json.text(config,"password")).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);}
+    private static String basic(JSONObject config){if(Json.text(config,"user").isEmpty()&&Json.text(config,"password").isEmpty())return "";return "Basic "+Base64.encodeToString((Json.text(config,"user")+":"+Json.text(config,"password")).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);}
     static HttpUrl davChild(HttpUrl root,String value){
         HttpUrl url=root.resolve(value);
         if(url==null||!sameOrigin(root,url)||!url.username().isEmpty()||!url.password().isEmpty()||url.query()!=null||url.fragment()!=null||!url.encodedPath().startsWith(root.encodedPath()))throw new IllegalStateException("WebDAV返回了配置目录以外的地址，已停止读取。");return url;
@@ -101,7 +101,8 @@ final class MediaSources {
     private List<Entry> listDav(JSONObject config,String parent) throws Exception {
         HttpUrl root=davUrl(Json.text(config,"url")),folder=davChild(root,parent);
         String xml="<?xml version=\"1.0\"?><d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:displayname/></d:prop></d:propfind>";
-        Request request=new Request.Builder().url(folder).header("Authorization",basic(config)).header("Depth","1").method("PROPFIND",RequestBody.create(MediaType.parse("application/xml; charset=utf-8"),xml)).build();
+        Request.Builder builder=new Request.Builder().url(folder).header("Depth","1").method("PROPFIND",RequestBody.create(MediaType.parse("application/xml; charset=utf-8"),xml));
+        if(!basic(config).isEmpty())builder.header("Authorization",basic(config));Request request=builder.build();
         try(Response response=HTTP.newCall(request).execute()){
             if(response.code()!=207){requireSuccess(response,"WebDAV");throw new IllegalStateException("该地址没有返回WebDAV目录，请检查地址。");}
             byte[] bytes=TmdbClient.read(response.body().byteStream(),2*1024*1024);
@@ -138,7 +139,7 @@ final class MediaSources {
     private static String UriName(HttpUrl url){List<String> segments=url.pathSegments();return segments.get(segments.size()-1).isEmpty()&&segments.size()>1?segments.get(segments.size()-2):segments.get(segments.size()-1);}
     Lease resolve(JSONObject file) throws Exception {
         String source=Json.text(file,"source"),id=Json.text(file,"fileId");Map<String,String> headers=new LinkedHashMap<>();
-        if(source.equals("webdav")){JSONObject config=Json.object(dav.read());HttpUrl url=davChild(davUrl(Json.text(config,"url")),id);headers.put("Authorization",basic(config));return new Lease(url,headers);}
+        if(source.equals("webdav")){JSONObject config=Json.object(dav.read());HttpUrl url=davChild(davUrl(Json.text(config,"url")),id);if(!basic(config).isEmpty())headers.put("Authorization",basic(config));return new Lease(url,headers);}
         if(!source.equals("quark"))throw new IllegalArgumentException("媒体源无效。");String cookie=quark.read();validateCookie(cookie);
         JSONObject body=new JSONObject();Json.put(body,"fids",new JSONArray().put(id));JSONObject result=quarkRequest(cookie,api("file/download").build(),RequestBody.create(MediaType.parse("application/json"),body.toString()));
         JSONArray rows=result.optJSONArray("data");String value=rows!=null&&rows.length()>0?rows.getJSONObject(0).optString("download_url"):"";HttpUrl url=HttpUrl.parse(value);

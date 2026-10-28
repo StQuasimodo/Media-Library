@@ -39,6 +39,7 @@ final class PlaybackScenario {
         Json.put(report,"fixtureApiAddress",java.net.InetAddress.getByName("api.tmdb.org").getHostAddress());
         Json.put(report,"fixtureQuarkAddress",java.net.InetAddress.getByName("drive-pc.quark.cn").getHostAddress());
         check(Json.text(report,"fixtureApiAddress").equals("10.0.2.2")&&Json.text(report,"fixtureQuarkAddress").equals("10.0.2.2"),"controlled hosts must resolve inside disposable fixture before sending synthetic credentials");String metadata=new SecretStore(context).read();MediaSources sources=new MediaSources(context);
+        sources.saveDav("https://api.tmdb.org/public-dav/","","");List<MediaSources.Entry> anonymous=sources.list("webdav",sources.root("webdav"));check(anonymous.size()==1&&!sources.resolve(anonymous.get(0).json()).headers.containsKey("Authorization"),"anonymous WebDAV omits Basic authorization");
         boolean denied=false;try{sources.saveDav("https://api.tmdb.org/dav/","tv-test","incorrect");}catch(IllegalStateException expected){denied=true;}check(denied,"401 credentials rejected");
         sources.saveDav("https://api.tmdb.org/dav/","tv-test","fixture");List<MediaSources.Entry> files=sources.list("webdav",sources.root("webdav"));check(files.size()==1&&files.get(0).video(),"authenticated WebDAV PROPFIND");
         denied=false;try{sources.saveDav("https://api.tmdb.org/bad-dav/","tv-test","fixture");}catch(IllegalStateException expected){denied=true;}check(denied&&sources.root("webdav").equals("https://api.tmdb.org/dav/"),"unsafe href rejected and prior settings retained");

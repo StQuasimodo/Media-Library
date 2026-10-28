@@ -54,14 +54,14 @@ def serve(root, log):
             self.wfile.write(body)
 
         def do_PROPFIND(self):
-            if self.headers.get('Authorization') != 'Basic dHYtdGVzdDpmaXh0dXJl':
+            path=urlparse(self.path).path
+            if (path == '/public-dav/' and self.headers.get('Authorization')) or (path != '/public-dav/' and self.headers.get('Authorization') != 'Basic dHYtdGVzdDpmaXh0dXJl'):
                 self.reply({},401)
                 return
-            path=urlparse(self.path).path
-            if path not in ['/dav/', '/bad-dav/']:
+            if path not in ['/dav/', '/bad-dav/', '/public-dav/']:
                 self.reply({},404)
                 return
-            href='https://example.invalid/stolen.mp4' if path == '/bad-dav/' else '/dav/Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
+            href='https://example.invalid/stolen.mp4' if path == '/bad-dav/' else path+'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
             xml=('<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>'+href+'</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>1024</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>').encode()
             self.send_response(207)
             self.send_header('Content-Type','application/xml; charset=utf-8')
@@ -145,7 +145,7 @@ def serve(root, log):
                         state['mode'] = mode
                 self.reply(dict(state))
                 return
-            if uri.path.startswith('/stream/') or uri.path.startswith('/dav/'):
+            if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/'):
                 self.media(uri)
                 return
             if uri.path == '/1/clouddrive/file/sort':

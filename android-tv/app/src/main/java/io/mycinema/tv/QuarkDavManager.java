@@ -18,6 +18,8 @@ final class QuarkDavManager {
     String rootId(){return prefs.getString("folderId","0");}
     String name(){return prefs.getString("folderName","夸克影视");}
     synchronized boolean running(){return server!=null;}
+    synchronized String error(){return server==null?"":server.error();}
+    synchronized int recoveries(){return server==null?0:server.recoveries();}
     void enable(String id,String name) throws Exception {
         if(id.isEmpty()||id.length()>1024||name.isEmpty()||name.length()>1024)throw new IllegalArgumentException("请选择有效的夸克文件夹。");
         new MediaSources(context).rawQuarkList(id); // Validate first; a failed selection keeps the prior mount.

@@ -20,27 +20,43 @@ import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /** One embedded decoder, own remote-first controls; intents carry only stable catalog IDs. */
 public final class PlayerActivity extends Activity {
     private final Handler handler=new Handler();private MediaCatalog catalog;private JSONObject file;
     private LibVLC vlc;private MediaPlayer player;private PlaybackRelay relay;private VLCVideoLayout video;
     private TextView title,status;private LinearLayout controls;private Button toggle;
-    private long resume;private boolean resumed,failed,ended;private int ticks;
-    private final Runnable timer=new Runnable(){@Override public void run(){if(player==null)return;long time=player.getTime(),length=player.getLength();if(!failed)status.setText(clock(time)+" / "+clock(length)+"   ·   隐藏面板后：左右 ±10秒 · 确认 暂停/播放 · 菜单 音轨/字幕");if(++ticks%5==0)save();handler.postDelayed(this,1000);}};
+    private final ExecutorService connector=Executors.newSingleThreadExecutor();private Future<?> connecting;private int generation;
+    private long resume;private boolean resumed,failed,ended,buffering;private float buffered;private int ticks;
+    private final Runnable timer=new Runnable(){@Override public void run(){if(player==null)return;long time=player.getTime(),length=player.getLength();if(!failed&&!ended)status.setText((buffering?"正在缓冲 "+Math.round(buffered)+"% · ":"")+clock(time)+" / "+clock(length)+"   ·   隐藏面板后：左右 ±10秒 · 确认 暂停/播放 · 菜单 音轨/字幕");if(++ticks%5==0)save();handler.postDelayed(this,1000);}};
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN|WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         catalog=new MediaCatalog(this);file=catalog.get(getIntent().getStringExtra("mediaKey"));if(file==null){finish();return;}resume=catalog.position(Json.text(file,"key"));
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(0xff000000);video=new VLCVideoLayout(this);root.addView(video,new FrameLayout.LayoutParams(-1,-1));
         controls=new LinearLayout(this);controls.setOrientation(LinearLayout.VERTICAL);controls.setPadding(24,12,24,18);controls.setBackgroundColor(0xdd101216);FrameLayout.LayoutParams params=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);root.addView(controls,params);
         title=new TextView(this);title.setTextColor(MainActivity.PRIMARY);title.setTextSize(18);title.setText(Json.text(file,"name"));controls.addView(title);status=new TextView(this);status.setTextColor(MainActivity.PRIMARY);status.setTextSize(14);controls.addView(status);
-        LinearLayout actions=new LinearLayout(this);toggle=button("暂停 / 播放",this::toggle);actions.addView(toggle);actions.addView(button("后退10秒",()->seek(-10000)));actions.addView(button("前进10秒",()->seek(10000)));actions.addView(button("音轨 / 字幕",this::tracks));actions.addView(button("退出播放",this::finish));controls.addView(actions);setContentView(root);toggle.requestFocus();
+        LinearLayout actions=new LinearLayout(this);toggle=button("暂停 / 播放",this::toggle);actions.addView(toggle);actions.addView(button("后退10秒",()->seek(-10000)));actions.addView(button("前进10秒",()->seek(10000)));actions.addView(button("音轨 / 字幕",this::tracks));actions.addView(button("重新连接",this::retry));actions.addView(button("退出播放",this::finish));controls.addView(actions);setContentView(root);toggle.requestFocus();
     }
     @Override public void onWindowFocusChanged(boolean focus){super.onWindowFocusChanged(focus);if(focus)getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);}
-    @Override protected void onStart(){super.onStart();if(file==null)return;try{
-        failed=false;resumed=false;ended=false;relay=new PlaybackRelay(new MediaSources(this),file);ArrayList<String> options=new ArrayList<>();options.add("--quiet");options.add("--no-video-title-show");options.add("--network-caching=1500");vlc=new LibVLC(this,options);player=new MediaPlayer(vlc);player.attachViews(video,null,false,false);
-        player.setEventListener(event->{if(player==null)return;if(event.type==MediaPlayer.Event.Playing){if(!resumed&&resume>0)player.setTime(resume);resumed=true;status.setText("正在播放");}if(event.type==MediaPlayer.Event.EncounteredError){failed=true;String reason=relay==null?"":relay.error();status.setText(reason.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":reason);}if(event.type==MediaPlayer.Event.EndReached){ended=true;resume=0;catalog.progress(Json.text(file,"key"),0,player.getLength());status.setText("播放完毕");}});
-        Media media=new Media(vlc,android.net.Uri.parse(relay.url()));media.setHWDecoderEnabled(true,false);try{player.setMedia(media);}finally{media.release();}status.setText("正在连接媒体源…");player.play();handler.postDelayed(timer,1000);
+    @Override protected void onStart(){super.onStart();startPlayback();}
+    private void retry(){save();release();startPlayback();}
+    private void startPlayback(){if(file==null)return;try{
+        failed=false;resumed=false;ended=false;buffering=true;buffered=0;final int session=++generation;ArrayList<String> options=new ArrayList<>();options.add("--quiet");options.add("--no-video-title-show");options.add("--network-caching=1500");vlc=new LibVLC(this,options);player=new MediaPlayer(vlc);player.attachViews(video,null,false,false);
+        player.setEventListener(event->{if(player==null)return;if(event.type==MediaPlayer.Event.Buffering){buffered=event.getBuffering();buffering=buffered<100;}if(event.type==MediaPlayer.Event.Playing){buffering=false;if(!resumed&&resume>0)player.setTime(resume);resumed=true;status.setText("正在播放");}if(event.type==MediaPlayer.Event.EncounteredError){failed=true;String reason=relay==null?CinemaApplication.dav(this).error():relay.error();status.setText(reason.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":reason);}if(event.type==MediaPlayer.Event.EndReached){ended=true;resume=0;catalog.progress(Json.text(file,"key"),0,player.getLength());status.setText("播放完毕");}});
+        status.setText("正在连接媒体源…");
+        connecting=connector.submit(()->{PlaybackRelay pending=null;try{
+            MediaSources sources=new MediaSources(this);MediaSources.Lease direct=null;
+            if(Json.text(file,"source").equals("quark"))direct=sources.resolveForPlayback(file);else pending=new PlaybackRelay(sources,file);
+            final PlaybackRelay ready=pending;final MediaSources.Lease endpoint=direct;MediaSources.interrupted();
+            handler.post(()->{if(session!=generation||player==null){if(ready!=null)ready.close();return;}relay=ready;
+                // Quark already has a scoped local transport. Do not add a second relay.
+                Media media=new Media(vlc,android.net.Uri.parse(endpoint==null?ready.url():endpoint.url.toString()));
+                try{if(endpoint!=null){String auth=endpoint.headers.get("Authorization");String decoded=new String(android.util.Base64.decode(auth.substring(6),android.util.Base64.NO_WRAP),java.nio.charset.StandardCharsets.UTF_8);int colon=decoded.indexOf(':');media.addOption(":http-user="+decoded.substring(0,colon));media.addOption(":http-pwd="+decoded.substring(colon+1));}media.setHWDecoderEnabled(true,false);player.setMedia(media);player.play();handler.postDelayed(timer,1000);}catch(Exception|LinkageError failure){failed=true;status.setText("播放器启动失败，请重新连接或更换电视支持的编码版本。");release();}finally{media.release();}
+            });pending=null;
+        }catch(Exception failure){if(pending!=null)pending.close();handler.post(()->{if(session==generation&&player!=null){failed=true;status.setText("媒体源连接失败，请检查网络、夸克登录状态及所选文件夹后重试。");}});}});
     }catch(Exception|LinkageError error){failed=true;status.setText("播放器初始化失败，该设备可能不兼容。请返回并反馈设备型号。");release();}}
     private Button button(String text,Runnable action){Button button=new Button(this);button.setText(text);button.setAllCaps(false);button.setTextSize(13);button.setOnClickListener(view->action.run());return button;}
     private void toggle(){if(player==null)return;if(player.isPlaying())player.pause();else{if(ended){ended=false;resumed=false;resume=0;player.setTime(0);}player.play();}}
@@ -51,7 +67,7 @@ public final class PlayerActivity extends Activity {
     @Override public boolean onKeyDown(int code,KeyEvent event){if(code==KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE){toggle();return true;}if(code==KeyEvent.KEYCODE_MENU){tracks();return true;}if(controls.getVisibility()!=View.VISIBLE){if(code==KeyEvent.KEYCODE_DPAD_LEFT){seek(-10000);return true;}if(code==KeyEvent.KEYCODE_DPAD_RIGHT){seek(10000);return true;}if(code==KeyEvent.KEYCODE_DPAD_CENTER||code==KeyEvent.KEYCODE_ENTER){toggle();controls.setVisibility(View.VISIBLE);return true;}if(code==KeyEvent.KEYCODE_DPAD_UP||code==KeyEvent.KEYCODE_DPAD_DOWN){controls.setVisibility(View.VISIBLE);toggle.requestFocus();return true;}}return super.onKeyDown(code,event);}
     @Override public void onBackPressed(){if(controls.getVisibility()==View.VISIBLE){controls.setVisibility(View.GONE);}else{controls.setVisibility(View.VISIBLE);new AlertDialog.Builder(this).setTitle("退出播放？").setMessage("进度会保存在电视本机。").setNegativeButton("继续播放",null).setPositiveButton("退出",(dialog,n)->finish()).show();}}
     private void save(){if(player!=null&&file!=null&&resumed&&!ended){long time=player.getTime();resume=time;catalog.progress(Json.text(file,"key"),time,player.getLength());}}
-    private void release(){handler.removeCallbacks(timer);if(relay!=null){relay.close();relay=null;}if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}if(vlc!=null){vlc.release();vlc=null;}}
+    private void release(){generation++;if(connecting!=null){connecting.cancel(true);connecting=null;}handler.removeCallbacks(timer);if(relay!=null){relay.close();relay=null;}if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}if(vlc!=null){vlc.release();vlc=null;}}
     @Override protected void onStop(){save();release();super.onStop();}
-    @Override protected void onDestroy(){release();if(catalog!=null)catalog.close();super.onDestroy();}
+    @Override protected void onDestroy(){release();connector.shutdownNow();if(catalog!=null)catalog.close();super.onDestroy();}
 }

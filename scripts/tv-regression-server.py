@@ -37,7 +37,8 @@ def prepare(root):
 
 
 def serve(root, log):
-    state = {'mode': 'normal', 'requests': 0, 'downloads': 0, 'ranges': 0, 'mediaRequests': 0}
+    state = {'mode': 'normal', 'requests': 0, 'downloads': 0, 'ranges': 0, 'mediaRequests': 0,
+             'fault': 'none', 'drops': 0, 'expiredLease': -1}
     lock = threading.Lock()
     log.parent.mkdir(parents=True, exist_ok=True)
 
@@ -82,7 +83,7 @@ def serve(root, log):
                     state['downloads']+=1
                     number=state['downloads']
                 filename='expired.mp4' if number == 1 else 'movie.mp4'
-                self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+filename}]})
+                self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+filename+'?lease='+str(number)}]})
             else:
                 self.reply({},404)
 
@@ -97,6 +98,12 @@ def serve(root, log):
                 self.reply({},401)
                 return
             if uri.path.endswith('/expired.mp4'):
+                self.reply({},403)
+                return
+            lease=int(parse_qs(uri.query).get('lease',['0'])[0])
+            with lock:
+                expired=lease>0 and lease==state['expiredLease']
+            if expired:
                 self.reply({},403)
                 return
             video=root/'sample.mp4'
@@ -115,9 +122,18 @@ def serve(root, log):
             with lock:
                 state['mediaRequests']+=1
                 if ranged:state['ranges']+=1
+                fault=state['fault'] if uri.path.startswith('/stream/') else 'none'
+                drop=self.command!='HEAD' and (fault=='drop_always' or (fault in ['drop_expire','bad_resume'] and state['drops']==0))
+                if drop:
+                    state['drops']+=1
+                    if fault=='drop_expire':state['expiredLease']=lease
+                bad_resume=fault=='bad_resume' and state['drops']>0 and not drop
+            if bad_resume:
+                start,end,ranged=0,size-1,''
             self.send_response(206 if ranged else 200)
             self.send_header('Content-Type','video/mp4')
             self.send_header('Accept-Ranges','bytes')
+            self.send_header('ETag','"my-cinema-fixture-v1"')
             self.send_header('Content-Length',str(end-start+1))
             if ranged:self.send_header('Content-Range',f'bytes {start}-{end}/{size}')
             self.end_headers()
@@ -127,9 +143,13 @@ def serve(root, log):
                     stream.seek(start)
                     remaining=end-start+1
                     while remaining>0:
-                        chunk=stream.read(min(65536,remaining))
+                        chunk=stream.read(min(4096 if drop else 65536,remaining))
                         if not chunk:break
                         self.wfile.write(chunk);remaining-=len(chunk)
+                        if drop:
+                            self.wfile.flush()
+                            self.close_connection=True
+                            return
             except (BrokenPipeError,ConnectionResetError,ssl.SSLEOFError):pass
 
         def do_GET(self):
@@ -137,12 +157,16 @@ def serve(root, log):
             query = parse_qs(uri.query)
             if self.server.server_port == 8765:
                 if uri.path == '/control':
-                    mode = query.get('mode', ['normal'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree']:
+                    mode = query.get('mode', [state['mode']])[0]
+                    fault=query.get('fault',['none'])[0]
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     with lock:
                         state['mode'] = mode
+                        state['fault']=fault
+                        state['drops']=0
+                        state['expiredLease']=-1
                 self.reply(dict(state))
                 return
             if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/'):

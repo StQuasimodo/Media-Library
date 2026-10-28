@@ -39,6 +39,22 @@ final class QuarkDavScenario {
         request.method(method,method.equals("PROPFIND")||method.equals("DELETE")||method.equals("PUT")?RequestBody.create(null,new byte[0]):null);return MediaSources.HTTP.newCall(request.build()).execute();
     }
     private void mode(String mode) throws Exception {try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("http://10.0.2.2:8765/control?mode="+mode).build()).execute()){check(response.code()==200,"fixture mode");}}
+    private JSONObject control(String fault) throws Exception {try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("http://10.0.2.2:8765/"+(fault==null?"":"control?fault="+fault)).build()).execute()){check(response.code()==200,"fixture control");return Json.object(response.body().string());}}
+    private void recovery(MediaSources.Lease endpoint,MediaSources.Lease file,QuarkDavManager manager,JSONObject report) throws Exception {
+        byte[] baseline;try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){baseline=response.body().bytes();}
+        int before=manager.recoveries(),downloads=control("drop_expire").optInt("downloads");
+        try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){check(response.code()==206&&Arrays.equals(baseline,response.body().bytes()),"drop plus expired lease resumes at exact byte, without loss or duplication");}
+        JSONObject state=control(null);check(state.optInt("drops")==1&&state.optInt("downloads")==downloads+1&&manager.recoveries()==before+1,"one interrupted transfer refreshes expired lease once");
+        Json.put(report,"byteExactDropAndExpiryRecovery",true);
+        control("drop_always");before=manager.recoveries();boolean rejected=false;
+        try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){response.body().bytes();}catch(java.io.IOException expected){rejected=true;}
+        check(rejected&&control(null).optInt("drops")==3&&manager.recoveries()==before+2,"continuous failures stop after two resumptions");
+        Json.put(report,"maximumResumptionsPerRequest",2);
+        control("bad_resume");before=manager.recoveries();rejected=false;
+        try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){response.body().bytes();}catch(java.io.IOException expected){rejected=true;}
+        check(rejected&&manager.recoveries()==before,"server ignoring resumed Range is rejected instead of corrupting the stream");
+        control("none");checks.add("mid-body drop and expired URL recover byte-exactly; continuous drops stop at two resumptions; ignored Range never appends a wrong body or HTTP error page");
+    }
     private View label(View view,String wanted){if(view instanceof TextView&&((TextView)view).getText().toString().equals(wanted))return view;if(view instanceof ViewGroup)for(int n=0;n<((ViewGroup)view).getChildCount();n++){View result=label(((ViewGroup)view).getChildAt(n),wanted);if(result!=null)return result;}return null;}
     private ListView folderList(View view){if(view instanceof ListView)return (ListView)view;if(view instanceof ViewGroup)for(int n=0;n<((ViewGroup)view).getChildCount();n++){ListView found=folderList(((ViewGroup)view).getChildAt(n));if(found!=null)return found;}return null;}
     private boolean firstFolderContains(String name){ListView list=folderList(owner.getWindow().getDecorView());return list!=null&&list.getAdapter()!=null&&list.getAdapter().getCount()>0&&list.getAdapter().getItem(0).toString().contains(name);}
@@ -71,10 +87,21 @@ final class QuarkDavScenario {
             try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("https://drive-pc.quark.cn/stream/movie.mp4").header("Cookie","__puus=tv-playback-fixture").header("Range","bytes=1000-1063").build()).execute()){check(Arrays.equals(bytes,response.body().bytes()),"converted Range bytes exactly match upstream");}
             try(Response response=request(endpoint,"HEAD",file.url.toString(),null,null,true)){check(response.code()==200&&response.body().bytes().length==0&&Long.parseLong(response.header("Content-Length"))>1024,"HEAD gives real length without body");}
             checks.add("app directory and playback paths use the generated TV WebDAV; nested fid routes, HEAD length and byte-exact206 work");
+            recovery(endpoint,file,manager,report);
             String key;try(MediaCatalog catalog=new MediaCatalog(context)){JSONObject data=catalog.put(video,"");key=Json.text(data,"key");catalog.progress(key,0,45000);check(Json.text(data,"source").equals("quark")&&!data.toString().contains(endpoint.headers.get("Authorization")),"catalog persists stable identity, not gateway secrets");}
+            control("drop_expire");int beforeNativeRecovery=manager.recoveries();
             activity=(PlayerActivity)test.startActivitySync(new Intent(context,PlayerActivity.class).putExtra("mediaKey",key).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));await(()->player()!=null&&player().isPlaying()&&player().getTime()>1500&&frames()>0,"Quark to WebDAV to LibVLC actually displays frames");
+            check(control(null).optInt("drops")==1&&manager.recoveries()>beforeNativeRecovery,"native VLC renders after a real stream drop and lease expiry");control("none");Json.put(report,"nativePlaybackAfterDropAndExpiry",true);
+            java.lang.reflect.Field relay=PlayerActivity.class.getDeclaredField("relay");relay.setAccessible(true);check(relay.get(activity)==null,"Quark player has no second relay");
+            IMedia direct=player().getMedia();try{check(direct.getUri().toString().startsWith(base),"LibVLC directly requests the mounted local WebDAV endpoint");}finally{direct.release();}
+            Json.put(report,"localForwardingHops",1);
             int before=frames();test.runOnMainSync(()->player().setTime(20000));Thread.sleep(2500);await(()->player().getTime()>=21000&&frames()>before,"converted source seek displays new frames");
             Json.put(report,"postSeekTimeMs",player().getTime());Json.put(report,"displayedPictures",frames());Bitmap screen=test.getUiAutomation().takeScreenshot();try(FileOutputStream image=new FileOutputStream(new File(context.getFilesDir(),"q01-quark-dav-playing.png"))){screen.compress(Bitmap.CompressFormat.PNG,100,image);}screen.recycle();
+            long wall=android.os.SystemClock.elapsedRealtime(),startTime=player().getTime(),last=startTime;int startFrames=frames();
+            android.os.Debug.MemoryInfo memory=new android.os.Debug.MemoryInfo();android.os.Debug.getMemoryInfo(memory);int startPss=memory.getTotalPss();
+            while(android.os.SystemClock.elapsedRealtime()-wall<90000){Thread.sleep(5000);long current=player().getTime();check(player().isPlaying()&&current>last&&frames()>startFrames,"continuous playback advances on every five-second sample");last=current;}
+            android.os.Debug.getMemoryInfo(memory);Json.put(report,"continuousPlaybackWallMs",android.os.SystemClock.elapsedRealtime()-wall);Json.put(report,"continuousPlaybackAdvanceMs",last-startTime);Json.put(report,"continuousDisplayedPictures",frames()-startFrames);Json.put(report,"startPssKiB",startPss);Json.put(report,"endPssKiB",memory.getTotalPss());
+            checks.add("one-hop authenticated LibVLC playback advances continuously for at least90seconds; five-second clock checks and displayed-frame evidence; start/end PSS recorded, not peak memory");
             Json.put(report,"preExitTimeMs",player().getTime());Json.put(report,"durationMs",player().getLength());
             test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
             await(()->{try(MediaCatalog catalog=new MediaCatalog(context)){return catalog.position(key)>=19000;}},"exit saves Quark progress before gateway restart");
@@ -82,7 +109,10 @@ final class QuarkDavScenario {
             MediaSources.Lease restarted=manager.endpoint();check(!restarted.headers.get("Authorization").equals(endpoint.headers.get("Authorization")),"gateway restarts with new credentials");
             try(Response response=request(endpoint,"PROPFIND",restarted.url.toString(),"0",null,true)){check(response.code()==401,"old Basic secret revoked");}
             try(MediaCatalog catalog=new MediaCatalog(context)){check(catalog.position(key)>=19000,"Quark progress survives new connection");JSONObject stored=catalog.get(key);check(!stored.toString().contains("127.0.0.1"),"temporary host/port not stored as media identity");}
-            activity=(PlayerActivity)test.startActivitySync(new Intent(context,PlayerActivity.class).putExtra("mediaKey",key).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));await(()->player()!=null&&player().isPlaying()&&player().getTime()>=19000,"resume after gateway URL/password change");Thread.sleep(2000);check(player().getTime()>=21000&&frames()>0,"resumed new gateway advances and renders");test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
+            activity=(PlayerActivity)test.startActivitySync(new Intent(context,PlayerActivity.class).putExtra("mediaKey",key).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));await(()->player()!=null&&player().isPlaying()&&player().getTime()>=19000,"resume after gateway URL/password change");Thread.sleep(2000);check(player().getTime()>=21000&&frames()>0,"resumed new gateway advances and renders");
+            MediaPlayer previous=player();long reconnectTime=previous.getTime();test.runOnMainSync(()->{View button=label(activity.getWindow().getDecorView(),"重新连接");check(button!=null&&button.performClick(),"native reconnect action");});
+            await(()->player()!=null&&player()!=previous&&player().isPlaying()&&player().getTime()>=reconnectTime-1000&&frames()>0,"manual reconnect rebuilds decoder and resumes saved position");Json.put(report,"manualReconnectResumes",true);
+            test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
             checks.add("real LibVLC renders and seeks Quark-converted WebDAV; saved progress resumes after gateway URL/credentials restart");
             Json.put(report,"result","passed");Json.put(report,"checks",new JSONArray(checks));Json.put(report,"realQuarkAccountVerified",false);Json.put(report,"physicalTelevisionVerified",false);Json.put(report,"actualLocalWebDavServer",true);write(report);
         }catch(Throwable error){Json.put(report,"result","failed");Json.put(report,"checks",new JSONArray(checks));Json.put(report,"errorClass",error.getClass().getSimpleName());Json.put(report,"error",error instanceof AssertionError?error.getMessage():"controlled bridge verification failed");write(report);throw new AssertionError("Quark WebDAV scenario failed: "+error.getClass().getSimpleName(),error);}

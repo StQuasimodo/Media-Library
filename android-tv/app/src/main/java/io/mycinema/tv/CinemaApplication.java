@@ -7,7 +7,7 @@ import android.os.Handler;
 
 /** Owns the TV-local gateway while My Cinema is visible, without an external host. */
 public final class CinemaApplication extends Application {
-    private QuarkDavManager dav;private int visible;private final Handler handler=new Handler();
+    private volatile QuarkDavManager dav;private int visible;private final Handler handler=new Handler();
     private final Runnable stop=()->{if(visible==0&&dav!=null)dav.stop();};
     static QuarkDavManager dav(android.content.Context context){return ((CinemaApplication)context.getApplicationContext()).dav();}
     private synchronized QuarkDavManager dav(){if(dav==null)dav=new QuarkDavManager(this);return dav;}

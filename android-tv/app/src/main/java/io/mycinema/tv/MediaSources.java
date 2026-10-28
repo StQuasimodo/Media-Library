@@ -75,7 +75,7 @@ final class MediaSources {
             for(Cookie renewal:Cookie.parseAll(url,response.headers()))if(renewal.name().equals("__puus")){
                 updated=updated.replaceAll("(?i)(^|;\\s*)__puus=[^;]*","").replaceAll("^;\\s*","");updated+=(updated.isEmpty()?"":"; ")+"__puus="+renewal.value();
             }
-            if(!updated.equals(cookie)&&quark.exists()&&quark.read().equals(cookie))quark.save(updated);
+            if(!updated.equals(cookie)&&quark.exists()){String previous="";try{previous=quark.read();}catch(IllegalStateException unreadable){/* A new login may replace an unreadable old file. */}if(previous.equals(cookie))quark.save(updated);}
             return json;
         }
     }

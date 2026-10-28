@@ -63,7 +63,9 @@ final class QuarkDavScenario {
             activity=(PlayerActivity)test.startActivitySync(new Intent(context,PlayerActivity.class).putExtra("mediaKey",key).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));await(()->player()!=null&&player().isPlaying()&&player().getTime()>1500&&frames()>0,"Quark to WebDAV to LibVLC actually displays frames");
             int before=frames();test.runOnMainSync(()->player().setTime(20000));Thread.sleep(2500);await(()->player().getTime()>=21000&&frames()>before,"converted source seek displays new frames");
             Json.put(report,"postSeekTimeMs",player().getTime());Json.put(report,"displayedPictures",frames());Bitmap screen=test.getUiAutomation().takeScreenshot();try(FileOutputStream image=new FileOutputStream(new File(context.getFilesDir(),"q01-quark-dav-playing.png"))){screen.compress(Bitmap.CompressFormat.PNG,100,image);}screen.recycle();
+            Json.put(report,"preExitTimeMs",player().getTime());Json.put(report,"durationMs",player().getLength());
             test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
+            await(()->{try(MediaCatalog catalog=new MediaCatalog(context)){return catalog.position(key)>=19000;}},"exit saves Quark progress before gateway restart");
             manager.stop();check(manager.enabled()&&!manager.running(),"stopping server keeps chosen folder");
             MediaSources.Lease restarted=manager.endpoint();check(!restarted.headers.get("Authorization").equals(endpoint.headers.get("Authorization")),"gateway restarts with new credentials");
             try(Response response=request(endpoint,"PROPFIND",restarted.url.toString(),"0",null,true)){check(response.code()==401,"old Basic secret revoked");}

@@ -23,9 +23,9 @@ import okhttp3.Response;
 
 /** Controlled HTTPS source + real embedded LibVLC on a disposable API22 emulator. */
 final class PlaybackScenario {
-    private final Instrumentation test;private final Context context;private final List<String> checks=new ArrayList<>();
+    private final String buildRun;private final Instrumentation test;private final Context context;private final List<String> checks=new ArrayList<>();
     private PlayerActivity playerActivity;private MediaBrowserActivity browser;
-    PlaybackScenario(Instrumentation test){this.test=test;context=test.getTargetContext();}
+    PlaybackScenario(Instrumentation test,String buildRun){this.buildRun=buildRun;this.test=test;context=test.getTargetContext();}
     private void check(boolean value,String message){if(!value)throw new AssertionError(message);}
     private MediaPlayer player(){try{java.lang.reflect.Field field=PlayerActivity.class.getDeclaredField("player");field.setAccessible(true);return (MediaPlayer)field.get(playerActivity);}catch(Exception error){throw new IllegalStateException(error);}}
     interface Condition{boolean ready() throws Exception;}
@@ -33,7 +33,7 @@ final class PlaybackScenario {
     private void shot(String name) throws Exception {Bitmap image=test.getUiAutomation().takeScreenshot();check(image!=null,"screenshot");try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),name+".png"))){image.compress(Bitmap.CompressFormat.PNG,100,out);}image.recycle();}
     private void write(JSONObject report) throws Exception {try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),"tv-playback-report.json"))){out.write(report.toString(2).getBytes(StandardCharsets.UTF_8));}}
     private static Library.Item film(String id,String name){JSONObject data=new JSONObject();Json.put(data,"id",id);Json.put(data,"title",name);Json.put(data,"originalTitle",name);Json.put(data,"externalId","1396:season:"+id);Json.put(data,"mediaType","tv");return new Library.Item(data,new JSONObject());}
-    void run(){Bundle result=new Bundle();JSONObject report=new JSONObject();try{
+    void run(){Bundle result=new Bundle();JSONObject report=new JSONObject();Json.put(report,"buildRun",buildRun);try{
         check(android.os.Build.VERSION.SDK_INT==22,"API22 runtime required");
         Json.put(report,"fixtureApiAddress",java.net.InetAddress.getByName("api.tmdb.org").getHostAddress());
         Json.put(report,"fixtureQuarkAddress",java.net.InetAddress.getByName("drive-pc.quark.cn").getHostAddress());

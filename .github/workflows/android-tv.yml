@@ -81,8 +81,8 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
           script: |
             bash scripts/android-tv-smoke.sh
-            bash scripts/android-tv-regression.sh
             bash scripts/android-tv-playback.sh
+            bash scripts/android-tv-regression.sh
       - name: Prepare installable development preview
         run: |
           mkdir -p android-tv/release

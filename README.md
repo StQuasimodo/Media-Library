@@ -11,7 +11,8 @@
 - 横向海报浏览，背景与焦点联动。
 - 收藏、评分、观看状态、短评、系列分类与自定义专题。
 - TMDB 搜索导入，海报和背景图本地缓存。
-- 夸克资源记录、目录自动匹配与画质编码识别（1.2预览）。
+- 夸克资源记录、目录自动匹配与画质编码识别。
+- 影视库一键刷新资料、图片与已选夸克目录。
 - SQLite 本地保存，支持备份、恢复与 JSON 导出。
 
 面向 Windows 10 / 11 x64 个人使用，不提供播放或下载功能。夸克真实账号接入、TMDB 在线完整链路及 Windows 桌面验收状态见[验证说明](docs/VERIFICATION.md)。
@@ -20,7 +21,7 @@
 
 [下载 Windows 安装包与免安装版](https://github.com/StQuasimodo/Media-Library/releases/latest)。安装与首次配置见[使用指南](docs/USAGE.md)。
 
-[1.2.0-beta.3 预览版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.3)包含目录自动匹配、分季收藏、系列海报墙，以及高清横版背景和简体/英文海报筛选。已有作品更新后点「刷新资料」换图，规则见[图片说明](docs/ARTWORK.md)；网盘整理见[夸克自动匹配](docs/QUARK-MATCHING.md)。
+[1.2.0 正式版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0)包含目录自动匹配、分季收藏、系列海报墙及新选图规则。更新后在影视库点「全部刷新」统一更新资料与图片，操作见[使用指南](docs/USAGE.md)；网盘整理见[夸克自动匹配](docs/QUARK-MATCHING.md)。
 
 [Android TV 0.1.0-alpha.3开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.3)：原生界面、minSdk21/v1签名，独立管理收藏，同步新选图规则，已通过API22完整回归。实机、真实TMDB Key、WebDAV与播放仍待验收或开发。安装及与alpha.1签名不兼容的限制见[电视端说明](docs/ANDROID-TV.md)。
 

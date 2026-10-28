@@ -1,0 +1,275 @@
+{
+  "platform": "win32",
+  "headless": false,
+  "sandboxDisabled": false,
+  "artworkDir": null,
+  "quarkFixture": false,
+  "quarkSyncFixture": true,
+  "actualAccountVerified": false,
+  "checks": [
+    "production native menu removed",
+    "real preload IPC and SQLite",
+    "01-home",
+    "keyboard rail changes hero",
+    "02-home-focus",
+    "11-home-curation",
+    "home-1024",
+    "home-1280",
+    "home-1920",
+    "route change resets page scroll",
+    "03-library",
+    "20-library-filter-menu",
+    "real expanded library select uses dark themed picker and readable text; mouse opens and Escape dismisses",
+    "library search, year filter and clear through real UI",
+    "Windows clipboard shortcuts work with no native menu",
+    "library-1024",
+    "04-film",
+    "film more-actions edit dialog and resource navigation",
+    "film-1024",
+    "05-collections",
+    "edition edit controls do not navigate",
+    "06-collection",
+    "collection add/remove through real UI and IPC",
+    "08-collection-empty",
+    "07-film-no-art",
+    "12-watchlist",
+    "watchlist-1024",
+    "watchlist status update persists through real IPC",
+    "13-settings",
+    "14-quark-connection",
+    "09-quark-folder",
+    "15-quark-matches",
+    "16-quark-cloud-resources",
+    "21-season1-backdrop",
+    "22-season2-backdrop",
+    "different high-resolution show gallery variants cached and displayed for seasons through real import/refresh/UI",
+    "independent TV seasons, real season endpoint import/refresh and missing-title manual creation through UI/IPC",
+    "controlled Quark/TMDB: select folder through UI, recurse, match, confirm, real import/cache/SQLite, typed IDs, increment, missing files, failed scan and session isolation (not live account)",
+    "17-tmdb-season-picker",
+    "18-tmdb-seasons-collected",
+    "season batch partial failure preserves completed imports and retries only the remaining season",
+    "normal TMDB search expands six season rows, single/batch season import, collected markers, personal rating preservation, whole-series choice and manual missing-season form through real UI/IPC",
+    "23-season-poster-fallback",
+    "empty show backdrop gallery falls back to the selected English season poster",
+    "19-series-wall",
+    "manual series name and order saved through metadata edit dialog, persisted and exposed as a series category",
+    "series filter and automatic wall grouping keep film 1/2/10 and TV whole/1..6 adjacent in ascending order",
+    "editing only installment order retains the official series association and survives external metadata refresh",
+    "24-library-refresh-result",
+    "library toolbar refresh covers all films under a one-result filter, reads incremental Quark technical data, survives route changes, preserves personal data/manual series, reports one failure and retries successfully",
+    "10-home-empty"
+  ],
+  "errors": [],
+  "geometry": {
+    "01-home": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "02-home-focus": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "11-home-curation": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "home-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "home-1280": {
+      "width": 1280,
+      "height": 800,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "home-1920": {
+      "width": 1920,
+      "height": 1080,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "03-library": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "20-library-filter-menu": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "library-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "04-film": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "film-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "05-collections": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "06-collection": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "08-collection-empty": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "07-film-no-art": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "12-watchlist": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "watchlist-1024": {
+      "width": 1024,
+      "height": 680,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "13-settings": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "14-quark-connection": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "09-quark-folder": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "15-quark-matches": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "16-quark-cloud-resources": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "21-season1-backdrop": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "22-season2-backdrop": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "17-tmdb-season-picker": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "18-tmdb-seasons-collected": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "23-season-poster-fallback": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "19-series-wall": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "24-library-refresh-result": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    },
+    "10-home-empty": {
+      "width": 1440,
+      "height": 900,
+      "topbarTop": 0,
+      "pageOverflow": false,
+      "brokenImages": 0
+    }
+  }
+}

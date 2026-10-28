@@ -33,15 +33,15 @@
 - 新增 IPC 通道、数据库迁移或目录变化时更新 ARCHITECTURE.md 的对应表格。
 - 每次交付前把真实执行结果（测试数量、构建产物、截图）写进 VERIFICATION.md，不写「预计」「应该」。
 
-## 当前状态（2026-10-27）
+## 当前状态（2026-10-28）
 
 | 项目 | 状态 |
 |---|---|
-| Windows版本 / 数据库 | 1.2.0-beta.3 / schema v4；正式版1.1.0 / schema v2 |
-| Windows自动化测试 | beta.3：14个文件、155项通过，含图片语言/尺寸/分配与刷新、系列、目录增量及v2/v3→v4迁移 |
+| Windows版本 / 数据库 | 正式版1.2.0 / schema v4 |
+| Windows自动化测试 | 15个文件、170项通过，含全部刷新、取消/上下文隔离、图片、系列、目录增量及v2/v3→v4迁移 |
 | 构建与界面 | Windows构建、包校验、真实Electron、受控自动匹配、无菜单复制快捷键、网页登录隔离和加密兼容检查通过 |
 | 当前截图 | [界面预览](GALLERY.md)，含Windows自动匹配、文件规格与系列筛选展示 |
-| Windows发行产物 | [1.2.0-beta.3预览](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0-beta.3)已发布，真实安装器取消快捷方式/记忆选择检查通过；Latest保留1.1.0 |
+| Windows发行产物 | [1.2.0正式版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0)已发布并设Latest，真实安装器与旧凭据兼容通过，五个公开文件与受测产物逐字节一致 |
 | Android电视 | [0.1.0-alpha.3开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；新选图、720p/96MiB与1080p/64MiB应用堆、完整操作/进程和内核重启通过；长虹实机与真实Key待验收，与alpha.2签名相同，不能覆盖alpha.1 |
 | 待验收 | 个人电脑完整升级、字体与缩放；真实TMDB带Key在线匹配；夸克真实账号目录与会话重启 |
 

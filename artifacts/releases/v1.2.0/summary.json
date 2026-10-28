@@ -1,0 +1,41 @@
+{
+  "version": "1.2.0",
+  "source": "ac1e5fd42c69adff6173e1384d0c8919a70fce13",
+  "run": 40540673534,
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0",
+  "latest": true,
+  "prerelease": false,
+  "allPublishedAssetsByteIdentical": true,
+  "schemaVersion": 4,
+  "tests": 170,
+  "testFiles": 15,
+  "actualWindowsVerified": true,
+  "realAccountVerified": false,
+  "assets": [
+    {
+      "name": "INSTALL.cmd",
+      "bytes": 1331,
+      "sha256": "c27be343a9b6876007ac39a7e06a33032496fb01ce09bb4bbbff4ec33460a840"
+    },
+    {
+      "name": "My-Cinema-1.2.0-portable-win64.zip",
+      "bytes": 171280849,
+      "sha256": "c12702fd0872c2d2e7196422ad11fe878b91e88df36aceee79bf3a0a0e141fed"
+    },
+    {
+      "name": "My-Cinema-1.2.0-Setup.exe",
+      "bytes": 122940713,
+      "sha256": "b6cdaf94e87197aabb3ab692db5d2a4a9c7ce2ef9ffbfb33722b1ebee20fe986"
+    },
+    {
+      "name": "RUN-PORTABLE.cmd",
+      "bytes": 969,
+      "sha256": "6ed6e2891780fa81e4e214435f8c6afc08d7f477d975cb9e0756a2d51d0896cd"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 354,
+      "sha256": "a9f2c9531ed8becdb63c5122d6d56c0225fd4cf8e82e1568718d495346fb51f5"
+    }
+  ]
+}

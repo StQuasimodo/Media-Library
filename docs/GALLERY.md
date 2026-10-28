@@ -2,6 +2,10 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## Windows 1.2.0：全部刷新
+
+[查看影视库工具栏与刷新结果](../artifacts/review-2026-10-28/release120/24-library-refresh-result.png)。截图来自真实Windows Electron窗口，示范一次受控404失败后的汇总；其他作品更新及后续重试成功，不是真实账号故障。夸克/TMDB响应与图片均为测试数据。[原始报告](../artifacts/releases/v1.2.0/library-refresh-desktop-report.json)。
+
 ## beta.3 / TV alpha.3 选图修复
 
 Windows与电视端改为高清横版图库，不再取本季首张单集剧照。以下是真实原生窗口截图，图片和图库响应为合成测试数据，用于验证选图、缓存及界面联动；真实账号资料与最终构图仍须独立验收。[选图规则](ARTWORK.md)。

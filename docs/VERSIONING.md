@@ -6,7 +6,7 @@
 
 Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独立Android电视端以`android-tv/app/build.gradle`的versionName/versionCode为来源，初始`0.1.0-alpha.1` / 1，Tag使用`tv-v<versionName>`，避免与Windows Tag混淆；每个向用户分发的新APK递增versionCode，保持应用ID与正式签名身份。电视开发预览与签名限制见[电视说明](ANDROID-TV.md)。
 
-电视端当前为`0.1.0-alpha.3` / 3，与alpha.2开发签名一致；Windows新预览为`1.2.0-beta.3`，不再复用beta.2修订例外。alpha.1默认开发Keystore未成功缓存，无法用新签名覆盖；不移动原Tag、不替换旧资产、不要求用户盲目卸载。alpha.2起CI显式准备并校验[固定公开指纹](../android-tv/development-signing.sha256)，缓存丢失时构建失败，禁止静默换签。正式beta前仍需私有固定发布签名及备份，不把CI缓存视为永久托管。APK构建源码、后续回归驱动源码与发布脚本源码分别记录；即使源码不同，也必须以实际字节哈希证明所测应用与交付应用相同，不能只核对版本号。
+电视端当前为`0.1.0-alpha.3` / 3，与alpha.2开发签名一致；Windows当前正式版为`1.2.0`（schema v4），不再复用beta.2修订例外。alpha.1默认开发Keystore未成功缓存，无法用新签名覆盖；不移动原Tag、不替换旧资产、不要求用户盲目卸载。alpha.2起CI显式准备并校验[固定公开指纹](../android-tv/development-signing.sha256)，缓存丢失时构建失败，禁止静默换签。正式beta前仍需私有固定发布签名及备份，不把CI缓存视为永久托管。APK构建源码、后续回归驱动源码与发布脚本源码分别记录；即使源码不同，也必须以实际字节哈希证明所测应用与交付应用相同，不能只核对版本号。
 
 `package.json` 的 `version` 是应用版本的唯一来源。安装包、免安装 ZIP、应用「关于」与 GitHub Tag 必须一致，Tag 使用 `v<version>`。`1.1.0` 正式版使用 schema v2；`1.2.0-beta.1` 新增云端资源关联，使用 schema v3，升级前自动保存一致快照。
 
@@ -20,7 +20,7 @@ Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独�
 - **每次分发含新内容的安装包或预览包，先更新版本号。** 普通源码提交不必升版；已发布的相同产物可以重复下载。
 - 不得用同一个版本号发布不同内容，不覆盖既有 Tag、Release 或其资产。此前多个 `1.0.0` Actions 预览属于历史遗留，从本规则起停止复用。
 - 未发布的失败构建可在相同源码上重试。分发过的预览包若改动内容，必须递增预览编号；正式版不沿用预览后缀。
-- 本项目维护一条发布线，新版本须高于已发布版本。预览用 GitHub prerelease，不设为 Latest；正式版设为 Latest。
+- Windows发布线的新版本须高于该线已发布版本。预览用 GitHub prerelease，不设为 Latest；正式版设为 Latest。
 - 应用版本与数据库 schema 独立。升版不代表迁移数据库；保持 appId、productName、userData 和凭据格式稳定，除非有经过验证的迁移方案。
 
 ## 本次明确授权的例外

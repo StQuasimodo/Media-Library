@@ -1,5 +1,15 @@
 # 验证与交付
 
+## v1.2.0正式版：影视库全部刷新（2026-10-28）
+
+构建源码与Tag为`ac1e5fd42c69adff6173e1384d0c8919a70fce13`。[Windows完整发布流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40540673534)成功：15文件/170项测试、类型检查、生产构建、真实Electron/preload/SQLite、受控夸克与TMDB链路、v1.0旧加密凭据兼容、安装包校验和实际NSIS快捷方式选择检查通过。已发布为非prerelease并设为Latest，原有版本的Tag与资产保留。
+
+真实Windows界面从只显示1部的筛选状态点击「全部刷新」，验证实际处理全库、增量文件/2160p/HEVC规格、路由切换后继续、失败作品与重试、评分及手工系列顺序保留。新增后台测试覆盖目录失败保留清单、未配置来源、单部404继续、限流/鉴权/网络/503暂停、重复启动、图片不完整提示、取消与数据库更换禁止迟到写入。Linux工作区真实Electron诊断也通过，不代替Windows结果。
+
+五个公开文件重新下载后均与原保留产物逐字节一致，SHA256SUMS和GitHub资产摘要相符。安装包122,940,713字节，SHA-256 `b6cdaf94e87197aabb3ab692db5d2a4a9c7ce2ef9ffbfb33722b1ebee20fe986`。schema保持v4，没有额外迁移；从旧v2/v3升级仍有迁移前快照，凭据和数据目录不变。
+
+[正式版下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0) · [交付摘要](../artifacts/releases/v1.2.0/summary.json) · [全部刷新窗口报告](../artifacts/releases/v1.2.0/library-refresh-desktop-report.json) · [安装器报告](../artifacts/releases/v1.2.0/installer-report.json) · [校验文件](../artifacts/releases/v1.2.0/SHA256SUMS.txt) · [界面截图](GALLERY.md)。成功链路使用受控响应与合成图片，不把真实账号/Key完整链路、个人电脑完整升级或字体缩放标为完成。电视仍为独立alpha.3，未因Windows正式发布而加入播放。
+
 ## beta.3 / TV alpha.3：横版背景与海报语言（2026-10-27）
 
 原始构建均为`e6ddcafa9283043d918f43cc08e2d1affcbf1fc9`。Windows真实窗口、14文件/155项测试、构建/安装器/凭据检查及电视API22完整操作、缓存、进程/内核重启通过；两端公开下载均与原始受测文件逐字节一致。背景不再取首张单集剧照，海报只接受明确简体/大陆地区信息或英文。已有收藏更新应用后通过「更多操作 → 刷新资料」换图，个人记录保留。

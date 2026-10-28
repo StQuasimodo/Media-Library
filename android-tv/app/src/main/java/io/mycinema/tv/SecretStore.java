@@ -51,7 +51,7 @@ final class SecretStore {
             .setStartDate(start.getTime()).setEndDate(end.getTime()).build());generator.generateKeyPair();return keys();
     }
     synchronized void save(String value) throws Exception {
-        if(value.trim().isEmpty()||value.length()>24576)throw new IllegalArgumentException(label+"凭据为空或过长。");
+        if(value.trim().isEmpty()||value.trim().getBytes(StandardCharsets.UTF_8).length>24576)throw new IllegalArgumentException(label+"凭据为空或过长。");
         byte[] material=new byte[64],iv=new byte[16];SecureRandom random=new SecureRandom();random.nextBytes(material);random.nextBytes(iv);
         Cipher cipher=Cipher.getInstance("AES/CBC/PKCS5Padding");cipher.init(Cipher.ENCRYPT_MODE,new SecretKeySpec(Arrays.copyOfRange(material,0,32),"AES"),new IvParameterSpec(iv));
         byte[] encrypted=cipher.doFinal(value.trim().getBytes(StandardCharsets.UTF_8));

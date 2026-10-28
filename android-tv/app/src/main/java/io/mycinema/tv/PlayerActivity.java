@@ -42,7 +42,7 @@ public final class PlayerActivity extends Activity {
         Media media=new Media(vlc,android.net.Uri.parse(relay.url()));media.setHWDecoderEnabled(true,false);try{player.setMedia(media);}finally{media.release();}status.setText("正在连接媒体源…");player.play();handler.postDelayed(timer,1000);
     }catch(Exception|LinkageError error){failed=true;status.setText("播放器初始化失败，该设备可能不兼容。请返回并反馈设备型号。");release();}}
     private Button button(String text,Runnable action){Button button=new Button(this);button.setText(text);button.setAllCaps(false);button.setTextSize(13);button.setOnClickListener(view->action.run());return button;}
-    private void toggle(){if(player==null)return;if(player.isPlaying())player.pause();else player.play();}
+    private void toggle(){if(player==null)return;if(player.isPlaying())player.pause();else{if(ended){ended=false;resumed=false;resume=0;player.setTime(0);}player.play();}}
     private void seek(long delta){if(player==null)return;if(!player.isSeekable()){status.setText("当前媒体源尚不支持定位，或仍在缓冲。");return;}long duration=player.getLength(),target=Math.max(0,player.getTime()+delta);player.setTime(duration>0?Math.min(target,Math.max(0,duration-1000)):target);controls.setVisibility(View.VISIBLE);}
     private static String clock(long value){long seconds=Math.max(0,value)/1000;return String.format(Locale.ROOT,"%d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
     private void tracks(){if(player==null)return;new AlertDialog.Builder(this).setTitle("播放选项").setItems(new String[]{"选择音轨","选择字幕"},(dialog,index)->selectTracks(index==0)).setNegativeButton("返回",null).show();}

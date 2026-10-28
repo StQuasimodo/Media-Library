@@ -49,6 +49,10 @@ cd android-tv
 
 alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立准备任务共享；[固定公开证书指纹](../android-tv/development-signing.sha256)为`0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44`，缓存缺失时拒绝生成替代签名。缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，并补齐可导出备份。不要用开发签名作为长期正式发行方案。
 
+## 当前播放开发验证
+
+`0.2.0-alpha.1` / code4已通过[API22完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40632642462)，含LibVLC真实1080p解码、拖动/轨道/续播及收藏/重启回归。开发APK在该运行的Artifact中；还没有发布新的TV Release。真实夸克扫码、取流与长虹硬解仍未验证。[源码、哈希、实际截图与边界](TV-PLAYBACK-VALIDATION-2026-10-28.md)。以下保留已发布0.1.x的历史交付信息。
+
 ## 交付记录
 
 2026-10-27：[0.1.0-alpha.3开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.1.0-alpha.3)，[直接下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.1.0-alpha.3/My-Cinema-TV-0.1.0-alpha.3-debug.apk)。构建源码`e6ddcafa9283043d918f43cc08e2d1affcbf1fc9`，1,411,567字节，SHA-256 `83e074cba861a3dae1456a1763cee469e737b02f5c7f4a7df2424ce2b93e8bff`。[原始构建及完整API22验证](https://github.com/StQuasimodo/Media-Library/actions/runs/40527056050)通过，发布后下载三个资产均与原产物逐字节一致。使用同剧高清横版图库及简体/英文海报筛选；已有收藏通过刷新换图，来源语言不明确时回退英文。[选图规则](ARTWORK.md) · [公开产物检查](../artifacts/releases/tv-v0.1.0-alpha.3/public-assets.json)。

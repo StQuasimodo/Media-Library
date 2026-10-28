@@ -44,6 +44,7 @@
 | 当前截图 | [界面预览](GALLERY.md)，含Windows自动匹配、文件规格与系列筛选展示 |
 | Windows发行产物 | [1.2.0正式版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0)已发布并设Latest，真实安装器与旧凭据兼容通过，五个公开文件与受测产物逐字节一致 |
 | Android电视 | [0.1.0-alpha.3开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；新选图、720p/96MiB与1080p/64MiB应用堆、完整操作/进程和内核重启通过；长虹实机与真实Key待验收，与alpha.2签名相同，不能覆盖alpha.1 |
+| 电视播放开发 | 0.2.0-alpha.1，LibVLC3.7.7，ARMv7/x86；[媒体源与播放进展](TV-PLAYBACK.md)，真实夸克扫码和长虹硬解仍待验收 |
 | 待验收 | 个人电脑完整升级、字体与缩放；真实TMDB带Key在线匹配；夸克真实账号目录与会话重启 |
 
 详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

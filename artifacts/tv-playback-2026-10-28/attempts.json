@@ -1,0 +1,82 @@
+[
+  {
+    "run": 40629031316,
+    "source": "a2ce8079b4f71a0bcc15716df206c98e5b48bdd4",
+    "conclusion": "failure",
+    "stage": "AAR metadata",
+    "reason": "LibVLC3.7.7 requires compileSdk36; minSdk is still17 in dependency, app min21.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40629031316"
+  },
+  {
+    "run": 40629204211,
+    "source": "a1cf69bbfae2d5da76004f3bfb7688a8b21416d2",
+    "conclusion": "failure",
+    "stage": "fixture preparation",
+    "reason": "Android build, lint and package checks passed; runner missing FFmpeg. Emulator did not run.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40629204211"
+  },
+  {
+    "run": 40629466634,
+    "source": "66eb6f4e46694514a65fc7a21ddd613fb70cc972",
+    "conclusion": "failure",
+    "stage": "controlled WebDAV",
+    "reason": "Collection smoke/full/process/reboot returned pass; playback source received403 before decoding. Cause not proven from this report. Added explicit DNS isolation checks.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40629466634"
+  },
+  {
+    "run": 40630012844,
+    "source": "127d70400db59cede2681d590ae7db7b1c38dce5",
+    "conclusion": "failure",
+    "stage": "collection regression reboot",
+    "reason": "Smoke/full/process passed in job output. Emulator kernel reboot did not return within120s; playback not reached. Do not use collected stale reboot/playback files as passes.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40630012844"
+  },
+  {
+    "run": 40630753506,
+    "source": "9de4544d32474b8dc27f065fc0fde4d76b9a5ae1",
+    "conclusion": "cancelled",
+    "stage": "before verification completion",
+    "reason": "Cancelled to restore public routing after playback fixture; public network probe must validate actual endpoint resolution.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40630753506"
+  },
+  {
+    "run": 40630843117,
+    "source": "fd2ed31cda251ff2ca1a7d55cb67690fee397393",
+    "conclusion": "failure",
+    "stage": "post-playback collection fixture",
+    "reason": "Real LibVLC decode/Range/tracks/progress passed; system partition was read-only after runtime restart, so collection fixture CA push failed.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40630843117"
+  },
+  {
+    "run": 40631407385,
+    "source": "3683412ff87725121570e3d6bcc986a3247e4ac1",
+    "conclusion": "success",
+    "stage": "full workflow",
+    "reason": "Build, playback, collection regression and actual kernel reboot passed; later UI/seek checks were strengthened.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40631407385"
+  },
+  {
+    "run": 40631704177,
+    "source": "c23c2a5074ad5addb79e3ecb003f1f64e51559e5",
+    "conclusion": "success",
+    "stage": "full workflow",
+    "reason": "Immersive sources, decoded frames and advancing clock after seek21.319s, complete collection regression passed.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40631704177"
+  },
+  {
+    "run": 40632424075,
+    "source": "4980679b6bcb57a18c351367bf38ea8ad2b6c71d",
+    "conclusion": "cancelled",
+    "stage": "before final completion",
+    "reason": "Superseded by anonymous-WebDAV compatibility fix; not presented as a completed passing workflow.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40632424075"
+  },
+  {
+    "run": 40632642462,
+    "source": "a60b04f3471486413939f32e5b9b1f9e65d7c813",
+    "conclusion": "success",
+    "stage": "final full workflow",
+    "reason": "Anonymous/authenticated DAV, malformed-session rejection, native decoding/seek/progress and full collection/reboot checks passed.",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40632642462"
+  }
+]

@@ -1,5 +1,9 @@
 # 验证与交付
 
+## 电视0.2.0播放开发（2026-10-28）
+
+[最终API22完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40632642462)通过：LibVLC真实1080p H.264/AAC解码、内嵌轨道、定位后新帧/时钟、暂停和续播，以及收藏完整操作、进程和内核重启。APK构建源码`a60b04f3471486413939f32e5b9b1f9e65d7c813`，不是后续报告提交。夸克仍为受控协议测试，官方旧WebView扫码、真实账号取流及长虹硬解未验收。开发APK在Actions Artifact，未创建新Release。[报告、哈希和原生截图](TV-PLAYBACK-VALIDATION-2026-10-28.md)。
+
 ## v1.2.0正式版：影视库全部刷新（2026-10-28）
 
 构建源码与Tag为`ac1e5fd42c69adff6173e1384d0c8919a70fce13`。[Windows完整发布流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40540673534)成功：15文件/170项测试、类型检查、生产构建、真实Electron/preload/SQLite、受控夸克与TMDB链路、v1.0旧加密凭据兼容、安装包校验和实际NSIS快捷方式选择检查通过。已发布为非prerelease并设为Latest，原有版本的Tag与资产保留。

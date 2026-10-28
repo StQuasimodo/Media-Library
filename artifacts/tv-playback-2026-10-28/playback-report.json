@@ -1,0 +1,25 @@
+{
+  "buildRun": "40632642462",
+  "fixtureApiAddress": "10.0.2.2",
+  "fixtureQuarkAddress": "10.0.2.2",
+  "controlledRangeRequests": 2,
+  "decodedVideo": 114,
+  "displayedPictures": 31,
+  "decodedAudio": 353,
+  "postSeekTimeMs": 21319,
+  "postPlaybackPssKiB": 149969,
+  "result": "passed",
+  "apiLevel": 22,
+  "player": "LibVLC3.7.7",
+  "sample": "synthetic 1920x1080 15fps H264\/AAC, two audio tracks, mov_text subtitle",
+  "emulatorOnly": true,
+  "realQuarkAccountVerified": false,
+  "oldWebViewLoginVerified": false,
+  "actualTelevisionVerified": false,
+  "checks": [
+    "WebDAV authenticated PROPFIND, wrong credentials, same-origin\/root confinement and failed reconfiguration preserve prior source",
+    "filename quality\/codec\/audio\/HDR and season\/episode facts; exact unique season association; ambiguous\/missing-season left for review",
+    "Quark synthetic auth\/directory and encrypted isolated credentials; source 403 resolves fresh lease once; byte-exact206 Range; loopback token required",
+    "real LibVLC3.7.7 API22\/x86 HTTPS1080p H264\/AAC decoded video\/audio\/displayed frames; two audio tracks and embedded subtitle; seek, remote pause\/resume, DB reopen and new-activity resume"
+  ]
+}

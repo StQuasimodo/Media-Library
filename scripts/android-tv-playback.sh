@@ -29,6 +29,12 @@ collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-playback-report.json > "$out/report.json" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/p01-playing.png > "$out/p01-playing.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/p02-sources.png > "$out/p02-sources.png" || true
+  # The following collection regression probes the PUBLIC TMDB endpoint first.
+  # Restore routing and clear this process's DNS/TLS cache before that probe.
+  timeout 10s adb push .harness/tv-fixture-private/playback-hosts-original /system/etc/hosts || true
+  timeout 10s adb shell chmod 644 /system/etc/hosts || true
+  timeout 10s adb shell rm -f "/system/etc/security/cacerts/$ca_name" || true
+  timeout 10s adb shell am force-stop io.mycinema.tv || true
 }
 trap collect EXIT
 timeout 180s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"

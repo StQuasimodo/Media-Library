@@ -47,7 +47,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             if("true".equals(arguments.getString("playback"))){new PlaybackScenario(this,arguments.getString("buildRun","")).run();return;}
             if("true".equals(arguments.getString("regression"))){new RegressionScenario(this,arguments).run();return;}
             if("true".equals(arguments.getString("networkProbe"))){
-                JSONObject report=new JSONObject();boolean unauthorized=false;String reason="";
+                JSONObject report=new JSONObject();String address=java.net.InetAddress.getByName("api.tmdb.org").getHostAddress();check(!address.equals("10.0.2.2"),"public network probe must not use fixture DNS");Json.put(report,"publicApiAddress",address);boolean unauthorized=false;String reason="";
                 try{java.util.Map<String,String> params=new java.util.HashMap<>();params.put("language","zh-CN");TmdbClient.request("mycinema-tv-public-invalid-key-probe","/configuration",params);}
                 catch(IllegalArgumentException error){unauthorized=error.getMessage()!=null&&error.getMessage().contains("凭据无效");reason=error.getClass().getSimpleName();}
                 catch(Exception error){reason=error.getClass().getSimpleName()+":"+(error.getCause()==null?"":error.getCause().getClass().getSimpleName());}

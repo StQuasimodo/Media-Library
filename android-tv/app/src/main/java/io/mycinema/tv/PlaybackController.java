@@ -78,15 +78,15 @@ final class PlaybackController implements Closeable {
     }
 
     private void onEvent(int session,MediaPlayer engine,MediaPlayer.Event event){
-        if(!current(session,engine))return;
-                if(event.type==MediaPlayer.Event.Buffering){buffered=event.getBuffering();if(buffered<100&&state!=State.PAUSED)state(State.BUFFERING,"");}
-                else if(event.type==MediaPlayer.Event.Playing){
-                    loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;if(position>0){restoreAt=position;engine.setTime(position);}}
-                    if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
-                }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
-                else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();state(State.PAUSED,"");}
-                else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
-                else if(event.type==MediaPlayer.Event.EndReached){wantPaused=true;restoreAt=-1;position=0;duration=Math.max(duration,engine.getLength());state(State.ENDED,"播放完毕");listener.progress(0,duration);}
+        if(!current(session,engine)){return;}
+        if(event.type==MediaPlayer.Event.Buffering){buffered=event.getBuffering();if(buffered<100&&state!=State.PAUSED)state(State.BUFFERING,"");}
+        else if(event.type==MediaPlayer.Event.Playing){
+            loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;if(position>0){restoreAt=position;engine.setTime(position);}}
+            if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
+        }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
+        else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();state(State.PAUSED,"");}
+        else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
+        else if(event.type==MediaPlayer.Event.EndReached){wantPaused=true;restoreAt=-1;position=0;duration=Math.max(duration,engine.getLength());state(State.ENDED,"播放完毕");listener.progress(0,duration);}
     }
 
     void reconnect(){if(video==null||disposed)return;save();long resume=state==State.ENDED?0:position;boolean paused=state!=State.ENDED&&wantPaused;start(video,resume,paused);}

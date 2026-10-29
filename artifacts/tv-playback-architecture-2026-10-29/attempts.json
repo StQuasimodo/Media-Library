@@ -1,0 +1,51 @@
+[
+  {
+    "run": "40810719660",
+    "source": "db556f91d6eb79c1c7200fc5eace5365112b5c86",
+    "conclusion": "cancelled",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40810719660",
+    "detail": "Cancelled before a completed runtime report to include ended-state protection. No installable artifact distributed."
+  },
+  {
+    "run": "40811083182",
+    "source": "7ac9d38f4896c8298b144ce87de1dcbddf995b3f",
+    "conclusion": "failure",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40811083182",
+    "detail": "Protocol, API cancellation and90s playback passed; paused reconnect failed because playback paused before resume seeking completed."
+  },
+  {
+    "run": "40811963838",
+    "source": "a6d1f9b7b868b1a592fe84e03512b5371cc952de",
+    "conclusion": "cancelled",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40811963838",
+    "detail": "Cancelled before runtime acceptance to include the early-clock-event guard; no installable artifact distributed."
+  },
+  {
+    "run": "40812028870",
+    "source": "a7a7ab093b4aa8825b48c34771f3512c6cf4532a",
+    "conclusion": "failure",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40812028870",
+    "detail": "Paused reconnect passed; rapid reconnect joint state/frame assertion failed. This report lacks detailed failure state, so no decode-failure diagnosis is established."
+  },
+  {
+    "run": "40813174560",
+    "source": "cfd6f0840f5654b4ff1d6079dcf4ca5895f33ce9",
+    "conclusion": "failure",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40813174560",
+    "detail": "Build stopped at Android Lint: suspicious event-handler indentation. Runtime tests did not execute."
+  },
+  {
+    "run": "40813489359",
+    "source": "e17a05057329aabbd5a3197b0cc7f5a907822f9e",
+    "conclusion": "failure",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40813489359",
+    "detail": "Rapid reconnect actually displayed351 frames and advanced to132651ms, but controller state remained BUFFERING. Added Buffering100->PLAYING transition and terminal-state guards."
+  },
+  {
+    "run": "40814162433",
+    "source": "6e4b7d8bca66295445d43aaa7a6668c0dc617260",
+    "conclusion": "success",
+    "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/40814162433",
+    "detail": "Complete build/lint, API22 native playback/state tests, collection/process/kernel reboot and installable artifact passed. Only this APK is delivered."
+  }
+]

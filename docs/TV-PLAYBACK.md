@@ -1,6 +1,6 @@
 # 电视媒体源与内置播放
 
-2026-10-28用户授权开始实现。当前开发版本`0.2.0-alpha.3` / code6（alpha.1是此前客户端原型），Windows仍为1.2.0，电视收藏库schema仍为1。这里记录开发代码，尚未创建新Release；开发APK及完整验证见[播放稳定性报告](TV-PLAYBACK-STABILITY-2026-10-28.md)，模拟器通过不等同真实账号可用。
+2026-10-28用户授权开始实现。当前开发版本`0.2.0-alpha.4` / code7（alpha.1是此前客户端原型），Windows仍为1.2.0，电视收藏库schema仍为1。这里记录开发代码，尚未创建新Release；开发APK及完整验证见[本轮架构优化验证](TV-PLAYBACK-ARCHITECTURE-VALIDATION-2026-10-29.md)，模拟器通过不等同真实账号可用。
 
 ## 夸克转WebDAV（alpha.2）
 
@@ -27,9 +27,11 @@
 - `MediaSources`：夸克分页与取流；WebDAV Depth1/XML，拒绝跨域/越界href，限制响应与目录大小，不回显凭据或服务端原始响应。
 - `MediaBrowserActivity`：原生遥控器目录浏览，ListView复用行，后台扫描与事务关联。
 - `MediaCatalog`：新增独立SQLite文件，稳定文件身份与续播；原收藏库无需迁移。
-- `PlaybackRelay`：只监听127.0.0.1，随机会话路径，最多3路工作线程和有限队列，64KiB拷贝缓冲；Range/206/Content-Range透传。夸克401/403最多重取一次临时URL；跨源重定向不转发鉴权，HTTPS不降为HTTP。网络请求有超时；退出取消请求并关闭连接。播放器只拿本机会话URL，临时CDN地址不进数据库或Intent。
-- `PlayerActivity`：LibVLC 3.7.7共享库，硬解优先，暂停/退出保存进度，离开页面释放解码器。夸克直接连接已生成的本机WebDAV，以LibVLC登录回调提供临时Basic鉴权，不再创建第二个转发服务；外部WebDAV保留隔离凭据的原转发方式。目录/端点校验在后台执行，离开页面取消，过期回调按会话丢弃。缓冲状态可见，支持保留进度重新连接，网络缓存保持1500ms。
-- `PlaybackRelay`断流恢复：仅对已知长度的夸克响应，读取中断后按已成功写出的字节位置请求后续区间，单个请求最多续接两次；401/403重取地址一次。核对206、精确起止、总长度及原响应可用的强ETag/Last-Modified；缺乏标记时只能依赖稳定fid与长度，不能证明同长度覆盖写未发生。下游关闭不触发恢复；重试失败关闭原响应，不在视频后追加错误页。无全片内存或磁盘缓存。
+- `PlaybackRelay`：127.0.0.1只读HTTP/DAV协议、挂载范围和临时鉴权，最多3路工作线程及有限队列。内置播放器另有仅供本文件GET/HEAD的鉴权，退出/重连撤销并取消相应请求；临时URL/密码/CDN地址不进收藏或Intent。
+- `MediaTransfer`：通过Provider获取短期地址，每文件锁合并过期地址刷新；夸克顺序4MiB闭合Range、64KiB流式转发，保留正确全长，HEAD经1字节GET探测、尾部Range和首段/后续段核对。单个响应最多续接两次，每次取流请求401/403最多更新一次地址；跨源不带鉴权、HTTPS不降级。无全片内存或磁盘缓存。
+- `NetworkScope`：连接尝试和每个HTTP请求的真实Call/响应体取消，覆盖目录、取流API及视频读取；不只取消Future。
+- `PlaybackController`：LibVLC3.7.7、状态快照、恢复位置、暂停意图、静音准备及按会话处理回调。只有最新连接解析完成才创建解码器；缓冲完成回到播放，结束归零、退出释放。夸克直接连接本机DAV，外部WebDAV保持原转发方式，网络缓存1500ms。
+- `PlayerActivity`：原生界面、遥控器/轨道菜单及进度存储回调；[架构图与参考来源](TV-PLAYBACK-ARCHITECTURE.md)。
 
 API21仍为安装下限，ARMv7用于目标电视、x86用于模拟器；该预览不包含arm64/x86_64。媒体源可显式配置HTTP，因此manifest允许明文流量，其他内置TMDB/夸克端点固定HTTPS。旧电视的TLS/账号扫码和实际硬件解码不能由minSdk声明证明。
 
@@ -37,7 +39,7 @@ API21仍为安装下限，ARMv7用于目标电视、x86用于模拟器；该预�
 
 新增独立测试APK场景：受控HTTPS WebDAV/夸克协议、账号错误/越界拒绝、凭据隔离、403地址更新、精确Range字节、真实LibVLC 1080p H.264/AAC解码、双音轨/内嵌字幕、定位、遥控器暂停与续播。样片由FFmpeg生成，测试数据不打入正式应用；CA/hosts只在明确选中的一次性API22模拟器内安装，不改用户电视或应用TLS策略。
 
-Java源码及测试源码编译检查通过。Gradle/Lint、APK签名/ABI和API22模拟器完整回归已在开发提交通过；当前alpha.3最终源码与报告见[播放稳定性验证](TV-PLAYBACK-STABILITY-2026-10-28.md)；alpha.1[原验证](TV-PLAYBACK-VALIDATION-2026-10-28.md)保持历史结果。真实夸克账号、官方扫码、长虹ARM解码/声音/遥控器、4K/HEVC/HDR/直通未验收。不承诺旧电视实时转码或所有格式流畅。
+Java源码及测试源码编译检查通过。Gradle/Lint、APK签名/ABI和API22模拟器完整回归已在开发提交通过；当前alpha.4最终源码与报告见[本轮验证](TV-PLAYBACK-ARCHITECTURE-VALIDATION-2026-10-29.md)；alpha.3[播放稳定性验证](TV-PLAYBACK-STABILITY-2026-10-28.md)及alpha.1[原验证](TV-PLAYBACK-VALIDATION-2026-10-28.md)保持历史结果。真实夸克账号、官方扫码、长虹ARM解码/声音/遥控器、4K/HEVC/HDR/直通未验收。不承诺旧电视实时转码或所有格式流畅。
 
 ## 第三方与重新链接
 

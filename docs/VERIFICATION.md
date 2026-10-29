@@ -1,5 +1,9 @@
 # 验证与交付
 
+## 电视0.2.0-alpha.4：播放/WebDAV架构（2026-10-29）
+
+[完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40814162433)成功，构建源码`6e4b7d8bca66295445d43aaa7a6668c0dc617260`。顺序4MiB跨段字节一致、HEAD探测/尾部Range、并发过期只刷新一次、阻塞API取消、独立会话撤销、暂停恢复、快速重连、播完重播、原生90秒播放及收藏/进程/内核重启通过。观测90,298ms，时钟推进90,246ms，显示1,253帧；PSS起止164,933/158,818KiB，非峰值或流畅度承诺。真实夸克、实际提速和长虹ARM仍未验收，APK为Actions开发产物。[来源、失败记录、签名与哈希](TV-PLAYBACK-ARCHITECTURE-VALIDATION-2026-10-29.md)。
+
 ## 电视0.2.0-alpha.3：单层播放与断流恢复（2026-10-28）
 
 [完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40670992547)成功，构建源码`46a9bee450f2c6263267b2dd01dda4e821713a51`。LibVLC直接连接本机夸克WebDAV，实际断流并使地址过期后恢复播放；字节精确续接、两次上限、拒绝错误Range、重新连接/续播及收藏/进程/内核重启通过。1080p合成样片连续观测90,024ms，媒体时钟推进89,999ms、新增1,350显示帧，PSS起止157,771/160,689KiB。真实账号、老WebView、长虹硬解与整片播放仍未验收；APK在Actions，未创建新Release。[原始报告、哈希与首次401失败记录](TV-PLAYBACK-STABILITY-2026-10-28.md)。

@@ -4,7 +4,7 @@
 
 本机WebDAV保留协议与目录职责，MediaTransfer负责驱动取流、临时地址、精确Range与有限断流恢复。参考TV Media的有界请求思路，夸克使用最多4MiB的顺序分段，64KiB流式拷贝，不增加大型预读缓存；支持尾部Range、HEAD经1字节GET探测，并核对首段和后续段的实际区间。每文件刷新锁合并同一过期地址的并发重取，Cookie在每次上游请求时读取当前值。播放器的独立本机鉴权在退出/重连时撤销并取消该会话的上游读取，其他会话保留。
 
-借鉴源码和分工见[架构说明](TV-PLAYBACK-ARCHITECTURE.md)。继续使用Java、LibVLC3.7.7/OkHttp3.12、minSdk21及ARMv7/x86；没有引入完整OpenList、Node、Compose或新解码内核。Windows1.2.0、数据库schema、应用ID与开发签名不变。正在进行完整API22回归，真实夸克授权、服务端限速、实际提速和长虹硬解仍待验收，不把开源项目的测速当作本项目结果。
+借鉴源码和分工见[架构说明](TV-PLAYBACK-ARCHITECTURE.md)。继续使用Java、LibVLC3.7.7/OkHttp3.12、minSdk21及ARMv7/x86；没有引入完整OpenList、Node、Compose或新解码内核。Windows1.2.0、数据库schema、应用ID与开发签名不变。[完整API22回归](TV-PLAYBACK-ARCHITECTURE-VALIDATION-2026-10-29.md)已通过，含分段/并发刷新/取消、暂停恢复、快速重连、播完重播及收藏/进程/内核重启；开发APK在Actions，未创建新Release。真实夸克授权、服务端限速、实际提速和长虹硬解仍待验收，不把开源项目的测速当作本项目结果。
 
 # My Cinema TV 0.2.0-alpha.3（开发中）
 

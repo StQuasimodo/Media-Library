@@ -16,7 +16,7 @@ flowchart LR
 ## 职责与生命周期
 
 - `PlayerActivity`只构建原生界面、处理遥控器/轨道菜单和保存进度回调。它不持有网络线程、临时URL刷新逻辑或全局VLC登录回调。
-- `PlaybackController`拥有解码器、Surface连接、连接任务及状态快照。状态包括STOPPED、CONNECTING、BUFFERING、PLAYING、PAUSED、ENDED和ERROR；旧异步任务及原生事件按会话代数和解码器身份过滤。重连保留位置和暂停意图；恢复定位前的临时零时钟不会覆盖已存位置。VLC静态登录回调按所有者释放，旧控制器不清除新所有者。
+- `PlaybackController`拥有解码器、Surface连接、连接任务及状态快照。状态包括STOPPED、CONNECTING、BUFFERING、PLAYING、PAUSED、ENDED和ERROR；旧异步任务及原生事件按会话代数和解码器身份过滤。连接解析后只为最新尝试创建解码器；重连保留位置和暂停意图，恢复定位前的临时零时钟不会覆盖已存位置，暂停恢复准备阶段静音。缓冲完成显式返回PLAYING，终止状态忽略迟到缓冲事件。VLC静态登录回调按所有者释放，旧控制器不清除新所有者。
 - `PlaybackRelay`保留有界工作线程、本机监听、鉴权、HTTP解析与DAV方法。`QuarkDavTree`继续校验选中目录范围；视频策略独立放在`MediaTransfer`，目录与协议不再直接管理短期URL及重试。
 - `MediaTransfer`依赖小型Provider接口获取短期地址；八项LRU与每文件锁管理地址。同一旧地址并发401/403时比较被拒绝的Lease身份，只由首个请求刷新；在途解析项在缓存淘汰时保留。网络解析不持有全局缓存锁。错误按资源记录，正常拖动关闭客户端不当作源故障。
 - `NetworkScope`拥有OkHttp Call及响应体读取。连接尝试、每个HTTP请求、每个播放会话和网关停止都有清理路径；取消不仅作用于Future，也能中断目录/下载地址API及视频读取。
@@ -42,3 +42,5 @@ HEAD通过`GET bytes=0-0`的实际响应头探测，获取可信总长度后立�
 这是对协议和分工的研究及本项目独立实现，没有复制TV Media/OpenList的AGPL实现到应用，也未嵌入它们的运行时。既有LibVLC/OkHttp许可说明继续适用。
 
 开源项目关于夸克请求形式与速率的测试只属于其环境。本项目当前不能声称达到相同带宽或绕过账号限速。实际构建、模拟器与真实账号边界应以本轮验证报告为准。
+
+[完整构建、API22实测与开发APK](TV-PLAYBACK-ARCHITECTURE-VALIDATION-2026-10-29.md)。

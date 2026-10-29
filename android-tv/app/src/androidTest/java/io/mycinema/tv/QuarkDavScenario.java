@@ -124,6 +124,8 @@ final class QuarkDavScenario {
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);await(()->player().isPlaying(),"resume after paused reconnect");
             test.runOnMainSync(()->{View button=label(activity.getWindow().getDecorView(),"重新连接");for(int n=0;n<3;n++)button.performClick();});
             await(()->player()!=null&&player().isPlaying()&&frames()>0&&controller().snapshot().state==PlaybackController.State.PLAYING,"rapid reconnect keeps only the latest live session");Json.put(report,"rapidReconnectVerified",true);
+            test.runOnMainSync(()->player().setTime(player().getLength()-1200));await(()->controller().snapshot().state==PlaybackController.State.ENDED,"end-of-media state");Thread.sleep(1200);check(controller().snapshot().position==0,"timer cannot overwrite ended reset with full duration");
+            test.runOnMainSync(()->label(activity.getWindow().getDecorView(),"重新连接").performClick());await(()->player()!=null&&player().isPlaying()&&player().getTime()>500&&player().getTime()<10000&&frames()>0,"reconnect after end plays from beginning");Json.put(report,"endedReconnectRestarts",true);
             PlaybackController stopped=controller();PlaybackRelay.Session endingSession=session();
             test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
             await(()->stopped.snapshot().state==PlaybackController.State.STOPPED&&stopped.engine()==null,"finished Activity releases decoder and publishes stopped state");Thread.sleep(400);check(stopped.engine()==null,"late connection does not recreate decoder");

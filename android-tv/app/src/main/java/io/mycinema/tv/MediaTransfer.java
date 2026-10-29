@@ -32,7 +32,7 @@ final class MediaTransfer {
         java.util.Iterator<Slot> entries=leases.values().iterator();while(leases.size()>8&&entries.hasNext())if(entries.next().users==0)entries.remove();
     }
     private MediaSources.Lease lease(JSONObject file,MediaSources.Lease rejected,NetworkScope scope) throws Exception {
-        Slot slot;synchronized(this){slot=slot(file);slot.users++;trim();}
+        Slot slot;synchronized(this){scope.check();if(closed)throw new IOException("Transport stopped");slot=slot(file);slot.users++;trim();}
         // Resolve under a per-file lock, never while holding the whole cache lock.
         // A concurrent 403 for the same rejected lease reuses an already-refreshed address.
         try{synchronized(slot){scope.check();if(closed)throw new IOException("Transport stopped");
@@ -45,7 +45,7 @@ final class MediaTransfer {
     int recoveries(){return recoveries.get();}
     int segments(){return segments.get();}
     synchronized void close(){closed=true;leases.clear();}
-    private synchronized void error(JSONObject file,String text){slot(file).error=text;lastError=text;trim();}
+    private synchronized void error(JSONObject file,String text){if(closed)return;slot(file).error=text;lastError=text;trim();}
 
     private NetworkScope.Exchange request(MediaSources.Lease lease,String range,boolean head,NetworkScope scope) throws Exception {
         HttpUrl url=lease.url;

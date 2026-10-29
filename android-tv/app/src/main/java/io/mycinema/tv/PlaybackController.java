@@ -46,7 +46,7 @@ final class PlaybackController implements Closeable {
     private boolean current(int session,MediaPlayer engine){return session==generation&&engine==player&&!disposed;}
     private void publish(){snapshot=new Snapshot(state,position,duration,buffered,message);listener.changed(snapshot);}
     private void state(State state,String message){this.state=state;this.message=message;publish();}
-    private void sample(){if(player==null||!loaded)return;long time=player.getTime(),length=player.getLength();if(time>=0&&(restoreAt<0||Math.abs(time-restoreAt)<5000)){position=time;restoreAt=-1;}if(length>0)duration=length;}
+    private void sample(){if(player==null||!loaded||state==State.ENDED)return;long time=player.getTime(),length=player.getLength();if(time>=0&&(restoreAt<0||Math.abs(time-restoreAt)<5000)){position=time;restoreAt=-1;}if(length>0)duration=length;}
     private void save(){if(loaded&&state!=State.ENDED){sample();listener.progress(position,duration);}}
     private final Runnable timer=new Runnable(){@Override public void run(){if(player==null||disposed)return;sample();publish();if(++ticks%5==0)save();main.postDelayed(this,1000);}};
 
@@ -84,7 +84,7 @@ final class PlaybackController implements Closeable {
         }catch(Exception|LinkageError failure){state(State.ERROR,"播放器初始化失败，该设备可能不兼容。");release();}
     }
 
-    void reconnect(){if(video==null||disposed)return;save();long resume=position;boolean paused=wantPaused;start(video,resume,paused);}
+    void reconnect(){if(video==null||disposed)return;save();long resume=state==State.ENDED?0:position;boolean paused=state!=State.ENDED&&wantPaused;start(video,resume,paused);}
     void toggle(){
         if(player==null){reconnect();return;}wantPaused=!wantPaused;
         if(!loaded)return;

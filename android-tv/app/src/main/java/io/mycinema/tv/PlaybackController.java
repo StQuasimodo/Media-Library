@@ -36,7 +36,7 @@ final class PlaybackController implements Closeable {
     private PlaybackRelay.Session davSession;
     private LibVLC vlc;private volatile MediaPlayer player;private VLCVideoLayout video;
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
-    private boolean loaded,restoreApplied,wantPaused,disposed;private float buffered;
+    private boolean loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered;
     private State state=State.STOPPED;private String message="";
     private volatile Snapshot snapshot=new Snapshot(State.STOPPED,0,0,0,"");
 
@@ -51,17 +51,18 @@ final class PlaybackController implements Closeable {
     private final Runnable timer=new Runnable(){@Override public void run(){if(player==null||disposed)return;sample();publish();if(++ticks%5==0)save();main.postDelayed(this,1000);}};
 
     void start(VLCVideoLayout video,long resume,boolean paused){
-        if(disposed)return;stop();this.video=video;position=Math.max(0,resume);restoreAt=-1;duration=0;wantPaused=paused;loaded=false;restoreApplied=false;buffered=0;loginAttempts=0;ticks=0;
+        if(disposed)return;stop();this.video=video;position=Math.max(0,resume);restoreAt=-1;duration=0;wantPaused=paused;mutedForRestore=paused;loaded=false;restoreApplied=false;buffered=0;loginAttempts=0;ticks=0;
         final int session=++generation;network=new NetworkScope();final NetworkScope attempt=network;state(State.CONNECTING,"");
         try{
             ArrayList<String> options=new ArrayList<>();options.add("--quiet");options.add("--no-video-title-show");options.add("--network-caching=1500");
             vlc=new LibVLC(context,options);player=new MediaPlayer(vlc);final MediaPlayer engine=player;engine.attachViews(video,null,false,false);
             engine.setEventListener(event->{if(!current(session,engine))return;
-                if(event.type==MediaPlayer.Event.Buffering){buffered=event.getBuffering();if(buffered<100)state(State.BUFFERING,"");}
+                if(event.type==MediaPlayer.Event.Buffering){buffered=event.getBuffering();if(buffered<100&&state!=State.PAUSED)state(State.BUFFERING,"");}
                 else if(event.type==MediaPlayer.Event.Playing){
                     loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;if(position>0){restoreAt=position;engine.setTime(position);}}
-                    if(wantPaused){engine.pause();state(State.PAUSED,"");}else state(State.PLAYING,"");
-                }else if(event.type==MediaPlayer.Event.Paused){save();state(State.PAUSED,"");}
+                    if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
+                }else if(event.type==MediaPlayer.Event.TimeChanged){sample();if(wantPaused&&state!=State.PAUSED)pauseWhenRestored();}
+                else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();state(State.PAUSED,"");}
                 else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
                 else if(event.type==MediaPlayer.Event.EndReached){wantPaused=true;restoreAt=-1;position=0;duration=Math.max(duration,engine.getLength());state(State.ENDED,"播放完毕");listener.progress(0,duration);}
             });
@@ -76,7 +77,7 @@ final class PlaybackController implements Closeable {
                         try{
                             Media media=new Media(vlc,Uri.parse(endpoint==null?ready.url():endpoint.url.toString()));
                             try{if(endpoint!=null)localLogin(endpoint,session,engine);media.setHWDecoderEnabled(true,false);engine.setMedia(media);}finally{media.release();}
-                            engine.play();main.postDelayed(timer,1000);
+                            if(mutedForRestore)engine.setVolume(0);engine.play();main.postDelayed(timer,1000);
                         }catch(Exception|LinkageError failure){state(State.ERROR,"播放器启动失败，请重新连接或更换资源。");release();}
                     });pending=null;pendingSession=null;
                 }catch(Exception failure){if(pending!=null)pending.close();if(pendingSession!=null)pendingSession.close();main.post(()->{if(current(session,engine)&&!attempt.cancelled())state(State.ERROR,"媒体源连接失败，请检查网络、登录状态及所选文件夹后重试。");});}
@@ -85,10 +86,14 @@ final class PlaybackController implements Closeable {
     }
 
     void reconnect(){if(video==null||disposed)return;save();long resume=state==State.ENDED?0:position;boolean paused=state!=State.ENDED&&wantPaused;start(video,resume,paused);}
+    private void pauseWhenRestored(){
+        if(restoreAt>=0){state(State.BUFFERING,"正在恢复暂停位置…");return;}
+        if(player!=null){player.pause();state(State.PAUSED,"");}
+    }
     void toggle(){
         if(player==null){reconnect();return;}wantPaused=!wantPaused;
         if(!loaded)return;
-        if(wantPaused){player.pause();save();state(State.PAUSED,"");}else{if(state==State.ENDED){position=0;restoreApplied=false;player.setTime(0);}player.play();}
+        if(wantPaused){pauseWhenRestored();save();}else{if(mutedForRestore){mutedForRestore=false;player.setVolume(100);}if(state==State.ENDED){position=0;restoreApplied=false;player.setTime(0);}player.play();if(player.isPlaying())state(State.PLAYING,"");}
     }
     boolean seek(long delta){
         if(player==null||!player.isSeekable())return false;sample();long target=Math.max(0,position+delta);if(duration>0)target=Math.min(target,Math.max(0,duration-1000));player.setTime(target);return true;

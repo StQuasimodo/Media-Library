@@ -38,10 +38,16 @@ final class MediaSources {
     }
     static final class Lease {
         final HttpUrl url;final Map<String,String> headers;
-        Lease(HttpUrl url,Map<String,String> headers){this.url=url;this.headers=headers;}
+        interface Headers {Map<String,String> read() throws Exception;}
+        private final Headers live;
+        Lease(HttpUrl url,Map<String,String> headers){this(url,headers,null);}
+        Lease(HttpUrl url,Map<String,String> headers,Headers live){this.url=url;this.headers=java.util.Collections.unmodifiableMap(new LinkedHashMap<>(headers));this.live=live;}
+        Map<String,String> requestHeaders() throws Exception {return live==null?headers:live.read();}
     }
-    private final SecretStore quark,dav;private final Context context;
-    MediaSources(Context context){this.context=context.getApplicationContext();quark=new SecretStore(context,"quark","夸克");dav=new SecretStore(context,"webdav","WebDAV");}
+    private final SecretStore quark,dav;private final Context context;private final NetworkScope scope;
+    MediaSources(Context context){this(context,new NetworkScope());}
+    private MediaSources(Context context,NetworkScope scope){this.context=context.getApplicationContext();this.scope=scope;quark=new SecretStore(context,"quark","夸克");dav=new SecretStore(context,"webdav","WebDAV");}
+    MediaSources withScope(NetworkScope scope){return new MediaSources(context,scope);}
     boolean connected(String source){return store(source).exists();}
     SecretStore store(String source){if(source.equals("quark"))return quark;if(source.equals("webdav"))return dav;throw new IllegalArgumentException("媒体源无效。");}
     void disconnect(String source){if(source.equals("quark"))CinemaApplication.dav(context).disable();store(source).clear();}
@@ -67,7 +73,7 @@ final class MediaSources {
     private JSONObject quarkRequest(String cookie,HttpUrl url,RequestBody body) throws Exception {
         Request.Builder request=new Request.Builder().url(url).header("Cookie",cookie).header("Referer","https://pan.quark.cn/").header("User-Agent",UA);
         if(body!=null)request.post(body);
-        try(Response response=HTTP.newCall(request.build()).execute()){
+        try(NetworkScope.Exchange exchange=scope.open(HTTP,request.build())){Response response=exchange.response;
             requireSuccess(response,"夸克");JSONObject json=Json.object(new String(TmdbClient.read(response.body().byteStream(),2*1024*1024),StandardCharsets.UTF_8));
             if(json.optInt("code",-1)!=0||json.optInt("status",0)!=200)throw new IllegalStateException("夸克请求未通过，请重新连接账号或检查官方页面的访问限制。");
             // Persist only renewal of the session cookie issued by the API host.
@@ -105,7 +111,7 @@ final class MediaSources {
         String xml="<?xml version=\"1.0\"?><d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:displayname/></d:prop></d:propfind>";
         Request.Builder builder=new Request.Builder().url(folder).header("Depth","1").method("PROPFIND",RequestBody.create(MediaType.parse("application/xml; charset=utf-8"),xml));
         if(!basic(config).isEmpty())builder.header("Authorization",basic(config));Request request=builder.build();
-        try(Response response=HTTP.newCall(request).execute()){
+        try(NetworkScope.Exchange exchange=scope.open(HTTP,request)){Response response=exchange.response;
             if(response.code()!=207){requireSuccess(response,"WebDAV");throw new IllegalStateException("该地址没有返回WebDAV目录，请检查地址。");}
             byte[] bytes=TmdbClient.read(response.body().byteStream(),2*1024*1024);
             return parseDav(bytes,root,folder);
@@ -139,7 +145,7 @@ final class MediaSources {
         if(!rootSeen)throw new IllegalStateException("WebDAV没有返回标准目录XML。");return result;
     }
     private static String UriName(HttpUrl url){List<String> segments=url.pathSegments();return segments.get(segments.size()-1).isEmpty()&&segments.size()>1?segments.get(segments.size()-2):segments.get(segments.size()-1);}
-    Lease resolveForPlayback(JSONObject file) throws Exception {return Json.text(file,"source").equals("quark")?CinemaApplication.dav(context).playback(file):resolve(file);}
+    Lease resolveForPlayback(JSONObject file) throws Exception {scope.check();return Json.text(file,"source").equals("quark")?CinemaApplication.dav(context).playback(file,scope):resolve(file);}
     Lease resolve(JSONObject file) throws Exception {
         String source=Json.text(file,"source"),id=Json.text(file,"fileId");Map<String,String> headers=new LinkedHashMap<>();
         if(source.equals("webdav")){JSONObject config=Json.object(dav.read());HttpUrl url=davChild(davUrl(Json.text(config,"url")),id);if(!basic(config).isEmpty())headers.put("Authorization",basic(config));return new Lease(url,headers);}
@@ -148,7 +154,7 @@ final class MediaSources {
         JSONArray rows=result.optJSONArray("data");String value=rows!=null&&rows.length()>0?rows.getJSONObject(0).optString("download_url"):"";HttpUrl url=HttpUrl.parse(value);
         if(url==null||!url.isHttps()||!url.username().isEmpty()||!url.password().isEmpty())throw new IllegalStateException("夸克未返回可用的HTTPS播放地址，请检查账号权限或稍后重试。");
         headers.put("Referer","https://pan.quark.cn/");headers.put("User-Agent",UA);
-        if(quarkHost(url.host()))headers.put("Cookie",quark.read());return new Lease(url,headers);
+        if(quarkHost(url.host()))headers.put("Cookie",quark.read());return new Lease(url,headers,()->{Map<String,String> latest=new LinkedHashMap<>(headers);if(quarkHost(url.host()))latest.put("Cookie",quark.read());return latest;});
     }
     static boolean quarkHost(String host){return host.equals("quark.cn")||host.endsWith(".quark.cn")||host.endsWith(".quark-hdb.com")||host.equals("uc.cn")||host.endsWith(".uc.cn");}
     static void requireSuccess(Response response,String source){int code=response.code();if(code==401)throw new IllegalStateException(source+"登录已失效或账号密码不正确，请重新连接。");if(code<200||code>=300)throw new IllegalStateException(source+"请求失败（HTTP "+code+"），请检查权限、地址或稍后重试。");}

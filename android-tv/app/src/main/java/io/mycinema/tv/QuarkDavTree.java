@@ -12,7 +12,7 @@ import java.util.Set;
 
 /** A read-only mount anchored at one Quark folder. Every path is checked against its ancestry. */
 final class QuarkDavTree {
-    interface Listing { List<MediaSources.Entry> list(String folder) throws Exception; }
+    interface Listing { List<MediaSources.Entry> list(String folder,NetworkScope scope) throws Exception; }
     static final class Missing extends Exception { private static final long serialVersionUID=1L; }
     static final class Node {
         final MediaSources.Entry entry;final String path;
@@ -34,45 +34,50 @@ final class QuarkDavTree {
             if(!Base64.encodeToString(decoded.getBytes(StandardCharsets.UTF_8),Base64.URL_SAFE|Base64.NO_WRAP|Base64.NO_PADDING).equals(id))throw new Missing();return decoded;
         }catch(IllegalArgumentException error){throw new Missing();}
     }
-    List<MediaSources.Entry> children(String id) throws Exception {
+    List<MediaSources.Entry> children(String id,NetworkScope scope) throws Exception {
+        scope.check();
         synchronized(cache){Cached found=cache.get(id);if(found!=null&&android.os.SystemClock.elapsedRealtime()-found.at<5000)return found.entries;}
-        MediaSources.interrupted();List<MediaSources.Entry> rows=listing.list(id);Set<String> ids=new HashSet<>();
+        MediaSources.interrupted();List<MediaSources.Entry> rows=listing.list(id,scope);scope.check();Set<String> ids=new HashSet<>();
         for(MediaSources.Entry entry:rows)if(!entry.parent.equals(id)||entry.id.equals(id)||!ids.add(entry.id))throw new IllegalStateException("夸克目录层级异常，请稍后重试。");
         synchronized(cache){cache.put(id,new Cached(rows));int count=0;for(Cached value:cache.values())count+=value.entries.size();while(cache.size()>8||count>12000){String first=cache.keySet().iterator().next();count-=cache.remove(first).entries.size();}}
         return rows;
     }
     Node root(){return new Node(new MediaSources.Entry("quark",rootId,name,"",true,0),"");}
-    Node resolve(String relative) throws Exception {
+    Node resolve(String relative) throws Exception {try(NetworkScope scope=new NetworkScope()){return resolve(relative,scope);}}
+    Node resolve(String relative,NetworkScope scope) throws Exception {
+        scope.check();
         if(relative.length()>7000||relative.startsWith("/")||relative.contains("?")||relative.contains("#")||relative.contains("\\"))throw new Missing();
         Node current=root();if(relative.isEmpty())return current;
         String[] parts=relative.split("/",-1);if(parts.length>18)throw new Missing();
         for(int n=0;n<parts.length;n++){
             String part=parts[n];if(part.isEmpty()){if(n==parts.length-1&&current.entry.directory)return current;throw new Missing();}
             if(!current.entry.directory)throw new Missing();String id=fid(part);MediaSources.Entry selected=null;
-            for(MediaSources.Entry entry:children(current.entry.id))if(entry.id.equals(id)){selected=entry;break;}
+            for(MediaSources.Entry entry:children(current.entry.id,scope))if(entry.id.equals(id)){selected=entry;break;}
             if(selected==null)throw new Missing();String path=current.path+part+(selected.directory?"/":"");current=new Node(selected,path);remember(selected.id,path);
         }
         if(current.entry.directory)throw new Missing();return current;
     }
-    List<Node> childNodes(Node folder) throws Exception {
+    List<Node> childNodes(Node folder,NetworkScope scope) throws Exception {
         List<Node> result=new ArrayList<>();if(!folder.entry.directory)return result;
-        for(MediaSources.Entry entry:children(folder.entry.id)){String path=folder.path+segment(entry)+(entry.directory?"/":"");remember(entry.id,path);result.add(new Node(entry,path));}return result;
+        for(MediaSources.Entry entry:children(folder.entry.id,scope)){String path=folder.path+segment(entry)+(entry.directory?"/":"");remember(entry.id,path);result.add(new Node(entry,path));}return result;
     }
     private void remember(String id,String path){synchronized(paths){paths.put(id,path);while(paths.size()>6000)paths.remove(paths.keySet().iterator().next());}}
     String knownPath(String id){if(id.equals(rootId))return "";synchronized(paths){return paths.get(id);}}
-    String locate(String id) throws Exception {
-        String found=knownPath(id);if(found!=null){try{Node node=resolve(found);if(node.entry.id.equals(id))return found;}catch(Missing ignored){}}
+    String locate(String id) throws Exception {try(NetworkScope scope=new NetworkScope()){return locate(id,scope);}}
+    String locate(String id,NetworkScope scope) throws Exception {
+        scope.check();
+        String found=knownPath(id);if(found!=null){try{Node node=resolve(found,scope);if(node.entry.id.equals(id))return found;}catch(Missing ignored){}}
         ArrayDeque<Node> queue=new ArrayDeque<>();queue.add(root());Set<String> seen=new HashSet<>();int count=0;
         while(!queue.isEmpty()){
             MediaSources.interrupted();Node current=queue.remove();if(!seen.add(current.entry.id))continue;
             if(seen.size()>200)throw new IllegalStateException("所选夸克文件夹过大，请选择更小的影视目录。");
-            for(Node node:childNodes(current)){if(++count>10000)throw new IllegalStateException("所选夸克目录过大，请先缩小范围。");if(node.entry.id.equals(id))return node.path;if(node.entry.directory&&node.path.split("/").length<16)queue.add(node);}
+            for(Node node:childNodes(current,scope)){if(++count>10000)throw new IllegalStateException("所选夸克目录过大，请先缩小范围。");if(node.entry.id.equals(id))return node.path;if(node.entry.directory&&node.path.split("/").length<16)queue.add(node);}
         }
         throw new Missing();
     }
-    byte[] propfind(Node node,String base,boolean includeChildren) throws Exception {
+    byte[] propfind(Node node,String base,boolean includeChildren,NetworkScope scope) throws Exception {
         StringBuilder xml=new StringBuilder("<?xml version=\"1.0\" encoding=\"utf-8\"?><d:multistatus xmlns:d=\"DAV:\">");response(xml,node,base);
-        if(includeChildren)for(Node child:childNodes(node))response(xml,child,base);
+        if(includeChildren)for(Node child:childNodes(node,scope))response(xml,child,base);
         return xml.append("</d:multistatus>").toString().getBytes(StandardCharsets.UTF_8);
     }
     private static void response(StringBuilder xml,Node node,String base){

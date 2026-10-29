@@ -27,7 +27,7 @@ final class PlaybackScenario {
     private PlayerActivity playerActivity;private MediaBrowserActivity browser;
     PlaybackScenario(Instrumentation test,String buildRun){this.buildRun=buildRun;this.test=test;context=test.getTargetContext();}
     private void check(boolean value,String message){if(!value)throw new AssertionError(message);}
-    private MediaPlayer player(){try{java.lang.reflect.Field field=PlayerActivity.class.getDeclaredField("player");field.setAccessible(true);return (MediaPlayer)field.get(playerActivity);}catch(Exception error){throw new IllegalStateException(error);}}
+    private MediaPlayer player(){try{java.lang.reflect.Field field=PlayerActivity.class.getDeclaredField("controller");field.setAccessible(true);PlaybackController controller=(PlaybackController)field.get(playerActivity);return controller==null?null:controller.engine();}catch(Exception error){throw new IllegalStateException(error);}}
     interface Condition{boolean ready() throws Exception;}
     private void await(Condition condition,String label) throws Exception {long deadline=System.currentTimeMillis()+25000;while(System.currentTimeMillis()<deadline){if(condition.ready())return;Thread.sleep(300);}throw new AssertionError("timeout: "+label);}
     private int displayed(){IMedia media=player().getMedia();if(media==null)return 0;try{IMedia.Stats stats=media.getStats();return stats==null?0:stats.displayedPictures;}finally{media.release();}}

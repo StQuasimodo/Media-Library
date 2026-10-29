@@ -8,6 +8,7 @@ import ssl
 import struct
 import subprocess
 import threading
+import time
 from urllib.parse import parse_qs, urlparse
 import zlib
 
@@ -38,8 +39,10 @@ def prepare(root):
 
 def serve(root, log):
     state = {'mode': 'normal', 'requests': 0, 'downloads': 0, 'ranges': 0, 'mediaRequests': 0,
-             'fault': 'none', 'drops': 0, 'expiredLease': -1}
+             'fault': 'none', 'drops': 0, 'expiredLease': -1, 'expiredReplies': 0,
+             'pendingDownloads': 0, 'quarkGets': 0, 'unboundedQuarkGets': 0, 'maxQuarkRangeBytes': 0}
     lock = threading.Lock()
+    expired_pair = threading.Barrier(2)
     log.parent.mkdir(parents=True, exist_ok=True)
 
     class Handler(BaseHTTPRequestHandler):
@@ -82,6 +85,12 @@ def serve(root, log):
                 with lock:
                     state['downloads']+=1
                     number=state['downloads']
+                    slow=state['fault']=='slow_download'
+                    if slow:state['pendingDownloads']+=1
+                if slow:
+                    try:time.sleep(10)
+                    finally:
+                        with lock:state['pendingDownloads']-=1
                 filename='expired.mp4' if number == 1 else 'movie.mp4'
                 self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+filename+'?lease='+str(number)}]})
             else:
@@ -104,6 +113,12 @@ def serve(root, log):
             with lock:
                 expired=lease>0 and lease==state['expiredLease']
             if expired:
+                with lock:
+                    state['expiredReplies']+=1
+                    paired=state['fault']=='expire_concurrent'
+                if paired:
+                    try:expired_pair.wait(timeout=5)
+                    except threading.BrokenBarrierError:pass
                 self.reply({},403)
                 return
             video=root/'sample.mp4'
@@ -120,6 +135,18 @@ def serve(root, log):
                 if start>end:
                     self.send_response(416);self.send_header('Content-Range',f'bytes */{size}');self.send_header('Content-Length','0');self.end_headers();return
             with lock:
+                quark_stream=uri.path.startswith('/stream/')
+                fault=state['fault'] if quark_stream else 'none'
+                if quark_stream and self.command=='GET':
+                    state['quarkGets']+=1
+                    bounded=bool(ranged and ranged.rsplit('-',1)[1])
+                    if not bounded:state['unboundedQuarkGets']+=1
+                    if bounded:state['maxQuarkRangeBytes']=max(state['maxQuarkRangeBytes'],end-start+1)
+                reject=fault=='bounded_only' and (self.command=='HEAD' or not ranged or not ranged.rsplit('-',1)[1] or end-start+1>4*1024*1024)
+            if reject:
+                self.reply({},405 if self.command=='HEAD' else 429)
+                return
+            with lock:
                 state['mediaRequests']+=1
                 if ranged:state['ranges']+=1
                 fault=state['fault'] if uri.path.startswith('/stream/') else 'none'
@@ -135,7 +162,7 @@ def serve(root, log):
             self.send_header('Accept-Ranges','bytes')
             self.send_header('ETag','"my-cinema-fixture-v1"')
             self.send_header('Content-Length',str(end-start+1))
-            if ranged:self.send_header('Content-Range',f'bytes {start}-{end}/{size}')
+            if ranged:self.send_header('Content-Range',f"bytes {start+1 if fault=='wrong_initial' else start}-{end}/{size}")
             self.end_headers()
             if self.command == 'HEAD':return
             try:
@@ -159,14 +186,19 @@ def serve(root, log):
                 if uri.path == '/control':
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     with lock:
                         state['mode'] = mode
                         state['fault']=fault
                         state['drops']=0
-                        state['expiredLease']=-1
+                        state['expiredLease']=state['downloads'] if fault=='expire_concurrent' else -1
+                        state['expiredReplies']=0
+                        state['quarkGets']=0
+                        state['unboundedQuarkGets']=0
+                        state['maxQuarkRangeBytes']=0
+                        if fault=='expire_concurrent':expired_pair.reset()
                 self.reply(dict(state))
                 return
             if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/'):

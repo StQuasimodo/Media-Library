@@ -36,6 +36,7 @@ if(build.nativeLibraries){
   const code=Number(/versionCode (\d+)/.exec(gradle)?.[1]);
   if(code>=5){const dav=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/quark-dav-report.json'),'utf8'));assert.equal(dav.result,'passed');assert.equal(dav.buildRun,runId);assert.equal(dav.actualLocalWebDavServer,true);}
   if(code>=6){const dav=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/quark-dav-report.json'),'utf8'));assert.equal(dav.localForwardingHops,1);assert.equal(dav.byteExactDropAndExpiryRecovery,true);assert.equal(dav.nativePlaybackAfterDropAndExpiry,true);assert.equal(dav.manualReconnectResumes,true);assert.ok(dav.continuousPlaybackWallMs>=90000);}
+  if(code>=7){const dav=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/quark-dav-report.json'),'utf8'));for(const check of ['boundedMultiSegmentByteExact','headWithoutUpstreamHead','suffixRangeByteExact','wrongInitialRangeRejected','concurrentExpirySingleRefresh','leaseApiCancellationVerified','playbackSessionRevoked','pausedReconnectPreserved','rapidReconnectVerified','stoppedSessionCannotRestart'])assert.equal(dav[check],true,check);}
 }else assert.equal(build.nativeLibraries,false);
 if(version!=='0.1.0-alpha.1'){
   const signer=execFileSync('git',['show',`${source}:android-tv/development-signing.sha256`],{encoding:'utf8'}).trim();

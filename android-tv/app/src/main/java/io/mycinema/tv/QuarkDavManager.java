@@ -18,8 +18,9 @@ final class QuarkDavManager {
     String rootId(){return prefs.getString("folderId","0");}
     String name(){return prefs.getString("folderName","夸克影视");}
     synchronized boolean running(){return server!=null;}
-    synchronized String error(){return server==null?"":server.error();}
+    synchronized String error(JSONObject file){return server==null?"":server.error(file);}
     synchronized int recoveries(){return server==null?0:server.recoveries();}
+    synchronized int segments(){return server==null?0:server.segments();}
     void enable(String id,String name) throws Exception {
         if(id.isEmpty()||id.length()>1024||name.isEmpty()||name.length()>1024)throw new IllegalArgumentException("请选择有效的夸克文件夹。");
         new MediaSources(context).rawQuarkList(id); // Validate first; a failed selection keeps the prior mount.
@@ -30,7 +31,7 @@ final class QuarkDavManager {
     synchronized void stop(){if(server!=null)server.close();server=null;tree=null;}
     private synchronized PlaybackRelay ensure() throws Exception {
         if(!enabled())throw new IllegalStateException("请先选择夸克文件夹并启用WebDAV。");
-        if(server==null){MediaSources backend=new MediaSources(context);if(!backend.connected("quark"))throw new IllegalStateException("请先连接夸克账号。");tree=new QuarkDavTree(rootId(),name(),backend::rawQuarkList);server=new PlaybackRelay(backend,tree);}
+        if(server==null){MediaSources backend=new MediaSources(context);if(!backend.connected("quark"))throw new IllegalStateException("请先连接夸克账号。");tree=new QuarkDavTree(rootId(),name(),(id,scope)->backend.withScope(scope).rawQuarkList(id));server=new PlaybackRelay(backend,tree);}
         return server;
     }
     synchronized MediaSources.Lease endpoint() throws Exception {PlaybackRelay active=ensure();Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",active.authorization());return new MediaSources.Lease(HttpUrl.parse(active.url()),headers);}
@@ -44,11 +45,15 @@ final class QuarkDavManager {
             result.add(new MediaSources.Entry("quark",node.entry.id,row.name,node.entry.parent,row.directory,row.size,relative,mounted.rootId));}
         return result;
     }
-    MediaSources.Lease playback(JSONObject file) throws Exception {
+    MediaSources.Lease playback(JSONObject file,NetworkScope scope) throws Exception {
         PlaybackRelay active;QuarkDavTree mounted;synchronized(this){active=ensure();mounted=tree;}
         String id=Json.text(file,"fileId"),relative=Json.text(file,"davPath");
-        if(!Json.text(file,"davRoot").equals(mounted.rootId)||relative.isEmpty())relative=mounted.locate(id);
-        QuarkDavTree.Node node=mounted.resolve(relative);if(node.entry.directory||!node.entry.id.equals(id))throw new IllegalStateException("该资源不在已选择的夸克WebDAV文件夹中。");
+        if(!Json.text(file,"davRoot").equals(mounted.rootId)||relative.isEmpty())relative=mounted.locate(id,scope);
+        QuarkDavTree.Node node=mounted.resolve(relative,scope);if(node.entry.directory||!node.entry.id.equals(id))throw new IllegalStateException("该资源不在已选择的夸克WebDAV文件夹中。");
         Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",active.authorization());return new MediaSources.Lease(HttpUrl.parse(active.url()+relative),headers);
+    }
+    PlaybackRelay.Session openPlayback(JSONObject file,NetworkScope scope) throws Exception {
+        MediaSources.Lease endpoint=playback(file,scope);scope.check();
+        synchronized(this){if(server==null||!MediaSources.sameOrigin(endpoint.url,HttpUrl.parse(server.url())))throw new IllegalStateException("媒体源已重启，请重新连接。");return server.openSession(Json.text(file,"fileId"),endpoint.url);}
     }
 }

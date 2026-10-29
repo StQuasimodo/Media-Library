@@ -1,0 +1,312 @@
+{
+  "observedDate": "2026-10-29",
+  "timezone": "Asia/Hong_Kong",
+  "repositories": [
+    {
+      "repo": "jellyfin/jellyfin",
+      "stars": 58774,
+      "created_at": "2018-12-09T06:36:45Z",
+      "pushed_at": "2026-10-28T18:39:16Z",
+      "archived": false,
+      "default_branch": "master",
+      "description": "The Free Software Media System - Server Backend & API",
+      "license": {
+        "key": "gpl-2.0",
+        "name": "GNU General Public License v2.0",
+        "spdx_id": "GPL-2.0",
+        "url": "https://api.github.com/licenses/gpl-2.0",
+        "node_id": "MDc6TGljZW5zZTg="
+      },
+      "head": "63464ab8f4e9b73c8f69af7ddc486b2fc74edba6",
+      "latestRelease": {
+        "tag_name": "v12.4",
+        "published_at": "2026-10-26T21:30:17Z",
+        "html_url": "https://github.com/jellyfin/jellyfin/releases/tag/v12.4",
+        "prerelease": false
+      },
+      "url": "https://github.com/jellyfin/jellyfin"
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "stars": 4672,
+      "created_at": "2018-12-13T14:33:32Z",
+      "pushed_at": "2026-10-29T12:51:29Z",
+      "archived": false,
+      "default_branch": "master",
+      "description": "Android TV Client for Jellyfin",
+      "license": {
+        "key": "gpl-2.0",
+        "name": "GNU General Public License v2.0",
+        "spdx_id": "GPL-2.0",
+        "url": "https://api.github.com/licenses/gpl-2.0",
+        "node_id": "MDc6TGljZW5zZTg="
+      },
+      "head": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "latestRelease": {
+        "tag_name": "v0.19.10",
+        "published_at": "2026-08-16T08:04:36Z",
+        "html_url": "https://github.com/jellyfin/jellyfin-androidtv/releases/tag/v0.19.10",
+        "prerelease": false
+      },
+      "url": "https://github.com/jellyfin/jellyfin-androidtv"
+    },
+    {
+      "repo": "xbmc/xbmc",
+      "stars": 21398,
+      "created_at": "2011-01-03T21:18:51Z",
+      "pushed_at": "2026-10-29T10:42:01Z",
+      "archived": false,
+      "default_branch": "master",
+      "description": "Kodi is an award-winning free and open source home theater/media center software and entertainment hub for digital media. With its beautiful interface and powerful skinning engine, it's available for Android, BSD, Linux,",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "spdx_id": "NOASSERTION",
+        "url": null,
+        "node_id": "MDc6TGljZW5zZTA="
+      },
+      "head": "7b12e7be164ddee838efb1d6272c720b5e23b187",
+      "latestRelease": {
+        "tag_name": "21.3-Omega",
+        "published_at": "2025-10-31T17:21:33Z",
+        "html_url": "https://github.com/xbmc/xbmc/releases/tag/21.3-Omega",
+        "prerelease": false
+      },
+      "url": "https://github.com/xbmc/xbmc"
+    },
+    {
+      "repo": "nova-video-player/aos-AVP",
+      "stars": 4768,
+      "created_at": "2018-05-15T11:59:08Z",
+      "pushed_at": "2026-10-27T18:05:14Z",
+      "archived": false,
+      "default_branch": "nova",
+      "description": "NOVA opeN sOurce Video plAyer: main repository to build them all",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "head": "5c5d4ec81b47ba59be8f91c9d877b49b0ab1c01e",
+      "latestRelease": {
+        "tag_name": "v6.6.2",
+        "published_at": "2026-10-27T18:05:15Z",
+        "html_url": "https://github.com/nova-video-player/aos-AVP/releases/tag/v6.6.2",
+        "prerelease": false
+      },
+      "url": "https://github.com/nova-video-player/aos-AVP"
+    },
+    {
+      "repo": "OpenListTeam/OpenList",
+      "stars": 25341,
+      "created_at": "2025-06-11T23:35:02Z",
+      "pushed_at": "2026-10-29T14:41:35Z",
+      "archived": false,
+      "default_branch": "main",
+      "description": "A new AList Fork to Anti Trust Crisis",
+      "license": {
+        "key": "agpl-3.0",
+        "name": "GNU Affero General Public License v3.0",
+        "spdx_id": "AGPL-3.0",
+        "url": "https://api.github.com/licenses/agpl-3.0",
+        "node_id": "MDc6TGljZW5zZTE="
+      },
+      "head": "78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02",
+      "latestRelease": {
+        "tag_name": "v4.2.9",
+        "published_at": "2026-10-25T05:28:47Z",
+        "html_url": "https://github.com/OpenListTeam/OpenList/releases/tag/v4.2.9",
+        "prerelease": false
+      },
+      "url": "https://github.com/OpenListTeam/OpenList"
+    },
+    {
+      "repo": "Komet/MediaElch",
+      "stars": 1119,
+      "created_at": "2012-03-04T15:02:33Z",
+      "pushed_at": "2026-08-28T12:33:07Z",
+      "archived": false,
+      "default_branch": "master",
+      "description": "Media Manager for Kodi",
+      "license": {
+        "key": "lgpl-3.0",
+        "name": "GNU Lesser General Public License v3.0",
+        "spdx_id": "LGPL-3.0",
+        "url": "https://api.github.com/licenses/lgpl-3.0",
+        "node_id": "MDc6TGljZW5zZTEy"
+      },
+      "head": "e60309e6b4917db30001a261ff91ae38ad465a0e",
+      "latestRelease": {
+        "tag_name": "v2.12.0",
+        "published_at": "2024-10-13T12:43:47Z",
+        "html_url": "https://github.com/Komet/MediaElch/releases/tag/v2.12.0",
+        "prerelease": false
+      },
+      "url": "https://github.com/Komet/MediaElch"
+    },
+    {
+      "repo": "mpv-android/mpv-android",
+      "stars": 3652,
+      "created_at": "2016-04-20T21:29:44Z",
+      "pushed_at": "2026-10-29T09:03:01Z",
+      "archived": false,
+      "default_branch": "master",
+      "description": "Video player for Android based on libmpv ↦ #mpv-android @ irc.libera.chat",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "head": "f700f6f740a15e774452603a00acc88d126c2753",
+      "latestRelease": {
+        "tag_name": "2026-09-17",
+        "published_at": "2026-09-17T15:33:45Z",
+        "html_url": "https://github.com/mpv-android/mpv-android/releases/tag/2026-09-17",
+        "prerelease": false
+      },
+      "url": "https://github.com/mpv-android/mpv-android"
+    },
+    {
+      "repo": "moneytoo/Player",
+      "stars": 2758,
+      "created_at": "2020-11-09T20:05:41Z",
+      "pushed_at": "2026-10-22T19:55:25Z",
+      "archived": false,
+      "default_branch": "master",
+      "description": "▶ Simple and lightweight, yet polished and powerful Android video player based on ExoPlayer",
+      "license": {
+        "key": "unlicense",
+        "name": "The Unlicense",
+        "spdx_id": "Unlicense",
+        "url": "https://api.github.com/licenses/unlicense",
+        "node_id": "MDc6TGljZW5zZTE1"
+      },
+      "head": "b74285ca8a2fc6cf1ad604e34781a0a07b0384c0",
+      "latestRelease": {
+        "tag_name": "v0.217",
+        "published_at": "2026-09-11T21:01:50Z",
+        "html_url": "https://github.com/moneytoo/Player/releases/tag/v0.217",
+        "prerelease": false
+      },
+      "url": "https://github.com/moneytoo/Player"
+    },
+    {
+      "repo": "GhostenEditor/Ghosten-Player",
+      "stars": 3381,
+      "created_at": "2024-09-24T14:56:56Z",
+      "pushed_at": "2026-09-21T17:26:18Z",
+      "archived": false,
+      "default_branch": "dev",
+      "license": {
+        "key": "agpl-3.0",
+        "name": "GNU Affero General Public License v3.0",
+        "spdx_id": "AGPL-3.0",
+        "url": "https://api.github.com/licenses/agpl-3.0",
+        "node_id": "MDc6TGljZW5zZTE="
+      },
+      "head": "8c4fc325c2f816470cb60c1123fd7d7cdb884941",
+      "latestRelease": {
+        "tag_name": "v2.4.7",
+        "published_at": "2026-09-22T15:50:17Z",
+        "html_url": "https://github.com/GhostenEditor/Ghosten-Player/releases/tag/v2.4.7",
+        "prerelease": false
+      },
+      "url": "https://github.com/GhostenEditor/Ghosten-Player"
+    },
+    {
+      "repo": "leepeuker/movary",
+      "stars": 787,
+      "created_at": "2021-01-24T14:11:05Z",
+      "pushed_at": "2026-10-23T10:50:26Z",
+      "archived": false,
+      "default_branch": "main",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "head": "bab0c76216897a753b40fd83e3987c1b7c941d96",
+      "latestRelease": {
+        "tag_name": "0.82.1",
+        "published_at": "2026-10-21T20:23:13Z",
+        "html_url": "https://github.com/leepeuker/movary/releases/tag/0.82.1",
+        "prerelease": false
+      },
+      "url": "https://github.com/leepeuker/movary"
+    },
+    {
+      "repo": "chenqimiao/quarkdrive-webdav",
+      "stars": 372,
+      "created_at": "2025-06-12T05:40:11Z",
+      "pushed_at": "2026-09-24T09:05:46Z",
+      "archived": false,
+      "default_branch": "main",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "head": "7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e",
+      "latestRelease": {
+        "tag_name": "v1.3.9",
+        "published_at": "2026-03-07T15:51:39Z",
+        "html_url": "https://github.com/chenqimiao/quarkdrive-webdav/releases/tag/v1.3.9",
+        "prerelease": false
+      },
+      "url": "https://github.com/chenqimiao/quarkdrive-webdav"
+    },
+    {
+      "repo": "nova-video-player/aos-Video",
+      "head": "4bf05901637678fbc9453a7e10feccd075b34b71",
+      "stars": 101,
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "parentRepo": "nova-video-player/aos-AVP",
+      "submodulePath": "Video",
+      "pinnedByParent": true
+    },
+    {
+      "repo": "nova-video-player/aos-MediaLib",
+      "head": "fba68119be9b704bfa0cad78f7ca8422df0e5cfb",
+      "stars": 21,
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "parentRepo": "nova-video-player/aos-AVP",
+      "submodulePath": "MediaLib",
+      "pinnedByParent": true
+    },
+    {
+      "repo": "nova-video-player/aos-FileCoreLibrary",
+      "head": "56fc8dfa00ba25d01fa98bd3aed4398ed3e74efc",
+      "stars": 23,
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "parentRepo": "nova-video-player/aos-AVP",
+      "submodulePath": "FileCoreLibrary",
+      "pinnedByParent": true
+    }
+  ]
+}

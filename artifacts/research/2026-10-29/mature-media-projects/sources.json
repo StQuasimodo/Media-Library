@@ -1,0 +1,405 @@
+{
+  "scope": "Static source review; upstream apps not built or run; source bytes verified against Git blob SHA-1 from pinned trees.",
+  "files": [
+    {
+      "repo": "jellyfin/jellyfin",
+      "commit": "63464ab8f4e9b73c8f69af7ddc486b2fc74edba6",
+      "path": "Emby.Naming/TV/EpisodePathParser.cs",
+      "blob": "f06aa909ba027625602e12c7b36f3faaa1532ec7",
+      "bytes": 9793,
+      "lines": 244,
+      "url": "https://github.com/jellyfin/jellyfin/blob/63464ab8f4e9b73c8f69af7ddc486b2fc74edba6/Emby.Naming/TV/EpisodePathParser.cs",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin",
+      "commit": "63464ab8f4e9b73c8f69af7ddc486b2fc74edba6",
+      "path": "Emby.Naming/Video/VideoListResolver.cs",
+      "blob": "e16562774d91e48391a217d900d440b0e89ba161",
+      "bytes": 11628,
+      "lines": 321,
+      "url": "https://github.com/jellyfin/jellyfin/blob/63464ab8f4e9b73c8f69af7ddc486b2fc74edba6/Emby.Naming/Video/VideoListResolver.cs",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin",
+      "commit": "63464ab8f4e9b73c8f69af7ddc486b2fc74edba6",
+      "path": "MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs",
+      "blob": "bc44d0266de7f5a552e944852131a2ff296aeb16",
+      "bytes": 3095,
+      "lines": 87,
+      "url": "https://github.com/jellyfin/jellyfin/blob/63464ab8f4e9b73c8f69af7ddc486b2fc74edba6/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin",
+      "commit": "63464ab8f4e9b73c8f69af7ddc486b2fc74edba6",
+      "path": "MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs",
+      "blob": "dc4f8606044205099a0554f57df66718e1c766fe",
+      "bytes": 3671,
+      "lines": 104,
+      "url": "https://github.com/jellyfin/jellyfin/blob/63464ab8f4e9b73c8f69af7ddc486b2fc74edba6/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "commit": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "path": "app/build.gradle.kts",
+      "blob": "480116e45a61e6f5c0c658695c7c43916b8e24a6",
+      "bytes": 5690,
+      "lines": 190,
+      "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/7ec47a0014b8ac8bac56d66ed75cbe442706f0ce/app/build.gradle.kts",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "commit": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "path": "app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfileReport.kt",
+      "blob": "f2cad7205c872ac6a57ca96ab492036055b2baf1",
+      "bytes": 12278,
+      "lines": 301,
+      "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/7ec47a0014b8ac8bac56d66ed75cbe442706f0ce/app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfileReport.kt",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "commit": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "path": "app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfile.kt",
+      "blob": "4588e48c737343279af50db101d354d1437159fd",
+      "bytes": 17036,
+      "lines": 592,
+      "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/7ec47a0014b8ac8bac56d66ed75cbe442706f0ce/app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfile.kt",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "commit": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "path": "app/src/main/java/org/jellyfin/androidtv/ui/navigation/focus/FocusPersistManager.kt",
+      "blob": "cfc84d0dfdfce10ea4464ff86a0c4eadb188f9a6",
+      "bytes": 1682,
+      "lines": 54,
+      "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/7ec47a0014b8ac8bac56d66ed75cbe442706f0ce/app/src/main/java/org/jellyfin/androidtv/ui/navigation/focus/FocusPersistManager.kt",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "commit": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "path": "app/src/main/java/org/jellyfin/androidtv/ui/navigation/focus/FocusRestorationNavEntryDecorator.kt",
+      "blob": "342690ee8adb93c5c94b8476952cf785644f15a8",
+      "bytes": 1183,
+      "lines": 41,
+      "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/7ec47a0014b8ac8bac56d66ed75cbe442706f0ce/app/src/main/java/org/jellyfin/androidtv/ui/navigation/focus/FocusRestorationNavEntryDecorator.kt",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "commit": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "path": "playback/core/src/main/kotlin/queue/Queue.kt",
+      "blob": "27a5a2a7d3858f7e101bf228d6beef4caf5451a7",
+      "bytes": 3237,
+      "lines": 111,
+      "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/7ec47a0014b8ac8bac56d66ed75cbe442706f0ce/playback/core/src/main/kotlin/queue/Queue.kt",
+      "verified": true
+    },
+    {
+      "repo": "xbmc/xbmc",
+      "commit": "7b12e7be164ddee838efb1d6272c720b5e23b187",
+      "path": "LICENSE.md",
+      "blob": "a6538c0336ea5e4cbb2b106ee4433d3352dd9309",
+      "bytes": 290,
+      "lines": 16,
+      "url": "https://github.com/xbmc/xbmc/blob/7b12e7be164ddee838efb1d6272c720b5e23b187/LICENSE.md",
+      "verified": true
+    },
+    {
+      "repo": "xbmc/xbmc",
+      "commit": "7b12e7be164ddee838efb1d6272c720b5e23b187",
+      "path": "addons/skin.estuary/xml/Includes_Home.xml",
+      "blob": "2052b9740dad3b3a059db12f240b956ed9823fdb",
+      "bytes": 40925,
+      "lines": 1087,
+      "url": "https://github.com/xbmc/xbmc/blob/7b12e7be164ddee838efb1d6272c720b5e23b187/addons/skin.estuary/xml/Includes_Home.xml",
+      "verified": true
+    },
+    {
+      "repo": "xbmc/xbmc",
+      "commit": "7b12e7be164ddee838efb1d6272c720b5e23b187",
+      "path": "xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecAndroidMediaCodec.cpp",
+      "blob": "85c7d2c12a4bcadf77ea7f8d6ba89a4cf5b97a8d",
+      "bytes": 65352,
+      "lines": 1937,
+      "url": "https://github.com/xbmc/xbmc/blob/7b12e7be164ddee838efb1d6272c720b5e23b187/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecAndroidMediaCodec.cpp",
+      "verified": true
+    },
+    {
+      "repo": "nova-video-player/aos-AVP",
+      "commit": "5c5d4ec81b47ba59be8f91c9d877b49b0ab1c01e",
+      "path": "README.md",
+      "blob": "62a57a6caf5230bcf84987f19800b5c3d6bb96bb",
+      "bytes": 13321,
+      "lines": 133,
+      "url": "https://github.com/nova-video-player/aos-AVP/blob/5c5d4ec81b47ba59be8f91c9d877b49b0ab1c01e/README.md",
+      "verified": true
+    },
+    {
+      "repo": "nova-video-player/aos-AVP",
+      "commit": "5c5d4ec81b47ba59be8f91c9d877b49b0ab1c01e",
+      "path": ".gitmodules",
+      "blob": "6d0ba60139b3f12c901399526da257491ecd9718",
+      "bytes": 2418,
+      "lines": 84,
+      "url": "https://github.com/nova-video-player/aos-AVP/blob/5c5d4ec81b47ba59be8f91c9d877b49b0ab1c01e/.gitmodules",
+      "verified": true
+    },
+    {
+      "repo": "OpenListTeam/OpenList",
+      "commit": "78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02",
+      "path": "drivers/quark_uc/driver.go",
+      "blob": "84ab24c1f6ad4c8c64f47af52c2b1cf4d767e068",
+      "bytes": 5768,
+      "lines": 238,
+      "url": "https://github.com/OpenListTeam/OpenList/blob/78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02/drivers/quark_uc/driver.go",
+      "verified": true
+    },
+    {
+      "repo": "OpenListTeam/OpenList",
+      "commit": "78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02",
+      "path": "drivers/quark_uc/util.go",
+      "blob": "87798c6efd975e74fb84f8153f4829296489260b",
+      "bytes": 9828,
+      "lines": 362,
+      "url": "https://github.com/OpenListTeam/OpenList/blob/78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02/drivers/quark_uc/util.go",
+      "verified": true
+    },
+    {
+      "repo": "OpenListTeam/OpenList",
+      "commit": "78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02",
+      "path": "drivers/quark_open/util.go",
+      "blob": "788ca0e99abc1807f1702ba62cd4aacac755a5f4",
+      "bytes": 12986,
+      "lines": 470,
+      "url": "https://github.com/OpenListTeam/OpenList/blob/78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02/drivers/quark_open/util.go",
+      "verified": true
+    },
+    {
+      "repo": "OpenListTeam/OpenList",
+      "commit": "78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02",
+      "path": "drivers/quark_uc_tv/meta.go",
+      "blob": "c1e871dd850c1dcba7903e91a8a445c18f65f351",
+      "bytes": 2091,
+      "lines": 69,
+      "url": "https://github.com/OpenListTeam/OpenList/blob/78c5d9b60b8c1d6a450346b4f6a7c30059ccbe02/drivers/quark_uc_tv/meta.go",
+      "verified": true
+    },
+    {
+      "repo": "Komet/MediaElch",
+      "commit": "e60309e6b4917db30001a261ff91ae38ad465a0e",
+      "path": "docs/adr/scraper-interface.md",
+      "blob": "b86c755207768e5ebb77d7c80b09a21bab7ffc03",
+      "bytes": 7694,
+      "lines": 191,
+      "url": "https://github.com/Komet/MediaElch/blob/e60309e6b4917db30001a261ff91ae38ad465a0e/docs/adr/scraper-interface.md",
+      "verified": true
+    },
+    {
+      "repo": "Komet/MediaElch",
+      "commit": "e60309e6b4917db30001a261ff91ae38ad465a0e",
+      "path": "src/scrapers/image/TmdbImages.cpp",
+      "blob": "53102ad35f52f07b80cd537993b37e7e3a6b23d7",
+      "bytes": 10696,
+      "lines": 431,
+      "url": "https://github.com/Komet/MediaElch/blob/e60309e6b4917db30001a261ff91ae38ad465a0e/src/scrapers/image/TmdbImages.cpp",
+      "verified": true
+    },
+    {
+      "repo": "Komet/MediaElch",
+      "commit": "e60309e6b4917db30001a261ff91ae38ad465a0e",
+      "path": "src/ui/image/ImageDialog.cpp",
+      "blob": "bc58a98a3df9a2a6bd1cbc81eca2bce7059cdd3a",
+      "bytes": 35625,
+      "lines": 1009,
+      "url": "https://github.com/Komet/MediaElch/blob/e60309e6b4917db30001a261ff91ae38ad465a0e/src/ui/image/ImageDialog.cpp",
+      "verified": true
+    },
+    {
+      "repo": "GhostenEditor/Ghosten-Player",
+      "commit": "8c4fc325c2f816470cb60c1123fd7d7cdb884941",
+      "path": "README.md",
+      "blob": "a6ab2d87d55eac86a9ac5df3d0c82d801df99011",
+      "bytes": 11022,
+      "lines": 203,
+      "url": "https://github.com/GhostenEditor/Ghosten-Player/blob/8c4fc325c2f816470cb60c1123fd7d7cdb884941/README.md",
+      "verified": true
+    },
+    {
+      "repo": "GhostenEditor/Ghosten-Player",
+      "commit": "8c4fc325c2f816470cb60c1123fd7d7cdb884941",
+      "path": "android/app/build.gradle",
+      "blob": "de6b1338f78146a2c3c93dff5a767742f0eea8dd",
+      "bytes": 1954,
+      "lines": 74,
+      "url": "https://github.com/GhostenEditor/Ghosten-Player/blob/8c4fc325c2f816470cb60c1123fd7d7cdb884941/android/app/build.gradle",
+      "verified": true
+    },
+    {
+      "repo": "GhostenEditor/Ghosten-Player",
+      "commit": "8c4fc325c2f816470cb60c1123fd7d7cdb884941",
+      "path": "lib/pages_tv/components/focusable.dart",
+      "blob": "a6c8ef23c13bbc9d404a1bed31b1f823819948c5",
+      "bytes": 1532,
+      "lines": 64,
+      "url": "https://github.com/GhostenEditor/Ghosten-Player/blob/8c4fc325c2f816470cb60c1123fd7d7cdb884941/lib/pages_tv/components/focusable.dart",
+      "verified": true
+    },
+    {
+      "repo": "GhostenEditor/Ghosten-Player",
+      "commit": "8c4fc325c2f816470cb60c1123fd7d7cdb884941",
+      "path": "lib/pages_tv/detail/season.dart",
+      "blob": "d2fb284da9c32cb8c5705963fe61d94477bc658c",
+      "bytes": 22730,
+      "lines": 507,
+      "url": "https://github.com/GhostenEditor/Ghosten-Player/blob/8c4fc325c2f816470cb60c1123fd7d7cdb884941/lib/pages_tv/detail/season.dart",
+      "verified": true
+    },
+    {
+      "repo": "GhostenEditor/Ghosten-Player",
+      "commit": "8c4fc325c2f816470cb60c1123fd7d7cdb884941",
+      "path": "lib/pages_tv/home.dart",
+      "blob": "87640b84b88e34af81fd92e65df30ef179c1ef37",
+      "bytes": 13593,
+      "lines": 392,
+      "url": "https://github.com/GhostenEditor/Ghosten-Player/blob/8c4fc325c2f816470cb60c1123fd7d7cdb884941/lib/pages_tv/home.dart",
+      "verified": true
+    },
+    {
+      "repo": "leepeuker/movary",
+      "commit": "bab0c76216897a753b40fd83e3987c1b7c941d96",
+      "path": "src/Service/Tmdb/SyncMovie.php",
+      "blob": "7a6c3f5cbe575b565e492c476d16afb48fbda881",
+      "bytes": 4727,
+      "lines": 115,
+      "url": "https://github.com/leepeuker/movary/blob/bab0c76216897a753b40fd83e3987c1b7c941d96/src/Service/Tmdb/SyncMovie.php",
+      "verified": true
+    },
+    {
+      "repo": "leepeuker/movary",
+      "commit": "bab0c76216897a753b40fd83e3987c1b7c941d96",
+      "path": "src/Domain/Movie/History/MovieHistoryEntity.php",
+      "blob": "56615752121fd2154dd44e575e4afddfb03f7f6b",
+      "bytes": 1302,
+      "lines": 60,
+      "url": "https://github.com/leepeuker/movary/blob/bab0c76216897a753b40fd83e3987c1b7c941d96/src/Domain/Movie/History/MovieHistoryEntity.php",
+      "verified": true
+    },
+    {
+      "repo": "chenqimiao/quarkdrive-webdav",
+      "commit": "7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e",
+      "path": "README.md",
+      "blob": "b972959c29f31c4c2063176413985ed901db0d2a",
+      "bytes": 4074,
+      "lines": 108,
+      "url": "https://github.com/chenqimiao/quarkdrive-webdav/blob/7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e/README.md",
+      "verified": true
+    },
+    {
+      "repo": "chenqimiao/quarkdrive-webdav",
+      "commit": "7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e",
+      "path": "Cargo.toml",
+      "blob": "426d27756ad722b573df4419aede408556fd8de5",
+      "bytes": 3111,
+      "lines": 92,
+      "url": "https://github.com/chenqimiao/quarkdrive-webdav/blob/7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e/Cargo.toml",
+      "verified": true
+    },
+    {
+      "repo": "chenqimiao/quarkdrive-webdav",
+      "commit": "7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e",
+      "path": "src/vfs.rs",
+      "blob": "90173a9e0c6faa294c350c68018620812a72f192",
+      "bytes": 56498,
+      "lines": 1492,
+      "url": "https://github.com/chenqimiao/quarkdrive-webdav/blob/7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e/src/vfs.rs",
+      "verified": true
+    },
+    {
+      "repo": "chenqimiao/quarkdrive-webdav",
+      "commit": "7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e",
+      "path": "src/cache.rs",
+      "blob": "f0d0d5ceb664da6107e3f385261ee3a7bf301bc5",
+      "bytes": 5381,
+      "lines": 153,
+      "url": "https://github.com/chenqimiao/quarkdrive-webdav/blob/7a88d7f1fa299a6ef75b99d7e5dbc07a717f579e/src/cache.rs",
+      "verified": true
+    },
+    {
+      "repo": "moneytoo/Player",
+      "commit": "b74285ca8a2fc6cf1ad604e34781a0a07b0384c0",
+      "path": "app/build.gradle",
+      "blob": "34ff160e5b4afda391aa364a46050bc96ff8e26b",
+      "bytes": 4431,
+      "lines": 122,
+      "url": "https://github.com/moneytoo/Player/blob/b74285ca8a2fc6cf1ad604e34781a0a07b0384c0/app/build.gradle",
+      "verified": true
+    },
+    {
+      "repo": "nova-video-player/aos-Video",
+      "commit": "4bf05901637678fbc9453a7e10feccd075b34b71",
+      "path": "build.gradle",
+      "blob": "8badfdcaa7ce811ff36e7ba3ff2f2fc55978899d",
+      "bytes": 14626,
+      "lines": 379,
+      "url": "https://github.com/nova-video-player/aos-Video/blob/4bf05901637678fbc9453a7e10feccd075b34b71/build.gradle",
+      "verified": true
+    },
+    {
+      "repo": "nova-video-player/aos-MediaLib",
+      "commit": "fba68119be9b704bfa0cad78f7ca8422df0e5cfb",
+      "path": "src/com/archos/mediascraper/preprocess/InputMatcher.java",
+      "blob": "2005661ba5b408ab61cff34a50c655dac105a44e",
+      "bytes": 956,
+      "lines": 30,
+      "url": "https://github.com/nova-video-player/aos-MediaLib/blob/fba68119be9b704bfa0cad78f7ca8422df0e5cfb/src/com/archos/mediascraper/preprocess/InputMatcher.java",
+      "verified": true
+    },
+    {
+      "repo": "nova-video-player/aos-MediaLib",
+      "commit": "fba68119be9b704bfa0cad78f7ca8422df0e5cfb",
+      "path": "src/com/archos/mediascraper/preprocess/MovieDefaultMatcher.java",
+      "blob": "d68d22912bf68703a590ed094e58e8da61b0c19d",
+      "bytes": 10743,
+      "lines": 240,
+      "url": "https://github.com/nova-video-player/aos-MediaLib/blob/fba68119be9b704bfa0cad78f7ca8422df0e5cfb/src/com/archos/mediascraper/preprocess/MovieDefaultMatcher.java",
+      "verified": true
+    },
+    {
+      "repo": "nova-video-player/aos-MediaLib",
+      "commit": "fba68119be9b704bfa0cad78f7ca8422df0e5cfb",
+      "path": "src/com/archos/mediascraper/AutoScrapeService.java",
+      "blob": "7f0933d9373a2c0e36711f206f70efd11fd0ef8f",
+      "bytes": 52064,
+      "lines": 876,
+      "url": "https://github.com/nova-video-player/aos-MediaLib/blob/fba68119be9b704bfa0cad78f7ca8422df0e5cfb/src/com/archos/mediascraper/AutoScrapeService.java",
+      "verified": true
+    },
+    {
+      "repo": "nova-video-player/aos-Video",
+      "commit": "4bf05901637678fbc9453a7e10feccd075b34b71",
+      "path": "src/main/java/com/archos/mediacenter/video/info/VideoInfoBackdropChooserFragment.java",
+      "blob": "41ed90f99b9af22d72e6ec9f0d2284c0264c03e3",
+      "bytes": 13088,
+      "lines": 377,
+      "url": "https://github.com/nova-video-player/aos-Video/blob/4bf05901637678fbc9453a7e10feccd075b34b71/src/main/java/com/archos/mediacenter/video/info/VideoInfoBackdropChooserFragment.java",
+      "verified": true
+    },
+    {
+      "repo": "jellyfin/jellyfin-androidtv",
+      "commit": "7ec47a0014b8ac8bac56d66ed75cbe442706f0ce",
+      "path": "gradle/libs.versions.toml",
+      "blob": "d37a1318ef1a6996b7720600c6120b8e340cd9a1",
+      "bytes": 8344,
+      "lines": 168,
+      "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/7ec47a0014b8ac8bac56d66ed75cbe442706f0ce/gradle/libs.versions.toml",
+      "verified": true
+    }
+  ]
+}

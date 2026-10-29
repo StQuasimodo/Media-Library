@@ -1,0 +1,113 @@
+{
+  "scope": "Reports by upstream users; not independently reproduced.",
+  "queries": [
+    {
+      "query": "repo:jellyfin/jellyfin-androidtv is:issue codec",
+      "total": 484,
+      "issues": [
+        {
+          "number": 5368,
+          "title": "DolbyVision + TrueHD gets Transcoded with compatible hardware in 19.6 (worked in 18.11)",
+          "state": "open",
+          "updated_at": "2026-10-28T19:39:32Z",
+          "url": "https://github.com/jellyfin/jellyfin-androidtv/issues/5368"
+        },
+        {
+          "number": 5428,
+          "title": "576p MPEG2VIDEO reported wrong resolution, playback error",
+          "state": "open",
+          "updated_at": "2026-10-28T03:37:13Z",
+          "url": "https://github.com/jellyfin/jellyfin-androidtv/issues/5428"
+        },
+        {
+          "number": 5404,
+          "title": "Audio and Video Jump Out of Sync by Several Seconds.",
+          "state": "open",
+          "updated_at": "2026-10-27T14:57:06Z",
+          "url": "https://github.com/jellyfin/jellyfin-androidtv/issues/5404"
+        }
+      ]
+    },
+    {
+      "query": "repo:nova-video-player/aos-AVP is:issue scraper",
+      "total": 41,
+      "issues": [
+        {
+          "number": 1782,
+          "title": "Problems with nfo files (SMB)",
+          "state": "open",
+          "updated_at": "2026-10-06T19:56:37Z",
+          "url": "https://github.com/nova-video-player/aos-AVP/issues/1782"
+        },
+        {
+          "number": 1775,
+          "title": "Scraper isn't good anymore",
+          "state": "open",
+          "updated_at": "2026-09-25T11:43:54Z",
+          "url": "https://github.com/nova-video-player/aos-AVP/issues/1775"
+        },
+        {
+          "number": 1923,
+          "title": "[FEAT]: Regression in version 6.4.56",
+          "state": "open",
+          "updated_at": "2026-09-02T14:50:00Z",
+          "url": "https://github.com/nova-video-player/aos-AVP/issues/1923"
+        }
+      ]
+    },
+    {
+      "query": "repo:GhostenEditor/Ghosten-Player is:issue 夸克",
+      "total": 15,
+      "issues": [
+        {
+          "number": 364,
+          "title": "[Bug] 手动刮削能列出搜索结果，点选后报「数据格式错误」（夸克网盘模式 / v2.4.7）",
+          "state": "open",
+          "updated_at": "2026-10-06T17:46:11Z",
+          "url": "https://github.com/GhostenEditor/Ghosten-Player/issues/364"
+        },
+        {
+          "number": 362,
+          "title": "增加年份区间分类，增加电影系列合并",
+          "state": "open",
+          "updated_at": "2026-10-04T15:14:19Z",
+          "url": "https://github.com/GhostenEditor/Ghosten-Player/issues/362"
+        },
+        {
+          "number": 276,
+          "title": "无法播放WebDAV视频",
+          "state": "open",
+          "updated_at": "2026-09-18T06:58:26Z",
+          "url": "https://github.com/GhostenEditor/Ghosten-Player/issues/276"
+        }
+      ]
+    },
+    {
+      "query": "repo:OpenListTeam/OpenList is:issue quark",
+      "total": 40,
+      "issues": [
+        {
+          "number": 2963,
+          "title": "[BUG] 夸克下载js文件乱码，网页正常",
+          "state": "open",
+          "updated_at": "2026-10-20T03:11:11Z",
+          "url": "https://github.com/OpenListTeam/OpenList/issues/2963"
+        },
+        {
+          "number": 2115,
+          "title": "夸克网盘，使用的是转码视频的302，之前一直正常，2月12号的时候开始报failed link: failed get link: data invalid: [plf_invalid]。",
+          "state": "open",
+          "updated_at": "2026-10-16T09:05:24Z",
+          "url": "https://github.com/OpenListTeam/OpenList/issues/2115"
+        },
+        {
+          "number": 557,
+          "title": "[BUG] 夸克TV无法显示二维码",
+          "state": "open",
+          "updated_at": "2026-10-07T19:49:48Z",
+          "url": "https://github.com/OpenListTeam/OpenList/issues/557"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+[
+  {
+    "match": "bb2",
+    "parsed": {
+      "codec": "HEVC",
+      "year": "",
+      "hdr": "HDR10",
+      "season": 2,
+      "episode": 3,
+      "audio": "DDP5.1",
+      "source": "WEB-DL",
+      "title": "Breaking Bad",
+      "quality": "2160P"
+    },
+    "id": "baseline"
+  },
+  {
+    "match": "",
+    "parsed": {
+      "codec": "x264",
+      "year": "2014",
+      "hdr": "",
+      "season": 0,
+      "episode": 0,
+      "audio": "dd",
+      "source": "BluRay",
+      "title": "Pa",
+      "quality": "1080P"
+    },
+    "id": "audio-word-boundary"
+  },
+  {
+    "match": "",
+    "parsed": {
+      "codec": "",
+      "year": "1917",
+      "hdr": "",
+      "season": 0,
+      "episode": 0,
+      "audio": "",
+      "source": "",
+      "title": "",
+      "quality": "1080P"
+    },
+    "id": "numeric-movie-title"
+  },
+  {
+    "match": "",
+    "parsed": {
+      "codec": "",
+      "year": "2001",
+      "hdr": "",
+      "season": 0,
+      "episode": 0,
+      "audio": "",
+      "source": "",
+      "title": "",
+      "quality": "2160P"
+    },
+    "id": "numeric-movie-prefix"
+  },
+  {
+    "match": "",
+    "parsed": {
+      "codec": "",
+      "year": "",
+      "hdr": "",
+      "season": 0,
+      "episode": 1,
+      "audio": "",
+      "source": "",
+      "title": "Breaking Bad",
+      "quality": "1080P"
+    },
+    "id": "specials"
+  },
+  {
+    "match": "bb1",
+    "parsed": {
+      "codec": "",
+      "year": "",
+      "hdr": "",
+      "season": 1,
+      "episode": 1,
+      "audio": "",
+      "source": "",
+      "title": "Breaking Bad",
+      "quality": "1080P"
+    },
+    "id": "multi-episode"
+  },
+  {
+    "match": "bb1",
+    "parsed": {
+      "codec": "",
+      "year": "1920",
+      "hdr": "",
+      "season": 1,
+      "episode": 1,
+      "audio": "",
+      "source": "",
+      "title": "Breaking Bad",
+      "quality": ""
+    },
+    "id": "dimensions"
+  },
+  {
+    "match": "",
+    "parsed": {
+      "codec": "",
+      "year": "",
+      "hdr": "",
+      "season": 0,
+      "episode": 0,
+      "audio": "",
+      "source": "",
+      "title": "01",
+      "quality": ""
+    },
+    "id": "multi-parent-episode"
+  },
+  {
+    "match": "bb1",
+    "parsed": {
+      "codec": "HEVC",
+      "year": "",
+      "hdr": "HDR10",
+      "season": 1,
+      "episode": 1,
+      "audio": "DDP5.1",
+      "source": "WEB-DL",
+      "title": "Breaking Bad",
+      "quality": "2160P"
+    },
+    "id": "specifications"
+  },
+  {
+    "match": "bb1",
+    "parsed": {
+      "codec": "",
+      "year": "",
+      "hdr": "",
+      "season": 0,
+      "episode": 1,
+      "audio": "",
+      "source": "",
+      "title": "Breaking Bad",
+      "quality": "1080P"
+    },
+    "id": "explicit-special-over-parent"
+  }
+]

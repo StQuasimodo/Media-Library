@@ -1,0 +1,12 @@
+{
+  "numTotalTests": 33,
+  "numPassedTests": 33,
+  "numFailedTests": 0,
+  "success": true,
+  "files": [
+    "tests/quark.test.ts",
+    "tests/quark-resource-info.test.ts"
+  ],
+  "parserProbeCases": 10,
+  "scope": "Existing Windows regression tests passed; diagnostic sample mismatches are findings, not passing new regression tests. No new APK, Electron runtime, device or live-account validation."
+}

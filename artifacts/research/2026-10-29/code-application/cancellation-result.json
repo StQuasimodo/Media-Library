@@ -1,0 +1,6 @@
+{
+  "futureCancellationStoppedReadWithin200ms": false,
+  "scopeCancellationStoppedRead": true,
+  "scopeCancellationMs": 1,
+  "scope": "Host JVM with production NetworkScope and OkHttp 3.12.13; not an Android Activity or API22 runtime test."
+}

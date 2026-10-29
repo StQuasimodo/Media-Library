@@ -1,0 +1,84 @@
+[
+  {
+    "id": "baseline",
+    "filename": "Breaking.Bad.S02E03.2160p.WEB-DL.HEVC.HDR10.DDP5.1.mkv",
+    "parents": [],
+    "expectedTitle": "Breaking Bad",
+    "expectedYear": null,
+    "expectedMatch": "bb2"
+  },
+  {
+    "id": "audio-word-boundary",
+    "filename": "Paddington.2014.1080p.BluRay.x264.AAC.mkv",
+    "parents": [],
+    "expectedTitle": "Paddington",
+    "expectedYear": "2014"
+  },
+  {
+    "id": "numeric-movie-title",
+    "filename": "1917.2019.1080p.mkv",
+    "parents": [],
+    "expectedTitle": "1917",
+    "expectedYear": "2019",
+    "expectedMatch": "1917"
+  },
+  {
+    "id": "numeric-movie-prefix",
+    "filename": "2001.A.Space.Odyssey.1968.2160p.mkv",
+    "parents": [],
+    "expectedTitle": "2001 A Space Odyssey",
+    "expectedYear": "1968"
+  },
+  {
+    "id": "specials",
+    "filename": "Breaking.Bad.S00E01.1080p.mkv",
+    "parents": [],
+    "expectedTitle": "Breaking Bad",
+    "expectedYear": null,
+    "expectedMatch": "bb0"
+  },
+  {
+    "id": "multi-episode",
+    "filename": "Breaking.Bad.S01E01E02.1080p.mkv",
+    "parents": [],
+    "expectedTitle": "Breaking Bad",
+    "expectedYear": null,
+    "expectedEpisodeEnd": 2
+  },
+  {
+    "id": "dimensions",
+    "filename": "Breaking.Bad.S01E01.1920x1080.mkv",
+    "parents": [],
+    "expectedTitle": "Breaking Bad",
+    "expectedYear": null
+  },
+  {
+    "id": "multi-parent-episode",
+    "filename": "01.mkv",
+    "parents": [
+      "Breaking Bad",
+      "Season 01"
+    ],
+    "expectedTitle": "Breaking Bad",
+    "expectedYear": null,
+    "expectedMatch": "bb1"
+  },
+  {
+    "id": "specifications",
+    "filename": "Breaking.Bad.S01E01.2160p.WEB-DL.HEVC.10bit.HDR10.DDP5.1.Atmos.CHS.mkv",
+    "parents": [],
+    "expectedTitle": "Breaking Bad",
+    "expectedYear": null
+  },
+  {
+    "id": "explicit-special-over-parent",
+    "filename": "Breaking.Bad.S00E01.1080p.mkv",
+    "parents": [
+      "Breaking Bad",
+      "Season 01"
+    ],
+    "expectedTitle": "Breaking Bad",
+    "expectedYear": null,
+    "expectedMatch": "bb0"
+  }
+]

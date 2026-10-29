@@ -1,0 +1,5 @@
+{
+  "url": "https://repo.maven.apache.org/maven2/org/json/json/20240303/json-20240303.jar",
+  "sha1": "0ebb88e8fb5122b7506d5cf1d69f1ccdb790d22a",
+  "purpose": "Host-only parser probe; not added as application dependency"
+}

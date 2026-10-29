@@ -1,0 +1,269 @@
+[
+  {
+    "id": "baseline",
+    "parsed": {
+      "title": "Breaking Bad",
+      "year": null,
+      "season": 2,
+      "episode": 3
+    },
+    "technical": {
+      "resolution": "2160p",
+      "source": "WEB-DL",
+      "videoCodec": "H.265 / HEVC",
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [
+        "HDR10"
+      ],
+      "audioCodecs": [
+        "E-AC-3"
+      ],
+      "audioChannels": [
+        "5.1"
+      ],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "audio-word-boundary",
+    "parsed": {
+      "title": "Paddington",
+      "year": 2014,
+      "season": null,
+      "episode": null
+    },
+    "technical": {
+      "resolution": "1080p",
+      "source": "Blu-ray",
+      "videoCodec": "H.264 / AVC",
+      "encoder": "x264",
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [
+        "AAC"
+      ],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "numeric-movie-title",
+    "parsed": {
+      "title": "1917",
+      "year": 2019,
+      "season": null,
+      "episode": null
+    },
+    "technical": {
+      "resolution": "1080p",
+      "source": null,
+      "videoCodec": null,
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "numeric-movie-prefix",
+    "parsed": {
+      "title": "2001 A Space Odyssey",
+      "year": 1968,
+      "season": null,
+      "episode": null
+    },
+    "technical": {
+      "resolution": "2160p",
+      "source": null,
+      "videoCodec": null,
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "specials",
+    "parsed": {
+      "title": "Breaking Bad",
+      "year": null,
+      "season": 0,
+      "episode": 1
+    },
+    "technical": {
+      "resolution": "1080p",
+      "source": null,
+      "videoCodec": null,
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "multi-episode",
+    "parsed": {
+      "title": "Breaking Bad S01E01E02",
+      "year": null,
+      "season": null,
+      "episode": null
+    },
+    "technical": {
+      "resolution": "1080p",
+      "source": null,
+      "videoCodec": null,
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "dimensions",
+    "parsed": {
+      "title": "Breaking Bad",
+      "year": null,
+      "season": 1,
+      "episode": 1
+    },
+    "technical": {
+      "resolution": "1920×1080",
+      "source": null,
+      "videoCodec": null,
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "multi-parent-episode",
+    "parsed": {
+      "title": "Breaking Bad",
+      "year": null,
+      "season": 1,
+      "episode": 1
+    },
+    "technical": {
+      "resolution": null,
+      "source": null,
+      "videoCodec": null,
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "specifications",
+    "parsed": {
+      "title": "Breaking Bad",
+      "year": null,
+      "season": 1,
+      "episode": 1
+    },
+    "technical": {
+      "resolution": "2160p",
+      "source": "WEB-DL",
+      "videoCodec": "H.265 / HEVC",
+      "encoder": null,
+      "bitDepth": 10,
+      "hdr": [
+        "HDR10"
+      ],
+      "audioCodecs": [
+        "Atmos",
+        "E-AC-3"
+      ],
+      "audioChannels": [
+        "5.1"
+      ],
+      "audioLanguages": [],
+      "subtitles": [
+        "简体字幕"
+      ],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  },
+  {
+    "id": "explicit-special-over-parent",
+    "parsed": {
+      "title": "Breaking Bad",
+      "year": null,
+      "season": 0,
+      "episode": 1
+    },
+    "technical": {
+      "resolution": "1080p",
+      "source": null,
+      "videoCodec": null,
+      "encoder": null,
+      "bitDepth": null,
+      "hdr": [],
+      "audioCodecs": [],
+      "audioChannels": [],
+      "audioLanguages": [],
+      "subtitles": [],
+      "editions": [],
+      "frameRate": null,
+      "bitRate": null,
+      "container": "MKV"
+    }
+  }
+]

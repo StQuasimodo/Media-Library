@@ -9,6 +9,7 @@
 | [ANDROID-TV.md](ANDROID-TV.md) | API21/22原生电视端、独立收藏、遥控器与夸克直连播放计划 | 开发或安装电视预览 |
 | [TV-PLAYBACK-RESEARCH-2026-10-28.md](TV-PLAYBACK-RESEARCH-2026-10-28.md) | 电视独立直连夸克、官方播放库与GitHub项目、老安卓版本边界 | 讨论播放接入与播放器选择 |
 | [MATURE-MEDIA-PROJECTS-RESEARCH-2026-10-29.md](MATURE-MEDIA-PROJECTS-RESEARCH-2026-10-29.md) | Jellyfin、Kodi、NOVA等项目源码对照、老电视边界与最小改进建议 | 讨论下一阶段方向、避免重复开发 |
+| [OPEN-SOURCE-CODE-APPLICATION-2026-10-29.md](OPEN-SOURCE-CODE-APPLICATION-2026-10-29.md) | 开源实现逐项适配、实际解析与取消探针、具体改动范围 | 确定可直接应用的下一批修复 |
 | [TV-VALIDATION-2026-10-27.md](TV-VALIDATION-2026-10-27.md) | alpha.2的720p/1080p、真实应用堆限制、界面及重启回归证据 | 判断电视预览通过了哪些测试 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
 | [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |

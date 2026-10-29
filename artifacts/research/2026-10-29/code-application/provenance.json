@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-29",
+  "timezone": "Asia/Hong_Kong",
+  "myCinemaSource": "bd7b7e5eedceac99e719fe967e807e0ca1a0b888",
+  "scope": "Host JVM executes unchanged ResourceName/Json with org.json Java implementation and a minimal Library.Item stub; not Android UI/SQLite. Windows parsers executed from unchanged production TypeScript bundled by esbuild. Cancellation probe executes unchanged NetworkScope and OkHttp against a local delayed response; not Android Activity runtime.",
+  "sources": [
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/ResourceName.java",
+      "sha256": "90976d1ae75b1afb8f6ffb1026a2efa6832132146bbdb6557a97254805aefd99",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/ResourceName.java"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/Json.java",
+      "sha256": "ea96cada87d745dd4de0b3c057c6b40cffbb0787e618b19013f9f2b49d923b29",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/Json.java"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/MediaBrowserActivity.java",
+      "sha256": "59ba2904cb0681e9ff6734714f4cb2892340602c792f56ee912341c52e1d6506",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/MediaBrowserActivity.java"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/MediaCatalog.java",
+      "sha256": "ae943d155d1a617a5cc72281b707f79a25970ebdae0f77e080779222a2ee6fff",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/MediaCatalog.java"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/NetworkScope.java",
+      "sha256": "1474dfc541aec8900fcc37c1c59b5bfe5b4392ba62570fa386fc517167998bc8",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/NetworkScope.java"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/PlaybackController.java",
+      "sha256": "cb78467477a48b0ad7ed4208648aa992c538ced18d9727ff0ba82ae6589cef66",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/PlaybackController.java"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/Artwork.java",
+      "sha256": "02f568d3f9be1528b4bebbf8a2d048415d2573aff51a7fc4680eb88b4c738299",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/Artwork.java"
+    },
+    {
+      "path": "electron/main/services/quark/filename.ts",
+      "sha256": "e5f4054636421d5ee3ee58a888d0affed37649b8b97044084b8c40ac311ff2a5",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/electron/main/services/quark/filename.ts"
+    },
+    {
+      "path": "electron/main/services/quark/resourceInfo.ts",
+      "sha256": "61a0f944f36177f4d37907d2a966f563ecfe472a9ce23c8bf040098ab2b812a4",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/electron/main/services/quark/resourceInfo.ts"
+    },
+    {
+      "path": "electron/main/services/library.ts",
+      "sha256": "af115b661a6ee7693633600996fff7a78f37e070c7e4cf39c3bca38fa9c84341",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/electron/main/services/library.ts"
+    },
+    {
+      "path": "src/renderer/components/HeroBackdrop.tsx",
+      "sha256": "f17d4d1dccbc2a7a4030688a445cedf26534475185396d584939bb5a3d593c61",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/src/renderer/components/HeroBackdrop.tsx"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/MainActivity.java",
+      "sha256": "f04fb907d09e5d4238abf1245a15b371434504d479071312122e4f4b89bb1319",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/MainActivity.java"
+    },
+    {
+      "path": "android-tv/app/src/main/java/io/mycinema/tv/QuarkDavManager.java",
+      "sha256": "8bfc36c60434b275f44aeb684321a3164c577263547837cf1306db3a7f8b0945",
+      "url": "https://github.com/StQuasimodo/Media-Library/blob/bd7b7e5eedceac99e719fe967e807e0ca1a0b888/android-tv/app/src/main/java/io/mycinema/tv/QuarkDavManager.java"
+    }
+  ],
+  "libvlcSourceJarSha256": "a6ba4732437f1f5359ea4cf44e65a283e245d2fc41b77a1c9784d565b288c407"
+}

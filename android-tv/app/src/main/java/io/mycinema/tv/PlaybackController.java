@@ -79,7 +79,12 @@ final class PlaybackController implements Closeable {
 
     private void onEvent(int session,MediaPlayer engine,MediaPlayer.Event event){
         if(!current(session,engine)){return;}
-        if(event.type==MediaPlayer.Event.Buffering){buffered=event.getBuffering();if(buffered<100&&state!=State.PAUSED)state(State.BUFFERING,"");}
+        if(event.type==MediaPlayer.Event.Buffering){
+            buffered=event.getBuffering();
+            if(state==State.PAUSED||state==State.ENDED||state==State.ERROR){return;}
+            if(buffered<100)state(State.BUFFERING,"");
+            else if(loaded&&engine.isPlaying()){if(wantPaused){sample();pauseWhenRestored();}else state(State.PLAYING,"");}
+        }
         else if(event.type==MediaPlayer.Event.Playing){
             loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;if(position>0){restoreAt=position;engine.setTime(position);}}
             if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");

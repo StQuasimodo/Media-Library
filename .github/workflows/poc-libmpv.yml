@@ -43,6 +43,14 @@ jobs:
         working-directory: .harness/mpv-android/buildscripts
         run: ./download.sh
 
+      # download.sh installs the distribution's meson (1.3.2 on ubuntu-24.04), but
+      # fontconfig in the vendored tree requires >= 1.11.0 and aborts the build.
+      - name: Ensure a Meson new enough for the vendored fontconfig
+        run: |
+          python3 -m pip install --user --upgrade 'meson>=1.11' ninja
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/meson" --version
+
       - name: Build libmpv for armeabi-v7a (the real TV)
         working-directory: .harness/mpv-android/buildscripts
         run: ./buildall.sh --arch armv7l

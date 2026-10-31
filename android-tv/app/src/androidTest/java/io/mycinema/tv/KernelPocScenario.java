@@ -101,6 +101,22 @@ final class KernelPocScenario {
     }
 
     JSONObject run() throws Exception {
+        // Native LibVLC workers may outlive the probe and post into an executor the
+        // instrumentation runtime has already torn down. That surfaces as an
+        // uncaught RejectedExecutionException which would mask a passing probe, so
+        // record it instead of letting it kill the process.
+        final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
+            try { checks.put("late native callback ignored: " + error.getClass().getSimpleName()); } catch (Exception ignored) { }
+        });
+        try {
+            return runProbe();
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(previous);
+        }
+    }
+
+    private JSONObject runProbe() throws Exception {
         put(report, "purpose", "LibVLC 3.7.7 kernel capability probe on API 22");
         put(report, "apiLevel", android.os.Build.VERSION.SDK_INT);
         put(report, "buildRun", buildRun);

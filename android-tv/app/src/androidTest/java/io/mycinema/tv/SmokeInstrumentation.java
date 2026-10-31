@@ -45,6 +45,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         Bundle result=new Bundle();try{
             context=getTargetContext();check("true".equals(arguments.getString("disposableEmulator")),"fixture must be explicitly selected");check(BuildConfig.DEBUG,"only debug application may run fixtures");check(android.os.Build.VERSION.SDK_INT==22,"must run on actual API 22 runtime");
             if("true".equals(arguments.getString("playback"))){new PlaybackScenario(this,arguments.getString("buildRun","")).run();return;}
+            if("true".equals(arguments.getString("kernelPoc"))){JSONObject pocReport=new KernelPocScenario(context,arguments.getString("buildRun","")).run();result.putString("result",Json.text(pocReport,"result"));finish("passed".equals(Json.text(pocReport,"result"))?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);return;}
             if("true".equals(arguments.getString("regression"))){new RegressionScenario(this,arguments).run();return;}
             if("true".equals(arguments.getString("networkProbe"))){
                 JSONObject report=new JSONObject();String address=java.net.InetAddress.getByName("api.tmdb.org").getHostAddress();check(!address.equals("10.0.2.2"),"public network probe must not use fixture DNS");Json.put(report,"publicApiAddress",address);boolean unauthorized=false;String reason="";

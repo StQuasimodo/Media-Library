@@ -1,6 +1,14 @@
 name: Android TV API 22 preview
 on:
   workflow_dispatch:
+    inputs:
+      kernel_poc:
+        description: 'Also run the player-kernel PoC (external subtitles, dual-subtitle probe, HW/SW paths)'
+        type: choice
+        options: [false, true]
+        default: 'false'
+  push:
+    branches: [poc/player-kernel]
 permissions:
   contents: read
 concurrency:
@@ -83,6 +91,10 @@ jobs:
           script: |
             bash scripts/android-tv-smoke.sh
             bash scripts/android-tv-playback.sh
+            if [ "${{ inputs.kernel_poc }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
+              bash scripts/prepare-tv-kernel-poc.sh
+              bash scripts/android-tv-kernel-poc.sh
+            fi
             bash scripts/android-tv-regression.sh
       - name: Prepare installable development preview
         run: |
@@ -115,3 +127,8 @@ jobs:
             .harness/tv-playback/*.txt
             .harness/tv-playback/*.png
             .harness/tv-playback/*.log
+            .harness/tv-kernel-poc/*.json
+            .harness/tv-kernel-poc/*.txt
+            .harness/tv-kernel-poc/*.srt
+            .harness/tv-kernel-poc/*.ass
+            .harness/tv-kernel-poc/*.mp4

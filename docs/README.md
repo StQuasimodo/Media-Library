@@ -16,6 +16,7 @@
 | [TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md](TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md) | 夸克目录转本机只读WebDAV、内置播放器解码/定位/续播证据 | 验收电视端夸克转WebDAV |
 | [TV-PLAYBACK-VALIDATION-2026-10-28.md](TV-PLAYBACK-VALIDATION-2026-10-28.md) | LibVLC真实1080p解码、内嵌轨道、续播与重启回归 | 验收电视端播放基础能力 |
 | [TV-PLAYBACK-STABILITY-2026-10-28.md](TV-PLAYBACK-STABILITY-2026-10-28.md) | 断流与地址过期后的字节精确续接、重连与90秒观测 | 评估播放稳定性边界 |
+| [PLAYER-KERNEL-AUDIT.md](PLAYER-KERNEL-AUDIT.md) | 播放器内核选型审计：LibVLC 3.7.7 与 mpv 的能力证据、差距矩阵、PoC 计划 | 升级播放能力或换内核前 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
 | [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |
 | [ARTWORK.md](ARTWORK.md) | 横版背景品质、简体/英文海报、刷新与图片语言限制 | 图片不合适或需要更新已有收藏时 |

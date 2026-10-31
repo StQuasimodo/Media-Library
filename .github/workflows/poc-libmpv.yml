@@ -102,3 +102,46 @@ jobs:
             .harness/mpv-android-revision.txt
             .harness/mpv-android/buildscripts/prefix/**
             .harness/mpv-android/app/build/outputs/apk/**/*.apk
+
+  # P0-B step 3: compiling against API 21 is not the same as running on API 22.
+  # Install the APK on a real API 22 guest and require the process to stay alive
+  # with libmpv loaded; playback and dual subtitles come after this gate.
+  runtime-api22:
+    needs: libmpv
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: libmpv-poc
+          path: .harness/libmpv-poc
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 22
+          target: default
+          arch: x86
+          profile: Nexus 5
+          ram-size: 1024M
+          heap-size: 96M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -euo pipefail
+            mkdir -p .harness/libmpv-poc
+            apk=$(find .harness/libmpv-poc -name 'app-debug.apk' | head -1)
+            echo "apk: $apk"
+            adb install -r "$apk"
+            adb shell am start -W -n is.xyz.mpv/.MPVActivity
+            sleep 12
+            adb shell pidof is.xyz.mpv | tee /tmp/pid.txt
+            test -s /tmp/pid.txt
+            adb shell dumpsys meminfo is.xyz.mpv | head -20
+            adb logcat -d > .harness/libmpv-poc/runtime-logcat.txt || true
+            grep -iE 'mpv|libav' .harness/libmpv-poc/runtime-logcat.txt | tail -40 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: libmpv-api22-runtime
+          if-no-files-found: ignore
+          path: .harness/libmpv-poc/runtime-logcat.txt

@@ -195,26 +195,33 @@ powershell -File scripts/check-environment.ps1   # 临时目录 / 数据目录 /
 
 | 产物 | 路径 | 大小 | SHA-256 |
 |---|---|---|---|
-| 安装包 | `release/My-Cinema-1.0.0-Setup.exe` | 115.59 MB | `8621E609…2E9B` |
-| 免安装版 zip | `release/My-Cinema-1.0.0-portable-win64.zip` | 161.83 MB | `1B41B233…E209` |
-| 免安装目录 | `release/win-unpacked/My Cinema.exe` | 383.7 MB / 139 文件 | — |
-| 渲染层 | `dist/index.html` + `dist/assets/*` | 约 380 KB |
-| 主进程 / preload | `dist-electron/main.cjs` / `preload.cjs` | 111 KB / 3 KB |
+| 安装包 | `release/My-Cinema-1.2.0-Setup.exe` | 117.25 MB | `236B65C2…6B18` |
+| 免安装版 zip | `release/My-Cinema-1.2.0-portable-win64.zip` | 163.35 MB | `C6381E70…1801` |
+| 免安装目录 | `release/win-unpacked/My Cinema.exe` | 385.4 MB / **149 文件** | — |
+| 渲染层 | `dist/assets/index-CR5u1-lb.css` + `index-Da4h4DWi.js` | 60.2 KB / 390.9 KB |
+| 主进程 / preload | `dist-electron/main.cjs` / `preload.cjs` | 207.6 KB / 3 KB |
 | 图标 | `build/icon.ico`（7 个尺寸） | — |
 
-安装包内已核对：`dist` 资源哈希与本地构建一致；`app.asar.unpacked/node_modules/better-sqlite3/prebuilds/win32-x64.node` 存在。
+上表为 2026-10-31 在本机重新打包的 1.2.0 产物（旧的 1.0.0 产物已从 `release/` 清除）。与 GitHub 已发布的 v1.2.0 对比：本地安装包 122,940,711 字节，发布记录 122,940,713 字节，**相差 2 字节**；两者哈希不同（构建非位级可复现），但 `app.asar` 内的版本、渲染资源（`index-Da4h4DWi.js` / `index-CR5u1-lb.css`）与主进程功能标记（`quark-sync`、`season`、schema v4）一致。
+
+安装包内已核对：`app.asar` 版本 1.2.0、125 个条目；`app.asar.unpacked/node_modules/better-sqlite3/prebuilds/win32-x64.node` 存在。
+
+打包前需注意：pnpm 11 在 `node_modules` 留下的 `.ignored_*` 悬空链接会让 `@electron/rebuild` 以 `ENOENT` 失败，删除这些残留即可（2026-10-31 实测）。
 
 ---
 
 ## 4. 界面验证方式
 
-本机无法创建 Electron 窗口（`BrowserWindow` 阶段以 `STATUS_BREAKPOINT` / `ACCESS_VIOLATION` 崩溃，`--no-sandbox`、`--disable-gpu`、`--single-process`、关闭硬件加速、offscreen 均无效；`electron --version` 以 Node 模式正常）。
+**2026-10-31 更正**：本机此前「无法创建 Electron 窗口」的结论只适用于**交互桌面模式**。加 `--headless` 后真实 Electron 可以创建 BrowserWindow 并跑完整流程，`pnpm test:desktop` 已在本机通过（35 项检查、0 条控制台错误）。交互窗口仍会崩溃，最终观感需在正常桌面会话确认。
 
-因此界面验证使用 `scripts/ui-harness.ts`：
+```powershell
+pnpm build
+node scripts/run-desktop-smoke.mjs --headless --no-sandbox --quark-fixture --artwork-dir .harness\artwork
+```
 
-1. 用**真实**数据层与服务层（同一个 `openLibraryDatabase` / `LibraryService` / `ImageCache`）在临时目录建库并导入作品、专题、资源；
-2. 通过 HTTP 提供**真实**的 `dist/` 产物，用极薄的 `window.cinema` 适配层替代 preload 传输；
-3. 用无头 Edge（Chromium）在 1280 / 1440 / 1920 下截图。
+`--artwork-dir` 需要 `fight-poster.jpg`、`fight-backdrop.jpg`、`matrix-poster.jpg`、`matrix-backdrop.jpg` 四张测试图（仓库不含，可从 `.e2e-assets/` 转出）。
+
+没有真实桌面时也可用 `scripts/ui-harness.ts`（真实 `dist/` + 真实服务层 + 无头 Edge）生成截图。
 
 与发行版的差异只有传输层；React 组件、CSS、业务规则完全一致。
 
@@ -239,27 +246,28 @@ powershell -File scripts/check-environment.ps1   # 临时目录 / 数据目录 /
 
 ## 5. 当前验证结论
 
-2026-10-24 Linux 云环境重新验证；此前 Windows 打包结果不视为本轮重新构建。真实 Electron 截图使用独立 SQLite 夹具、本地缓存图片和显式诊断参数，详见 [修复记录](REPAIRS-2026-10-24.md)。
+本节为 2026-10-31 在本机（Windows 11 x64）实测；更早的版本证据见上方按日期记录的章节。
 
 | 检查 | 结果 |
 |---|---|
 | `tsc --noEmit` | 通过，0 错误 |
-| `vitest run` | 82 / 82 通过 |
-| `build.mjs` | 通过 |
-| `electron-builder --win` | 本轮未执行；历史报告通过 |
-| 安装包内容核对 | 本轮未执行；历史报告通过 |
-| 截图巡检 | 当前真实 Electron 截图覆盖首页、影视库、详情、专题、想看及设置，含小窗口、空态和无图 |
-| Electron 窗口启动 | Linux 无显示器诊断模式通过；Windows 交互桌面待验收 |
-| TMDB 带 Key 的在线搜索 | **未验证**（无凭据） |
-| 安装器静默安装 | **未验证**：本会话无交互桌面，`Setup.exe /S` 在初始化阶段不返回（已确认未写入注册表 / 开始菜单 / 安装目录，无残留）。免安装 zip 已核对结构完整（含 `My Cinema.exe`、`app.asar`、better-sqlite3 原生二进制） |
+| `vitest run` | **170 / 170 通过**（15 个文件） |
+| `build.mjs` | 通过（CSS 60.2 KB / JS 390.9 KB） |
+| 真实 Electron 冒烟（`--headless`） | **PASS，35 项检查，0 控制台错误**（真实 preload/IPC/SQLite、深色下拉、无原生菜单下的剪贴板快捷键、夸克连接页） |
+| `electron-builder --win` | 本轮执行通过，产出 1.2.0 安装包与免安装 zip |
+| 安装包内容核对 | 通过（asar 1.2.0 / 125 条目 / better-sqlite3 原生模块在 unpacked） |
+| Electron 窗口启动 | 交互窗口在本机崩溃（环境限制）；`--headless` 通过，1.2.0 正式版已在真实 Windows 窗口完成验收（见上） |
+| TMDB 带 Key 的在线搜索 | 受控链路通过；**真实 Key 未验证**（无凭据） |
+| 安装器静默安装 | **未验证**（无交互桌面；历史验证记录见上方章节） |
+| Android TV | 本机未运行（无模拟器/实机）；证据见 `TV-*` 各章 |
 
 ---
 
 ## 6. 已知限制
 
-1. Linux 已运行真实 Electron BrowserWindow；Windows 安装后的交互桌面、字体与缩放仍需验收。
+1. 交互桌面窗口在本机会崩溃（headless 可跑）；Windows 真实窗口的交付验收见上方 1.2.0 章节，个人电脑的字体与缩放仍需单独确认。
    - 若双击安装包报 `error writing temporary file`，是 NSIS 无法写入 `%TEMP%`：运行 `scripts/check-environment.ps1` 或改用免安装 zip。应用自身已把 Chromium 临时目录改到 `%APPDATA%\My Cinema\tmp`，不受该问题影响。
-2. 没有可用 TMDB API Key：只验证了请求可达与 401 错误映射，未验证成功搜索。
+2. 没有可用 TMDB API Key：只验证了请求可达、受控响应与 401 错误映射，未验证真实账号成功搜索。
 3. 仅 Windows x64；无自动更新。
 4. JSON 导出为单向归档，不支持回灌（恢复请用数据库备份）。
 5. 安装包包含 better-sqlite3 的多平台预编译二进制（约 5 MB 冗余），不影响运行。

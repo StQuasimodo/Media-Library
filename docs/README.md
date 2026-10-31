@@ -6,11 +6,16 @@
 |---|---|---|
 | [USAGE.md](USAGE.md) | 安装、TMDB 配置、资源记录、备份与快捷键 | 首次使用应用 |
 | [VERSIONING.md](VERSIONING.md) | 应用版本、预览编号、Tag 与发布检查规则 | 打包或向用户分发前 |
+| [RELEASE-NOTES.md](RELEASE-NOTES.md) | Windows 1.2.0 正式版发布说明、升级与回退约束 | 交付或升级 Windows 版前 |
+| [TV-RELEASE-NOTES.md](TV-RELEASE-NOTES.md) | Android TV 预览发布说明、签名与安装限制 | 交付电视预览前 |
 | [ANDROID-TV.md](ANDROID-TV.md) | API21/22原生电视端、独立收藏、遥控器与夸克直连播放计划 | 开发或安装电视预览 |
 | [TV-PLAYBACK-RESEARCH-2026-10-28.md](TV-PLAYBACK-RESEARCH-2026-10-28.md) | 电视独立直连夸克、官方播放库与GitHub项目、老安卓版本边界 | 讨论播放接入与播放器选择 |
 | [MATURE-MEDIA-PROJECTS-RESEARCH-2026-10-29.md](MATURE-MEDIA-PROJECTS-RESEARCH-2026-10-29.md) | Jellyfin、Kodi、NOVA等项目源码对照、老电视边界与最小改进建议 | 讨论下一阶段方向、避免重复开发 |
 | [OPEN-SOURCE-CODE-APPLICATION-2026-10-29.md](OPEN-SOURCE-CODE-APPLICATION-2026-10-29.md) | 开源实现逐项适配、实际解析与取消探针、具体改动范围 | 确定可直接应用的下一批修复 |
 | [TV-VALIDATION-2026-10-27.md](TV-VALIDATION-2026-10-27.md) | alpha.2的720p/1080p、真实应用堆限制、界面及重启回归证据 | 判断电视预览通过了哪些测试 |
+| [TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md](TV-QUARK-WEBDAV-VALIDATION-2026-10-28.md) | 夸克目录转本机只读WebDAV、内置播放器解码/定位/续播证据 | 验收电视端夸克转WebDAV |
+| [TV-PLAYBACK-VALIDATION-2026-10-28.md](TV-PLAYBACK-VALIDATION-2026-10-28.md) | LibVLC真实1080p解码、内嵌轨道、续播与重启回归 | 验收电视端播放基础能力 |
+| [TV-PLAYBACK-STABILITY-2026-10-28.md](TV-PLAYBACK-STABILITY-2026-10-28.md) | 断流与地址过期后的字节精确续接、重连与90秒观测 | 评估播放稳定性边界 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境要求、开发、构建、测试与 Windows 打包 | 从源码开发 |
 | [GALLERY.md](GALLERY.md) | 最新界面截图及其验证范围 | 查看产品外观 |
 | [ARTWORK.md](ARTWORK.md) | 横版背景品质、简体/英文海报、刷新与图片语言限制 | 图片不合适或需要更新已有收藏时 |

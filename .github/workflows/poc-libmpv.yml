@@ -1,0 +1,82 @@
+name: PoC libmpv native build
+
+# P0-B, step 1: prove libmpv can be cross-built for the ABI pair the Changhong
+# 55D2S needs (armeabi-v7a real device, x86 emulator) on a hosted Linux runner.
+# Nothing here is wired into the app yet: this job only produces and verifies
+# libmpv.so so the next step can consume a known-good artifact.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [poc/libmpv]
+
+permissions:
+  contents: read
+
+jobs:
+  libmpv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      MPV_ANDROID_REF: master
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch mpv-android sources and record the exact revision
+        run: |
+          mkdir -p .harness
+          git clone --depth 1 --branch "$MPV_ANDROID_REF" https://github.com/mpv-android/mpv-android .harness/mpv-android
+          git -C .harness/mpv-android rev-parse HEAD | tee .harness/mpv-android-revision.txt
+
+      - name: Cache downloaded toolchains and sources
+        uses: actions/cache@v4
+        with:
+          path: |
+            .harness/mpv-android/buildscripts/prefix
+            .harness/mpv-android/buildscripts/ndk
+            .harness/mpv-android/buildscripts/ffmpeg
+          key: libmpv-${{ env.MPV_ANDROID_REF }}-${{ hashFiles('.harness/mpv-android-revision.txt') }}
+          restore-keys: |
+            libmpv-${{ env.MPV_ANDROID_REF }}-
+
+      - name: Download SDK, NDK and vendored sources
+        working-directory: .harness/mpv-android/buildscripts
+        run: ./download.sh
+
+      - name: Build libmpv for armeabi-v7a (the real TV)
+        working-directory: .harness/mpv-android/buildscripts
+        run: ./buildall.sh --arch armv7l
+
+      - name: Build libmpv for x86 (the API 22 emulator)
+        working-directory: .harness/mpv-android/buildscripts
+        run: ./buildall.sh --arch x86
+
+      - name: Verify the produced libraries and their API level
+        run: |
+          set -euo pipefail
+          out=.harness/libmpv
+          mkdir -p "$out"
+          find .harness/mpv-android/buildscripts -name 'libmpv.so' -o -name 'libavcodec.so' | sort | tee "$out/libraries.txt"
+          python3 - <<'PY'
+          import pathlib, re, sys
+          root = pathlib.Path('.harness/mpv-android/buildscripts')
+          libs = sorted(root.rglob('libmpv.so'))
+          print('libmpv.so found:', len(libs))
+          for lib in libs:
+              data = lib.read_bytes()
+              # ELF e_machine: 40 = ARM, 3 = x86.
+              machine = int.from_bytes(data[18:20], 'little')
+              abi = {40: 'armeabi-v7a', 3: 'x86'}.get(machine, f'unknown({machine})')
+              print(f'  {abi:12} {lib} {lib.stat().st_size} bytes')
+          if not libs:
+              sys.exit('no libmpv.so was produced')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libmpv-poc
+          include-hidden-files: true
+          path: |
+            .harness/libmpv/libraries.txt
+            .harness/mpv-android-revision.txt
+            .harness/mpv-android/buildscripts/prefix/**

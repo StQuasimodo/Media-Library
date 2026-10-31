@@ -91,10 +91,7 @@ jobs:
           script: |
             bash scripts/android-tv-smoke.sh
             bash scripts/android-tv-playback.sh
-            if [ "${{ inputs.kernel_poc }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
-              bash scripts/prepare-tv-kernel-poc.sh
-              bash scripts/android-tv-kernel-poc.sh
-            fi
+            if [ "${{ inputs.kernel_poc }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then bash scripts/prepare-tv-kernel-poc.sh && bash scripts/android-tv-kernel-poc.sh; fi
             bash scripts/android-tv-regression.sh
       - name: Prepare installable development preview
         run: |

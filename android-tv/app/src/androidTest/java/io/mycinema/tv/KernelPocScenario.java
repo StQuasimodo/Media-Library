@@ -87,7 +87,7 @@ final class KernelPocScenario {
         put(report, "purpose", "LibVLC 3.7.7 kernel capability probe on API 22");
         put(report, "apiLevel", android.os.Build.VERSION.SDK_INT);
         put(report, "buildRun", buildRun);
-        File dir = new File(context.getExternalFilesDir(null), "mc-poc");
+        File dir = new File(context.getFilesDir(), "mc-poc");
         File video = new File(dir, "sample.mp4");
         File srt = new File(dir, "zh.srt");
         File ass = new File(dir, "en.ass");

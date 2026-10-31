@@ -45,9 +45,14 @@ ffmpeg -hide_banner -loglevel error -y \
   -c:v libx264 -profile:v baseline -level 4.0 -pix_fmt yuv420p -preset ultrafast -crf 30 \
   -c:a aac -b:a 96k -movflags +faststart "$out/sample.mp4"
 
-adb shell mkdir -p /sdcard/Android/data/io.mycinema.tv/files/mc-poc
-adb push "$out/sample.mp4" /sdcard/Android/data/io.mycinema.tv/files/mc-poc/sample.mp4
-adb push "$out/zh.srt" /sdcard/Android/data/io.mycinema.tv/files/mc-poc/zh.srt
-adb push "$out/en.ass" /sdcard/Android/data/io.mycinema.tv/files/mc-poc/en.ass
-adb shell ls -l /sdcard/Android/data/io.mycinema.tv/files/mc-poc | tee "$out/pushed.txt"
+adb push "$out/sample.mp4" /data/local/tmp/mc-poc-sample.mp4
+adb push "$out/zh.srt" /data/local/tmp/mc-poc-zh.srt
+adb push "$out/en.ass" /data/local/tmp/mc-poc-en.ass
+# The manifest declares no storage permission, so the sample is copied into the
+# app's private files directory through run-as instead of external storage.
+adb shell run-as io.mycinema.tv mkdir -p files/mc-poc
+adb shell run-as io.mycinema.tv cp /data/local/tmp/mc-poc-sample.mp4 files/mc-poc/sample.mp4
+adb shell run-as io.mycinema.tv cp /data/local/tmp/mc-poc-zh.srt files/mc-poc/zh.srt
+adb shell run-as io.mycinema.tv cp /data/local/tmp/mc-poc-en.ass files/mc-poc/en.ass
+adb shell run-as io.mycinema.tv ls -l files/mc-poc | tee "$out/pushed.txt"
 ffprobe -hide_banner -loglevel error -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$out/sample.mp4" | tee "$out/ffprobe.txt"

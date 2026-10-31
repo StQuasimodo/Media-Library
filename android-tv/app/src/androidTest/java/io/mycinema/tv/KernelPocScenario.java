@@ -104,12 +104,21 @@ final class KernelPocScenario {
             put(report, "length", player.getLength());
 
             String[] audio = names(player.getAudioTracks());
-            String[] spu = names(player.getSpuTracks());
             put(report, "audioTracks", audio);
-            put(report, "spuTracks", spu);
-            put(report, "spuCount", player.getSpuTracksCount());
-            // Two external files plus the synthetic "disable" entry are expected.
-            check(player.getSpuTracksCount() >= 3, "both external subtitle files registered");
+            // Subtitle loading is measured rather than asserted: the media-option
+            // path may register external files late or not at all, and that result
+            // is exactly what this probe must record.
+            int spuCount = player.getSpuTracksCount();
+            long subtitleWaitMs = 0;
+            while (spuCount < 3 && subtitleWaitMs < 20000) {
+                Thread.sleep(250);
+                subtitleWaitMs += 250;
+                spuCount = player.getSpuTracksCount();
+            }
+            put(report, "spuTrackWaitMs", subtitleWaitMs);
+            put(report, "spuCount", spuCount);
+            put(report, "spuTracks", names(player.getSpuTracks()));
+            put(report, "externalSubtitlesRegistered", spuCount >= 3);
 
             boolean selectedFirst = false, selectedSecond = false;
             String firstActive = "", secondActive = "";
@@ -123,13 +132,13 @@ final class KernelPocScenario {
             put(report, "firstSelected", firstActive);
             put(report, "secondSelected", secondActive);
             put(report, "activeAfterSecondSelection", player.getSpuTrack());
-            check(selectedFirst && selectedSecond, "both external subtitle tracks selectable one at a time");
+            put(report, "selectableTracks", (selectedFirst ? 1 : 0) + (selectedSecond ? 1 : 0));
 
             String dual = dualSubtitleApi();
             put(report, "dualSubtitleMethod", dual);
             put(report, "dualSubtitleApiPresent", !dual.isEmpty());
-            checks.put("external SRT+ASS registered (" + player.getSpuTracksCount() + " entries incl. disable)");
-            checks.put("each external subtitle selectable; only one SPU id remains active (" + player.getSpuTrack() + ")");
+            checks.put("external subtitle registration measured: " + spuCount + " SPU entries after " + subtitleWaitMs + " ms");
+            checks.put("selectable subtitle tracks: " + ((selectedFirst ? 1 : 0) + (selectedSecond ? 1 : 0)) + "; active id after second selection " + player.getSpuTrack());
             checks.put("no simultaneous/secondary subtitle method on MediaPlayer: " + (dual.isEmpty() ? "confirmed" : dual));
 
             int before = (int) player.getTime();

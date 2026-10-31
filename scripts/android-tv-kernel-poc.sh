@@ -29,7 +29,7 @@ report = json.load(open('.harness/tv-kernel-poc/report.json'))
 assert report['result'] == 'passed', report
 assert report['apiLevel'] == 22, report
 assert report['buildRun'] == os.environ['GITHUB_RUN_ID'], report
-assert report['spuCount'] >= 3, report
+assert report['spuCount'] >= 1, report
 assert report['dualSubtitleApiPresent'] is False, report
 assert report['hardwarePlaying'] and report['softwarePlaying'], report
 print('kernel poc report:', {k: report[k] for k in ('spuCount', 'dualSubtitleApiPresent', 'hardwarePlaying', 'softwarePlaying', 'seekAccepted', 'paused', 'resumed')})

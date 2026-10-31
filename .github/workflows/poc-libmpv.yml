@@ -80,6 +80,19 @@ jobs:
               sys.exit('no libmpv.so was produced')
           PY
 
+      - name: Build mpv-android's own JNI bridge against the fresh prefix
+        working-directory: .harness/mpv-android
+        run: |
+          set -euo pipefail
+          # Reuse the SDK that download.sh provisioned for the native build.
+          if [ -d buildscripts/android-sdk-linux ]; then
+            echo "sdk.dir=$PWD/buildscripts/android-sdk-linux" > local.properties
+          else
+            echo "sdk.dir=$ANDROID_HOME" > local.properties
+          fi
+          cat local.properties
+          ./gradlew --no-daemon assembleDebug
+
       - uses: actions/upload-artifact@v4
         with:
           name: libmpv-poc
@@ -88,3 +101,4 @@ jobs:
             .harness/libmpv/libraries.txt
             .harness/mpv-android-revision.txt
             .harness/mpv-android/buildscripts/prefix/**
+            .harness/mpv-android/app/build/outputs/apk/**/*.apk

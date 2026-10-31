@@ -9,7 +9,10 @@ mkdir -p "$out"
 adb shell am force-stop io.mycinema.tv
 adb shell run-as io.mycinema.tv rm -f files/kernel-poc-report.json || true
 
+collected=0
 collect() {
+  [ "$collected" = "1" ] && return 0
+  collected=1
   timeout 15s adb logcat -d > "$out/logcat.txt" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/kernel-poc-report.json > "$out/report.json" || true
   adb shell am force-stop io.mycinema.tv || true
@@ -22,6 +25,9 @@ timeout 300s adb shell am instrument -w \
   -e buildRun "$GITHUB_RUN_ID" \
   io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/instrumentation.txt"
+# Collect before asserting: the report only exists on the device until pulled.
+collect
+test -s "$out/report.json"
 
 python3 - <<'PY'
 import json, os

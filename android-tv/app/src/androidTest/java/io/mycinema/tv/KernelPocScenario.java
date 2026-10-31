@@ -35,13 +35,30 @@ final class KernelPocScenario {
 
     private void check(boolean value, String label) { if (!value) throw new AssertionError(label); }
 
+    private LibVLC lastEngine;
+
     private LibVLC engine() {
         ArrayList<String> options = new ArrayList<>();
         options.add("--quiet");
         options.add("--no-video-title-show");
         // No window exists in this harness; VLC still parses tracks with a dummy vout.
         options.add("--vout=dummy");
-        return new LibVLC(context, options);
+        LibVLC vlc = new LibVLC(context, options);
+        lastEngine = vlc;
+        return vlc;
+    }
+
+    /**
+     * LibVLC keeps its own executors alive; releasing only the player leaves them
+     * posting into the instrumentation runtime after the scenario returns, which
+     * surfaces as a RejectedExecutionException. Release the engine too and let the
+     * native threads settle before the caller finishes.
+     */
+    private void releaseEngine() {
+        if (lastEngine == null) return;
+        try { lastEngine.release(); } catch (RuntimeException ignored) { }
+        lastEngine = null;
+        try { Thread.sleep(800); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
     }
 
     private MediaPlayer play(File video, File[] subtitles, boolean hardware) {
@@ -157,7 +174,7 @@ final class KernelPocScenario {
             put(report, "resumed", resumed);
             check(paused && resumed, "pause and resume");
         } finally {
-            if (player != null) { player.stop(); player.release(); }
+            if (player != null) { player.stop(); player.release(); } releaseEngine();
         }
 
         MediaPlayer software = null;
@@ -168,7 +185,7 @@ final class KernelPocScenario {
             check(started, "software path reaches playback");
             checks.put("hardware and software decoder paths both reach playback with the same sample");
         } finally {
-            if (software != null) { software.stop(); software.release(); }
+            if (software != null) { software.stop(); software.release(); } releaseEngine();
         }
 
         put(report, "result", "passed");

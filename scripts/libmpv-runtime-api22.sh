@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # P0-B step 3: require the freshly built libmpv APK to run on an API 22 guest.
 set -euo pipefail
+adb start-server >/dev/null 2>&1 || true
 
 out=.harness/libmpv-poc
 mkdir -p "$out"

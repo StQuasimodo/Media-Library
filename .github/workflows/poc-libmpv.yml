@@ -116,6 +116,11 @@ jobs:
         with:
           name: libmpv-poc
           path: .harness/libmpv-poc
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Start the adb server before the emulator action
+        run: adb start-server
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 22

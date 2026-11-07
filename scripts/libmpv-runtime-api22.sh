@@ -7,9 +7,16 @@ out=.harness/libmpv-poc
 mkdir -p "$out"
 
 test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = 22
-apk=$(find "$out" -name 'app-debug.apk' | head -1)
+# The downloaded artifact keeps the upload paths, so search for any APK and show
+# the tree when the search comes back empty.
+find "$out" -maxdepth 8 -type f -name '*.apk' | head -20
+apk=$(find "$out" -type f -name '*.apk' | head -1)
 echo "apk: $apk"
-test -n "$apk"
+if [ -z "$apk" ]; then
+  echo 'artifact tree:'
+  find "$out" -maxdepth 4 | head -40
+  exit 1
+fi
 
 adb install -r "$apk"
 adb shell am start -W -n is.xyz.mpv/.MPVActivity

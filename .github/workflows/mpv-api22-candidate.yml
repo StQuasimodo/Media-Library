@@ -1,0 +1,44 @@
+name: mpv API22 candidate playback
+on:
+  workflow_dispatch:
+  push:
+    branches: [poc/mpv-api22-validation]
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+      - name: Download and verify API21 candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .harness/mpv-candidate
+          gh release download 2024-11-16 -R mpv-android/mpv-android -p app-default-x86-release.apk -D .harness/mpv-candidate
+          echo '90cdd455167c71c794f07c9d9458eb303526e1fca7f7f9ac0f8d71121d722414  .harness/mpv-candidate/app-default-x86-release.apk' | sha256sum -c -
+          aapt=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)
+          "$aapt" dump badging .harness/mpv-candidate/app-default-x86-release.apk | tee .harness/mpv-candidate/badging.txt
+          grep -qx "sdkVersion:'21'" .harness/mpv-candidate/badging.txt
+      - name: Create deterministic H264 sample
+        run: bash scripts/mpv-api22/create-fixture.sh
+      - name: Start adb server
+        run: adb start-server
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 22
+          target: default
+          arch: x86
+          profile: Nexus 5
+          ram-size: 1024M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/mpv-api22/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mpv-api22-candidate-evidence
+          path: .harness/mpv-candidate/
+          if-no-files-found: warn

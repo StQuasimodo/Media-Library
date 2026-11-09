@@ -35,4 +35,4 @@ grep -q 'libmpv.so' "$out/maps.txt"
 cat "$out/probe-live.txt"
 grep -qx DONE "$out/probe-live.txt"
 ! grep -q '^FAIL ' "$out/probe-live.txt"
-test "$(grep -c '^PASS ' "$out/probe-live.txt")" -eq 6
+test "$(grep -c '^PASS ' "$out/probe-live.txt")" -eq 7

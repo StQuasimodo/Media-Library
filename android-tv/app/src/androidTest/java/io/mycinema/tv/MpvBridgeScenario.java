@@ -51,6 +51,12 @@ final class MpvBridgeScenario {
             mpv.command(new String[]{"loadfile",session.endpoint.url.toString()});
             await(()->time(engine)>1.5,"mpv advances on scoped Quark stream");
             await(()->{Integer w=engine.getPropertyInt("width"),h=engine.getPropertyInt("height");return w!=null&&h!=null&&w==1920&&h==1080;},"mpv video dimensions");
+            await(()->{Integer count=engine.getPropertyInt("track-list/count");return count!=null&&count>=4;},"mpv tracks available");
+            Integer count=mpv.getPropertyInt("track-list/count");int[] subIds=new int[2];int found=0;
+            for(int i=0;i<count&&found<2;i++)if("sub".equals(mpv.getPropertyString("track-list/"+i+"/type"))){Integer id=mpv.getPropertyInt("track-list/"+i+"/id");if(id!=null)subIds[found++]=id;}
+            check(found==2,"two subtitle tracks present");
+            mpv.setPropertyInt("sid",subIds[0]);mpv.setPropertyInt("secondary-sid",subIds[1]);mpv.command(new String[]{"seek","0","absolute+exact"});
+            await(()->{String primary=engine.getPropertyString("sub-text"),secondary=engine.getPropertyString("secondary-sub-text");return primary!=null&&secondary!=null&&primary.contains("PRIMARY ENGLISH")&&secondary.contains("SECONDARY FRENCH");},"both subtitle texts present");
             Thread.sleep(2000);Bitmap image=test.getUiAutomation().takeScreenshot();check(image!=null,"app screenshot");
             try{
                 int colorful=0,total=0;for(int y=0;y<image.getHeight();y+=12)for(int x=0;x<image.getWidth();x+=12){int c=image.getPixel(x,y),r=(c>>16)&255,g=(c>>8)&255,b=c&255;total++;if(Math.max(r,Math.max(g,b))-Math.min(r,Math.min(g,b))>70&&Math.max(r,Math.max(g,b))>100)colorful++;}

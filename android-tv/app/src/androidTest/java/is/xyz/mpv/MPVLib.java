@@ -16,6 +16,7 @@ public final class MPVLib {
     public native void command(String[] command);
     public native Double getPropertyDouble(String name);
     public native Integer getPropertyInt(String name);
+    public native void setPropertyInt(String name,int value);
     public native String getPropertyString(String name);
     public native void setPropertyBoolean(String name,boolean value);
     public static void eventProperty(String name) {}

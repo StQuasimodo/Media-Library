@@ -9,15 +9,10 @@ concurrency:
   group: android-tv-preview
   cancel-in-progress: false
 jobs:
-  signing:
-    uses: ./.github/workflows/tv-development-signing.yml
   android-tv:
-    needs: signing
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      TV_PIN_DEVELOPMENT_SIGNING: '1'
-      TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
       TV_APK_TARGET: working
       TV_PROFILE: api22-hd-1gb
       TV_DENSITY: '160'
@@ -32,22 +27,6 @@ jobs:
         with:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
-      - name: Keep the development signing identity across preview builds
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.android/mycinema-tv-debug.keystore
-          key: my-cinema-tv-development-signing-v2
-          fail-on-cache-miss: true
-      - name: Check restored signing identity and application version
-        id: app
-        run: |
-          bash scripts/tv-dev-signing.sh
-          python3 - <<'PY'
-          import os,re
-          from pathlib import Path
-          version=re.search(r"versionName '([^']+)'",Path('android-tv/app/build.gradle').read_text()).group(1)
-          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('version='+version+'\n')
-          PY
       - name: Install compile SDK
         run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
       - name: Build and lint native APK and separate instrumentation

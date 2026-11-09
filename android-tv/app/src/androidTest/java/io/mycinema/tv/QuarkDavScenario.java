@@ -26,7 +26,7 @@ import okhttp3.Response;
 /** TV-local conversion, not an external WebDAV fixture masquerading as a Quark mount. */
 final class QuarkDavScenario {
     private final Instrumentation test;private final Context context;private final String run;
-    private PlayerActivity activity;private MediaBrowserActivity owner;
+    private PlayerActivity activity;private MediaBrowserActivity owner;private MainActivity orientationAnchor;
     private final List<String> checks=new ArrayList<>();
     QuarkDavScenario(Instrumentation test,String run){this.test=test;context=test.getTargetContext();this.run=run;}
     interface Condition{boolean ready() throws Exception;}
@@ -64,6 +64,10 @@ final class QuarkDavScenario {
     void run() throws Exception {
         JSONObject report=new JSONObject();Json.put(report,"buildRun",run);Json.put(report,"apiLevel",android.os.Build.VERSION.SDK_INT);QuarkDavManager manager=CinemaApplication.dav(context);
         try{
+            // Keep an existing landscape activity underneath the browser so returning from
+            // the previous player cannot rotate and recreate the browser during a click.
+            orientationAnchor=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            test.waitForIdleSync();Thread.sleep(2000);
             mode("bridge_tree");MediaSources sources=new MediaSources(context);sources.saveQuark("__puus=tv-playback-fixture");
             owner=(MediaBrowserActivity)test.startActivitySync(new Intent(context,MediaBrowserActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));test.waitForIdleSync();
             test.runOnMainSync(()->{View button=label(owner.getWindow().getDecorView(),"选择夸克文件夹并生成WebDAV");check(button!=null&&button.performClick(),"conversion entry exists and can be selected");});
@@ -135,6 +139,6 @@ final class QuarkDavScenario {
             checks.add("real LibVLC renders and seeks Quark-converted WebDAV; saved progress resumes after gateway URL/credentials restart");
             Json.put(report,"result","passed");Json.put(report,"checks",new JSONArray(checks));Json.put(report,"realQuarkAccountVerified",false);Json.put(report,"physicalTelevisionVerified",false);Json.put(report,"actualLocalWebDavServer",true);write(report);
         }catch(Throwable error){try{if(activity!=null&&controller()!=null){Json.put(report,"failureControllerState",controller().snapshot().state.toString());Json.put(report,"failureStoredPosition",controller().snapshot().position);if(player()!=null){Json.put(report,"failureNativePlaying",player().isPlaying());Json.put(report,"failureNativeTimeMs",player().getTime());Json.put(report,"failureDisplayedPictures",frames());}}}catch(Throwable ignored){}Json.put(report,"result","failed");Json.put(report,"checks",new JSONArray(checks));Json.put(report,"errorClass",error.getClass().getSimpleName());Json.put(report,"error",error instanceof AssertionError?error.getMessage():"controlled bridge verification failed");write(report);throw new AssertionError("Quark WebDAV scenario failed: "+error.getClass().getSimpleName(),error);}
-        finally{if(activity!=null)test.runOnMainSync(activity::finish);if(owner!=null)test.runOnMainSync(owner::finish);mode("normal");}
+        finally{if(activity!=null)test.runOnMainSync(activity::finish);if(owner!=null)test.runOnMainSync(owner::finish);if(orientationAnchor!=null)test.runOnMainSync(orientationAnchor::finish);mode("normal");}
     }
 }

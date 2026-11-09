@@ -5,6 +5,7 @@ apk="$out/app-default-x86-release.apk"
 collect() {
   adb logcat -d > "$out/logcat.txt" 2>&1 || true
   adb shell dumpsys meminfo is.xyz.mpv > "$out/meminfo.txt" 2>&1 || true
+  adb pull /data/local/tmp/mpv-poc/frame.png "$out/frame.png" >/dev/null 2>&1 || true
   adb pull /data/local/tmp/mpv-poc/mpv-probe.txt "$out/probe.txt" >/dev/null 2>&1 || true
   adb exec-out screencap -p > "$out/screen.png" 2>/dev/null || true
 }

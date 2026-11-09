@@ -25,7 +25,7 @@ jobs:
           "$aapt" dump badging .harness/mpv-candidate/app-default-x86-release.apk | tee .harness/mpv-candidate/badging.txt
           grep -qx "sdkVersion:'21'" .harness/mpv-candidate/badging.txt
       - name: Install media fixture tools
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
       - name: Create deterministic H264 sample
         run: bash scripts/mpv-api22/create-fixture.sh
       - name: Enable emulator acceleration

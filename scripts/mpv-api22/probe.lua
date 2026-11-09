@@ -19,6 +19,7 @@ mp.register_event('file-loaded', function()
       check(mp.get_property_number('sub-pos') == 90 and mp.get_property_number('secondary-sub-pos') == 10, 'independent subtitle positions')
       record('INFO scales primary=' .. tostring(mp.get_property('sub-scale')) .. ' secondary=' .. tostring(mp.get_property('secondary-sub-scale')))
       check(math.abs((mp.get_property_number('sub-scale') or 0)-1.1)<0.01 and math.abs((mp.get_property_number('secondary-sub-scale') or 0)-1.2)<0.01, 'independent subtitle scales')
+      mp.commandv('screenshot-to-file', '/data/local/tmp/mpv-poc/frame.png', 'subtitles')
       mp.set_property('pause','yes'); local before = mp.get_property_number('time-pos') or -1
       mp.add_timeout(2, function()
         local paused = mp.get_property_number('time-pos') or -2

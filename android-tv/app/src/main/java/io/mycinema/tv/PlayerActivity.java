@@ -47,7 +47,18 @@ public final class PlayerActivity extends Activity {
     private void toggle(){if(controller!=null)controller.toggle();}
     private void seek(long delta){if(controller==null||!controller.seek(delta)){status.setText("当前媒体源尚不支持定位，或仍在缓冲。");return;}controls.setVisibility(View.VISIBLE);}
     private static String clock(long value){long seconds=Math.max(0,value)/1000;return String.format(Locale.ROOT,"%d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
-    private void tracks(){if(controller==null||controller.engine()==null)return;new AlertDialog.Builder(this).setTitle("播放选项").setItems(new String[]{"选择音轨","选择字幕","调整音频同步","调整字幕同步","播放信息"},(dialog,index)->{if(index<2)selectTracks(index==0);else if(index<4)adjustDelay(index==2);else playbackInfo();}).setNegativeButton("返回",null).show();}
+    private void tracks(){if(controller==null||controller.engine()==null)return;new AlertDialog.Builder(this).setTitle("播放选项").setItems(new String[]{"选择音轨","选择字幕","调整音频同步","调整字幕同步","播放速度","播放信息"},(dialog,index)->{if(index<2)selectTracks(index==0);else if(index<4)adjustDelay(index==2);else if(index==4)selectSpeed();else playbackInfo();}).setNegativeButton("返回",null).show();}
+    private void selectSpeed(){
+        if(controller==null||controller.engine()==null)return;
+        final float[] rates={0.5f,0.75f,1f,1.25f,1.5f,2f};
+        final String[] labels={"0.5×","0.75×","正常 · 1×","1.25×","1.5×","2×"};
+        int selected=2;for(int i=0;i<rates.length;i++)if(Math.abs(controller.playbackRate()-rates[i])<0.01f)selected=i;
+        final PlaybackController current=controller;final MediaPlayer engine=current.engine();
+        new AlertDialog.Builder(this).setTitle("播放速度").setSingleChoiceItems(labels,selected,(dialog,index)->{
+            if(controller==current&&current.engine()==engine){if(!current.setPlaybackRate(rates[index]))status.setText("当前媒体暂不支持该播放速度。");}
+            dialog.dismiss();
+        }).setNegativeButton("返回",null).show();
+    }
     private void playbackInfo(){
         MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
         String info=playbackInfoText(player);

@@ -114,8 +114,13 @@ final class QuarkDavScenario {
             try(Response response=request(endpoint,"PROPFIND",restarted.url.toString(),"0",null,true)){check(response.code()==401,"old Basic secret revoked");}
             try(MediaCatalog catalog=new MediaCatalog(context)){check(catalog.position(key)>=19000,"Quark progress survives new connection");JSONObject stored=catalog.get(key);check(!stored.toString().contains("127.0.0.1"),"temporary host/port not stored as media identity");}
             activity=(PlayerActivity)test.startActivitySync(new Intent(context,PlayerActivity.class).putExtra("mediaKey",key).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));await(()->player()!=null&&player().isPlaying()&&player().getTime()>=19000,"resume after gateway URL/password change");Thread.sleep(2000);check(player().getTime()>=21000&&frames()>0,"resumed new gateway advances and renders");
+            test.runOnMainSync(()->check(controller().setPlaybackRate(1.5f),"set 1.5x playback speed"));
+            check(Math.abs(player().getRate()-1.5f)<0.01f,"native player accepts 1.5x");
             MediaPlayer previous=player();PlaybackRelay.Session oldSession=session();long reconnectTime=previous.getTime();test.runOnMainSync(()->{View button=label(activity.getWindow().getDecorView(),"重新连接");check(button!=null&&button.performClick(),"native reconnect action");});
             await(()->player()!=null&&player()!=previous&&player().isPlaying()&&player().getTime()>=reconnectTime-1000&&frames()>0,"manual reconnect rebuilds decoder and resumes saved position");Json.put(report,"manualReconnectResumes",true);
+            await(()->Math.abs(player().getRate()-1.5f)<0.01f,"playback speed restored after reconnect");
+            test.runOnMainSync(()->check(controller().setPlaybackRate(1f),"restore normal playback speed"));
+            Json.put(report,"speedSurvivesReconnect",true);
             try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url(oldSession.endpoint.url).header("Authorization",oldSession.endpoint.headers.get("Authorization")).header("Range","bytes=1000-1063").build()).execute()){check(response.code()==401,"reconnect revokes only the old playback session");}Json.put(report,"playbackSessionRevoked",true);
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);await(()->controller().snapshot().state==PlaybackController.State.PAUSED&&!player().isPlaying(),"controller paused state");long pausedAt=player().getTime();MediaPlayer pausedEngine=player();
             test.runOnMainSync(()->label(activity.getWindow().getDecorView(),"重新连接").performClick());

@@ -19,7 +19,11 @@ mp.register_event('file-loaded', function()
     mp.add_timeout(3, function()
       check(mp.get_property_number('sid') == subs[1] and mp.get_property_number('secondary-sid') == subs[2], 'independent subtitle selection')
       check(mp.get_property_number('sub-pos') == 90 and mp.get_property_number('secondary-sub-pos') == 10, 'independent subtitle positions')
-      record('INFO primary text=' .. tostring(mp.get_property('sub-text')) .. ' secondary text=' .. tostring(mp.get_property('secondary-sub-text')))
+      local primaryText = mp.get_property('sub-text') or ''
+      local secondaryText = mp.get_property('secondary-sub-text') or ''
+      record('INFO primary text=' .. primaryText .. ' secondary text=' .. secondaryText)
+      check(primaryText:find('PRIMARY ENGLISH', 1, true) ~= nil, 'primary subtitle text present')
+      check(secondaryText:find('SECONDARY FRENCH', 1, true) ~= nil, 'secondary subtitle text present')
       record('INFO scales primary=' .. tostring(mp.get_property('sub-scale')) .. ' secondary=' .. tostring(mp.get_property('secondary-sub-scale')))
       check(math.abs((mp.get_property_number('sub-scale') or 0)-1.1)<0.01 and math.abs((mp.get_property_number('secondary-sub-scale') or 0)-1.2)<0.01, 'independent subtitle scales')
       mp.commandv('screenshot-to-file', '/data/local/tmp/mpv-poc/frame.png', 'subtitles')

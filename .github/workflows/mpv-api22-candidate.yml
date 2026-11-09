@@ -12,6 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Download and verify API21 candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -24,6 +26,8 @@ jobs:
           grep -qx "sdkVersion:'21'" .harness/mpv-candidate/badging.txt
       - name: Create deterministic H264 sample
         run: bash scripts/mpv-api22/create-fixture.sh
+      - name: Enable emulator acceleration
+        run: sudo chmod a+rw /dev/kvm
       - name: Start adb server
         run: adb start-server
       - uses: reactivecircus/android-emulator-runner@v2

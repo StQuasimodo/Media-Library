@@ -50,7 +50,11 @@ public final class PlayerActivity extends Activity {
     private void tracks(){if(controller==null||controller.engine()==null)return;new AlertDialog.Builder(this).setTitle("播放选项").setItems(new String[]{"选择音轨","选择字幕","调整音频同步","调整字幕同步","播放信息"},(dialog,index)->{if(index<2)selectTracks(index==0);else if(index<4)adjustDelay(index==2);else playbackInfo();}).setNegativeButton("返回",null).show();}
     private void playbackInfo(){
         MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
-        IMedia media=player.getMedia();if(media==null){status.setText("媒体信息暂不可用。");return;}
+        String info=playbackInfoText(player);
+        new AlertDialog.Builder(this).setTitle("播放信息").setMessage(info).setPositiveButton("完成",null).show();
+    }
+    static String playbackInfoText(MediaPlayer player){
+        IMedia media=player.getMedia();if(media==null)return "媒体信息暂不可用。";
         StringBuilder info=new StringBuilder();
         try{
             for(int i=0;i<media.getTrackCount();i++){
@@ -73,7 +77,7 @@ public final class PlayerActivity extends Activity {
         }finally{media.release();}
         if(info.length()==0)info.append("轨道信息尚未就绪。\n");
         info.append("实际硬解 / 软解：当前无法确认。\n码率为媒体报告值，可能不可用；音频列表包含所有轨道。");
-        new AlertDialog.Builder(this).setTitle("播放信息").setMessage(info.toString()).setPositiveButton("完成",null).show();
+        return info.toString();
     }
     private void adjustDelay(boolean audio){
         MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;

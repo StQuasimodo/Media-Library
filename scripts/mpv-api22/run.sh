@@ -22,6 +22,7 @@ adb shell chmod 755 /data/data/is.xyz.mpv/files/scripts
 adb shell chmod 644 /data/data/is.xyz.mpv/files/scripts/probe.lua
 adb push "$out/sample.mkv" /data/local/tmp/mpv-poc/mycinema-sample.mkv
 adb shell rm -f /data/local/tmp/mpv-poc/mpv-probe.txt
+adb shell settings put secure immersive_mode_confirmations confirmed
 start=$(adb shell am start -W -a android.intent.action.VIEW -d file:///data/local/tmp/mpv-poc/mycinema-sample.mkv -t video/x-matroska -n is.xyz.mpv/.MPVActivity 2>&1 | tr -d '\r')
 echo "$start"
 grep -q '^Status: ok' <<< "$start"

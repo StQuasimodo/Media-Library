@@ -84,3 +84,47 @@ jobs:
           path: |
             .harness/backport-report/
             .harness/mpv-android/app/build/outputs/apk/default/debug/app-default-universal-debug.apk
+  runtime-api22:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mpv-api22-backport-build
+          path: .harness/backport-build
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+      - name: Prepare verified APK and test fixture
+        run: |
+          set -euo pipefail
+          mkdir -p .harness/mpv-candidate
+          mapfile -t files < <(find .harness/backport-build -name app-default-universal-debug.apk -type f)
+          test "${#files[@]}" -eq 1
+          cp "${files[0]}" .harness/mpv-candidate/app-default-x86-release.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging .harness/mpv-candidate/app-default-x86-release.apk | tee .harness/mpv-candidate/badging.txt
+          grep -qx "sdkVersion:'21'" .harness/mpv-candidate/badging.txt
+          sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+          bash scripts/mpv-api22/create-fixture.sh
+      - name: Enable emulator acceleration
+        run: sudo chmod a+rw /dev/kvm
+      - name: Start adb server
+        run: adb start-server
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 22
+          target: default
+          arch: x86
+          profile: Nexus 5
+          ram-size: 1024M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/mpv-api22/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mpv-api22-backport-runtime
+          path: .harness/mpv-candidate/
+          if-no-files-found: warn

@@ -31,4 +31,11 @@ for depth in 8 10; do
   grep -qx DONE "$out/live-$depth.txt"
   ! grep -q '^FAIL ' "$out/live-$depth.txt"
   test -s "$out/frame-$depth.png"
+  if [ "$depth" = 10 ]; then format=yuv420p10; else format=yuv420p; fi
+  grep -q "pixelformat=$format " "$out/live-$depth.txt"
+  # This guest cannot create MediaCodec; require evidence of attempted initialization
+  # and a software decoder, not merely a configured fallback option.
+  grep -q 'Looking at hwdec hevc_mediacodec' "$out/logcat-$depth.txt"
+  grep -q 'Could not create device' "$out/logcat-$depth.txt"
+  grep -q 'Using software decoding' "$out/logcat-$depth.txt"
 done

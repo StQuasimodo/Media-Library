@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import org.json.JSONObject;
 import org.videolan.libvlc.MediaPlayer;
+import org.videolan.libvlc.interfaces.IMedia;
 import org.videolan.libvlc.util.VLCVideoLayout;
 import java.util.Locale;
 
@@ -46,8 +47,51 @@ public final class PlayerActivity extends Activity {
     private void toggle(){if(controller!=null)controller.toggle();}
     private void seek(long delta){if(controller==null||!controller.seek(delta)){status.setText("当前媒体源尚不支持定位，或仍在缓冲。");return;}controls.setVisibility(View.VISIBLE);}
     private static String clock(long value){long seconds=Math.max(0,value)/1000;return String.format(Locale.ROOT,"%d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
-    private void tracks(){if(controller==null||controller.engine()==null)return;new AlertDialog.Builder(this).setTitle("播放选项").setItems(new String[]{"选择音轨","选择字幕"},(dialog,index)->selectTracks(index==0)).setNegativeButton("返回",null).show();}
-    private void selectTracks(boolean audio){MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;MediaPlayer.TrackDescription[] tracks=audio?player.getAudioTracks():player.getSpuTracks();if(tracks==null||tracks.length==0){status.setText(audio?"此资源没有可选音轨。":"此资源没有内嵌字幕；外挂字幕将在后续支持。");return;}String[] labels=new String[tracks.length];for(int i=0;i<tracks.length;i++)labels[i]=tracks[i].id==-1?"关闭字幕":tracks[i].name;new AlertDialog.Builder(this).setTitle(audio?"音轨":"字幕").setItems(labels,(dialog,n)->{MediaPlayer current=controller==null?null:controller.engine();if(current!=null&&current==player){if(audio)current.setAudioTrack(tracks[n].id);else current.setSpuTrack(tracks[n].id);}}).setNegativeButton("返回",null).show();}
+    private void tracks(){if(controller==null||controller.engine()==null)return;new AlertDialog.Builder(this).setTitle("播放选项").setItems(new String[]{"选择音轨","选择字幕","调整音频同步","调整字幕同步","播放信息"},(dialog,index)->{if(index<2)selectTracks(index==0);else if(index<4)adjustDelay(index==2);else playbackInfo();}).setNegativeButton("返回",null).show();}
+    private void playbackInfo(){
+        MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
+        String info=playbackInfoText(player);
+        new AlertDialog.Builder(this).setTitle("播放信息").setMessage(info).setPositiveButton("完成",null).show();
+    }
+    static String playbackInfoText(MediaPlayer player){
+        IMedia media=player.getMedia();if(media==null)return "媒体信息暂不可用。";
+        StringBuilder info=new StringBuilder();
+        try{
+            for(int i=0;i<media.getTrackCount();i++){
+                IMedia.Track track=media.getTrack(i);if(track==null)continue;
+                if(track instanceof IMedia.VideoTrack){IMedia.VideoTrack video=(IMedia.VideoTrack)track;
+                    info.append("视频：").append(track.codec==null?"未知":track.codec);
+                    if(video.width>0&&video.height>0)info.append(" · ").append(video.width).append(" × ").append(video.height);
+                    if(video.frameRateNum>0&&video.frameRateDen>0)info.append(String.format(Locale.ROOT," · %.2f 帧/秒",(double)video.frameRateNum/video.frameRateDen));
+                    if(track.bitrate>0)info.append(String.format(Locale.ROOT," · %.1f Mb/s",track.bitrate/1000000.0));
+                    info.append('\n');
+                }else if(track instanceof IMedia.AudioTrack){IMedia.AudioTrack audio=(IMedia.AudioTrack)track;
+                    info.append("音频：").append(track.codec==null?"未知":track.codec);
+                    if(audio.channels>0)info.append(" · ").append(audio.channels).append(" 声道");
+                    if(audio.rate>0)info.append(" · ").append(audio.rate).append(" Hz");
+                    if(track.language!=null&&!track.language.isEmpty())info.append(" · ").append(track.language);
+                    info.append('\n');
+                }
+            }
+            IMedia.Stats stats=media.getStats();if(stats!=null)info.append("本次会话已显示帧：").append(stats.displayedPictures).append(" · 丢失帧：").append(stats.lostPictures).append('\n');
+        }finally{media.release();}
+        if(info.length()==0)info.append("轨道信息尚未就绪。\n");
+        info.append("实际硬解 / 软解：当前无法确认。\n码率为媒体报告值，可能不可用；音频列表包含所有轨道。");
+        return info.toString();
+    }
+    private void adjustDelay(boolean audio){
+        MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
+        long delay=audio?player.getAudioDelay():player.getSpuDelay();
+        String label=audio?"音频":"字幕";
+        new AlertDialog.Builder(this).setTitle(String.format(Locale.ROOT,"%s同步：%+.1f 秒（正值为延后）",label,delay/1000000.0))
+            .setItems(new String[]{"提前 0.5 秒","延后 0.5 秒","恢复默认"},(dialog,index)->{
+                MediaPlayer current=controller==null?null:controller.engine();if(current!=player)return;
+                long next=index==2?0:Math.max(-60000000L,Math.min(60000000L,delay+(index==0?-500000L:500000L)));
+                boolean ok=audio?player.setAudioDelay(next):player.setSpuDelay(next);
+                if(ok)adjustDelay(audio);else status.setText("无法调整"+label+"同步，请确认媒体正在播放。");
+            }).setNegativeButton("完成",null).show();
+    }
+    private void selectTracks(boolean audio){MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;MediaPlayer.TrackDescription[] tracks=audio?player.getAudioTracks():player.getSpuTracks();if(tracks==null||tracks.length==0){status.setText(audio?"此资源没有可选音轨。":"此资源没有内嵌字幕；外挂字幕将在后续支持。");return;}String[] labels=new String[tracks.length];for(int i=0;i<tracks.length;i++)labels[i]=tracks[i].id==-1?(audio?"关闭音轨":"关闭字幕"):tracks[i].name;new AlertDialog.Builder(this).setTitle(audio?"音轨":"字幕").setItems(labels,(dialog,n)->{MediaPlayer current=controller==null?null:controller.engine();if(current!=null&&current==player){if(audio)current.setAudioTrack(tracks[n].id);else current.setSpuTrack(tracks[n].id);}}).setNegativeButton("返回",null).show();}
     @Override public boolean onKeyDown(int code,KeyEvent event){if(code==KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE){toggle();return true;}if(code==KeyEvent.KEYCODE_MENU){tracks();return true;}if(controls.getVisibility()!=View.VISIBLE){if(code==KeyEvent.KEYCODE_DPAD_LEFT){seek(-10000);return true;}if(code==KeyEvent.KEYCODE_DPAD_RIGHT){seek(10000);return true;}if(code==KeyEvent.KEYCODE_DPAD_CENTER||code==KeyEvent.KEYCODE_ENTER){toggle();controls.setVisibility(View.VISIBLE);return true;}if(code==KeyEvent.KEYCODE_DPAD_UP||code==KeyEvent.KEYCODE_DPAD_DOWN){controls.setVisibility(View.VISIBLE);toggle.requestFocus();return true;}}return super.onKeyDown(code,event);}
     @Override public void onBackPressed(){if(controls.getVisibility()==View.VISIBLE){controls.setVisibility(View.GONE);}else{controls.setVisibility(View.VISIBLE);new AlertDialog.Builder(this).setTitle("退出播放？").setMessage("进度会保存在电视本机。").setNegativeButton("继续播放",null).setPositiveButton("退出",(dialog,n)->finish()).show();}}
     @Override protected void onStop(){if(controller!=null)controller.stop();super.onStop();}

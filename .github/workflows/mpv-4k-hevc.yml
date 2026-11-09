@@ -1,0 +1,53 @@
+name: mpv API22 4K HEVC experiment
+on:
+  workflow_dispatch:
+  push:
+    branches: [poc/mpv-4k-hevc]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  experiment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Retrieve previously built PoC and verify exact APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .harness/mpv-4k .harness/mpv-build
+          gh run download 42583190460 -R "$GITHUB_REPOSITORY" -n mpv-api22-backport-build -D .harness/mpv-build
+          mapfile -t files < <(find .harness/mpv-build -name app-default-universal-debug.apk -type f)
+          test "${#files[@]}" -eq 1
+          cp "${files[0]}" .harness/mpv-4k/mpv.apk
+          echo '743176933d593bbf7f10db084371ce4c07d4ce6eabeac3fd6b9958f4f478f6ee  .harness/mpv-4k/mpv.apk' | sha256sum -c -
+      - name: Make synthetic 4K samples
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          for depth in 8 10; do
+            if [ "$depth" = 10 ]; then format=yuv420p10le; else format=yuv420p; fi
+            ffmpeg -hide_banner -loglevel error -f lavfi -i 'color=c=blue:s=3840x2160:r=5:d=15' -c:v libx265 -preset ultrafast -pix_fmt "$format" -x265-params 'pools=1:frame-threads=1:log-level=error' -y ".harness/mpv-4k/hevc-$depth.mkv"
+          done
+          sha256sum .harness/mpv-4k/hevc-*.mkv > .harness/mpv-4k/sample-sha256.txt
+      - name: Enable emulator acceleration
+        run: sudo chmod a+rw /dev/kvm && adb start-server
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 22
+          target: default
+          arch: x86
+          profile: Nexus 5
+          ram-size: 1536M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/mpv-4k/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mpv-api22-4k-experiment
+          path: .harness/mpv-4k/
+          if-no-files-found: warn

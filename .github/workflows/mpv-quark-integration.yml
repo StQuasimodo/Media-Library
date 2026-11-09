@@ -87,3 +87,4 @@ jobs:
             .harness/tv-playback/quark-dav-report.json
             .harness/tv-playback/instrumentation.txt
             .harness/tv-playback/logcat.txt
+            .harness/tv-playback/mpv-quark-render.png

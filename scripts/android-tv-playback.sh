@@ -32,6 +32,7 @@ collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/p02-sources.png > "$out/p02-sources.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-quark-dav-report.json > "$out/quark-dav-report.json" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q01-quark-dav-playing.png > "$out/q01-quark-dav-playing.png" || true
+  timeout 10s adb exec-out run-as io.mycinema.tv cat files/mpv-quark-render.png > "$out/mpv-quark-render.png" || true
   # The following collection regression probes the PUBLIC TMDB endpoint first.
   # Restore routing and clear this process's DNS/TLS cache before that probe.
   timeout 10s adb push .harness/tv-fixture-private/playback-hosts-original /system/etc/hosts || true

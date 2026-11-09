@@ -89,8 +89,8 @@ final class QuarkDavScenario {
             try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("https://drive-pc.quark.cn/stream/movie.mp4").header("Cookie","__puus=tv-playback-fixture").header("Range","bytes=1000-1063").build()).execute()){check(Arrays.equals(bytes,response.body().bytes()),"converted Range bytes exactly match upstream");}
             try(Response response=request(endpoint,"HEAD",file.url.toString(),null,null,true)){check(response.code()==200&&response.body().bytes().length==0&&Long.parseLong(response.header("Content-Length"))>1024,"HEAD gives real length without body");}
             checks.add("app directory and playback paths use the generated TV WebDAV; nested fid routes, HEAD length and byte-exact206 work");
-            MpvBridgeScenario.run(context,video.json());
-            checks.add("test-only mpv decodes scoped loopback Quark source, seeks, pauses, resumes and revokes session");
+            MpvBridgeScenario.run(test,owner,video.json());
+            checks.add("test-only mpv renders scoped loopback Quark source, remote seeks, pauses, resumes and revokes session");
             recovery(endpoint,file,manager,report);
             Json.put(report,"architectureChecks","running");new PlaybackArchitectureScenario(context).run(file,video,report);Json.put(report,"architectureChecks","passed");
             checks.add("four-MiB sequential transport, exact segment boundary and suffix, HEAD through GET probe, wrong initial Range rejection, concurrent expiry deduplication, underlying API cancellation");

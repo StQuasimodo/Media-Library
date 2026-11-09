@@ -1,6 +1,7 @@
 package is.xyz.mpv;
 
 import android.content.Context;
+import android.view.Surface;
 
 /** Test-only JNI declarations matching mpv-android at 3018d472. No native library is shipped in the app. */
 public final class MPVLib {
@@ -8,6 +9,9 @@ public final class MPVLib {
     public native void create(Context context);
     public native void init();
     public native void destroy();
+    public native void attachSurface(Surface surface);
+    public native void detachSurface();
+    public native Boolean getPropertyBoolean(String name);
     public native int setOptionString(String name,String value);
     public native void command(String[] command);
     public native Double getPropertyDouble(String name);

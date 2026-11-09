@@ -31,6 +31,8 @@ jobs:
           python3 -m pip install --user --break-system-packages 'meson==1.11.1'
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Fetch pinned Android wrapper and install native dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p .harness
@@ -40,6 +42,10 @@ jobs:
           ln -s "$ANDROID_HOME" .harness/mpv-android/buildscripts/sdk/android-sdk-linux
           ln -s "$ANDROID_HOME/ndk/29.0.14206865" .harness/mpv-android/buildscripts/sdk/android-ndk-r29
           cd .harness/mpv-android/buildscripts
+          mkdir -p deps/mbedtls /tmp/mycinema-build-deps
+          gh release download mbedtls-3.6.6 -R Mbed-TLS/mbedtls -p mbedtls-3.6.6.tar.bz2 -D /tmp/mycinema-build-deps
+          echo '8fb65fae8dcae5840f793c0a334860a411f884cc537ea290ce1c52bb64ca007a  /tmp/mycinema-build-deps/mbedtls-3.6.6.tar.bz2' | sha256sum -c -
+          tar -xjf /tmp/mycinema-build-deps/mbedtls-3.6.6.tar.bz2 -C deps/mbedtls --strip-components=1
           ./download.sh
       - name: Pin mpv and apply reviewed exact-context backport
         run: |

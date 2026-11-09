@@ -46,6 +46,15 @@ jobs:
           gh release download mbedtls-3.6.6 -R Mbed-TLS/mbedtls -p mbedtls-3.6.6.tar.bz2 -D /tmp/mycinema-build-deps
           echo '8fb65fae8dcae5840f793c0a334860a411f884cc537ea290ce1c52bb64ca007a  /tmp/mycinema-build-deps/mbedtls-3.6.6.tar.bz2' | sha256sum -c -
           tar -xjf /tmp/mycinema-build-deps/mbedtls-3.6.6.tar.bz2 -C deps/mbedtls --strip-components=1
+          gh release download v1.0.16 -R fribidi/fribidi -p fribidi-1.0.16.tar.xz -D /tmp/mycinema-build-deps
+          echo '1b1cde5b235d40479e91be2f0e88a309e3214c8ab470ec8a2744d82a5a9ea05c  /tmp/mycinema-build-deps/fribidi-1.0.16.tar.xz' | sha256sum -c -
+          mkdir -p deps/fribidi && tar -xf /tmp/mycinema-build-deps/fribidi-1.0.16.tar.xz -C deps/fribidi --strip-components=1
+          gh release download 14.2.0 -R harfbuzz/harfbuzz -p harfbuzz-14.2.0.tar.xz -D /tmp/mycinema-build-deps
+          echo '94017020f96d025bb66ae91574e4cf334bcad23e8175a8a40565b3721bc2eaff  /tmp/mycinema-build-deps/harfbuzz-14.2.0.tar.xz' | sha256sum -c -
+          mkdir -p deps/harfbuzz && tar -xf /tmp/mycinema-build-deps/harfbuzz-14.2.0.tar.xz -C deps/harfbuzz --strip-components=1
+          gh release download libunibreak_7_0 -R adah1972/libunibreak -p libunibreak-7.0.tar.gz -D /tmp/mycinema-build-deps
+          echo '8c9a6e121736cd0d5c890ae3ae96f3f4010a19aa040f1dbded833a62a87717d3  /tmp/mycinema-build-deps/libunibreak-7.0.tar.gz' | sha256sum -c -
+          mkdir -p deps/unibreak && tar -xf /tmp/mycinema-build-deps/libunibreak-7.0.tar.gz -C deps/unibreak --strip-components=1
           ./download.sh
       - name: Pin mpv and apply reviewed exact-context backport
         run: |

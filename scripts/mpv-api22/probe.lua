@@ -14,6 +14,8 @@ mp.register_event('file-loaded', function()
     mp.set_property_number('sid', subs[1]); mp.set_property_number('secondary-sid', subs[2])
     mp.set_property_number('sub-pos', 90); mp.set_property_number('secondary-sub-pos', 10)
     mp.set_property_number('sub-scale', 1.1); mp.set_property_number('secondary-sub-scale', 1.2)
+    -- Both long subtitle cues begin at zero; seek back after selecting tracks so the demuxer can deliver them.
+    mp.commandv('seek', '0', 'absolute+exact')
     mp.add_timeout(3, function()
       check(mp.get_property_number('sid') == subs[1] and mp.get_property_number('secondary-sid') == subs[2], 'independent subtitle selection')
       check(mp.get_property_number('sub-pos') == 90 and mp.get_property_number('secondary-sub-pos') == 10, 'independent subtitle positions')

@@ -1,0 +1,88 @@
+name: Decoder diagnostics API22 validation
+on:
+  push:
+    branches: [poc/tv-decoder-diagnostics]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-tv-preview
+  cancel-in-progress: false
+jobs:
+  signing:
+    uses: ./.github/workflows/tv-development-signing.yml
+  android-tv:
+    needs: signing
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      TV_PIN_DEVELOPMENT_SIGNING: '1'
+      TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
+      TV_APK_TARGET: working
+      TV_PROFILE: api22-hd-1gb
+      TV_DENSITY: '160'
+      TV_HEAP_MIB: '96'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Keep the development signing identity across preview builds
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/mycinema-tv-debug.keystore
+          key: my-cinema-tv-development-signing-v2
+          fail-on-cache-miss: true
+      - name: Check restored signing identity and application version
+        id: app
+        run: |
+          bash scripts/tv-dev-signing.sh
+          python3 - <<'PY'
+          import os,re
+          from pathlib import Path
+          version=re.search(r"versionName '([^']+)'",Path('android-tv/app/build.gradle').read_text()).group(1)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('version='+version+'\n')
+          PY
+      - name: Install compile SDK
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Build and lint native APK and separate instrumentation
+        working-directory: android-tv
+        run: ./gradlew --no-daemon lintDebug assembleDebug assembleDebugAndroidTest
+      - name: Verify API 21 minimum, v1 signature and ARMv7/x86 decoder
+        run: |
+          mkdir -p .harness/android-tv-package
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs --min-sdk-version 21 android-tv/app/build/outputs/apk/debug/app-debug.apk | tee .harness/android-tv-package/signature.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android-tv/app/build/outputs/apk/debug/app-debug.apk > .harness/android-tv-package/badging.txt
+          python3 scripts/verify-android-tv.py
+      - name: Enable emulator acceleration
+        run: sudo chmod a+rw /dev/kvm
+      - name: Prepare full UI protocol fixture without application hooks
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          node scripts/prepare-tv-regression.mjs
+          python3 scripts/tv-regression-server.py prepare
+          bash scripts/prepare-tv-playback.sh
+          sudo python3 scripts/tv-regression-server.py serve > .harness/tv-regression/fixture-server.log 2>&1 &
+      - name: Install, launch and exercise actual API 22
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          emulator-build: 11237101
+          api-level: 22
+          target: default
+          arch: x86
+          profile: Nexus 5
+          ram-size: 1024M
+          heap-size: 96M
+          pre-emulator-launch-script: python3 scripts/configure-tv-avd.py
+          disable-animations: true
+          emulator-options: -writable-system -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
+          script: |
+            bash scripts/android-tv-smoke.sh
+            bash scripts/android-tv-playback.sh
+            bash scripts/android-tv-regression.sh

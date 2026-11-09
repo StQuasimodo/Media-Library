@@ -18,6 +18,11 @@ adb root
 adb wait-for-device
 adb shell mkdir -p /data/data/is.xyz.mpv/files/scripts /data/local/tmp/mpv-poc
 adb shell chmod 777 /data/local/tmp/mpv-poc
+adb shell mkdir -p /data/local/tmp/mpv-poc/fonts
+adb push /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /data/local/tmp/mpv-poc/fonts/DejaVuSans.ttf
+printf "sub-font=DejaVu Sans\nsub-fonts-dir=/data/local/tmp/mpv-poc/fonts\n" > "$out/mpv.conf"
+adb push "$out/mpv.conf" /data/data/is.xyz.mpv/files/mpv.conf
+adb shell chmod 644 /data/data/is.xyz.mpv/files/mpv.conf
 adb push scripts/mpv-api22/probe.lua /data/data/is.xyz.mpv/files/scripts/probe.lua
 adb shell chmod 755 /data/data/is.xyz.mpv/files/scripts
 adb shell chmod 644 /data/data/is.xyz.mpv/files/scripts/probe.lua

@@ -19,8 +19,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .harness/mpv-candidate
-          gh release download 2024-11-16 -R mpv-android/mpv-android -p app-default-x86-release.apk -D .harness/mpv-candidate
-          echo '90cdd455167c71c794f07c9d9458eb303526e1fca7f7f9ac0f8d71121d722414  .harness/mpv-candidate/app-default-x86-release.apk' | sha256sum -c -
+          gh release download 2026-04-25 -R mpv-android/mpv-android -p app-default-x86-release.apk -D .harness/mpv-candidate
+          echo '2cf77b8cc654b9a257602aff0ad7f8c7e933dd91b99a29f9ca02f3c397e6b1dc  .harness/mpv-candidate/app-default-x86-release.apk' | sha256sum -c -
           aapt=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)
           "$aapt" dump badging .harness/mpv-candidate/app-default-x86-release.apk | tee .harness/mpv-candidate/badging.txt
           grep -qx "sdkVersion:'21'" .harness/mpv-candidate/badging.txt

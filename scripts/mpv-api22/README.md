@@ -1,0 +1,12 @@
+# API 22 mpv candidate PoC
+
+The standalone workflow `.github/workflows/mpv-api22-candidate.yml` downloads the official mpv-android 2024-11-16 x86 release and verifies its SHA-256 and declared minSdk21. It runs only on the isolated `poc/mpv-api22-validation` branch or manual dispatch. The workflow does not replace My Cinema's player or use Quark credentials. Its synthetic sample has 1080p15 H.264/AAC, two SRT streams, and an attached DejaVu font.
+
+The original `scripts/libmpv-runtime-api22.sh` gate was tightened: it requires one default-flavor APK, an API22-compatible manifest, an explicit successful install, an activity start, and libmpv mapped in the actual process. A successful build or adb exit status alone is not enough.
+
+## Recorded results
+
+- [Run 42572987605](https://github.com/StQuasimodo/Media-Library/actions/runs/42572987605), source `e2c8cc471d0404a860fabda8234714a07eb0ddfa`: API22 x86 installation, activity launch and libmpv mapping succeeded. Script observed two subtitle tracks, independent selection and position values; pause, seek to 25 seconds and resume clock progression passed. `secondary-sub-scale` returned unavailable and independent subtitle scaling failed. Screenshot was blocked by the Android immersive-mode prompt.
+- [Run 42573728614](https://github.com/StQuasimodo/Media-Library/actions/runs/42573728614), source `b80e8aa`: same core assertions, with a font attached to the Matroska file and mpv-rendered frame capture. Secondary scale still returned nil. Both the display screenshot and composed frame were black with no visible subtitles, so simultaneous visual display is **not verified**. Logs report that libass could not find its chosen font provider. The run correctly fails the independent scaling gate.
+
+Actions artifacts `mpv-api22-candidate-evidence` contain checksums, sample, `probe.txt`, process maps, memory snapshot, logcat, `screen.png`, and (where available) `frame.png`. The isolated third-party release demonstrates neither My Cinema integration nor ARMv7 runtime compatibility; no physical television or real Quark streaming was tested. The original current-master native build uses moving inputs and has not become a reproducible API21 source build. Further work must resolve subtitle rendering/font setup, test independently enabling/disabling each track and other style attributes, and evaluate an API21-compatible newer mpv before selecting a production engine.

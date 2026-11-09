@@ -65,3 +65,12 @@ jobs:
             bash scripts/android-tv-smoke.sh
             bash scripts/android-tv-playback.sh
             bash scripts/android-tv-regression.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: decoder-diagnostics-test-evidence
+          if-no-files-found: warn
+          path: |
+            .harness/tv-playback/report.json
+            .harness/tv-playback/quark-dav-report.json
+            .harness/tv-playback/instrumentation.txt

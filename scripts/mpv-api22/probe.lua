@@ -1,5 +1,5 @@
 local mp = require 'mp'
-local out = '/sdcard/Download/mpv-probe.txt'
+local out = '/data/local/tmp/mpv-poc/mpv-probe.txt'
 local function record(s)
   local f = assert(io.open(out, 'a')); f:write(s .. '\n'); f:close()
 end

@@ -5,7 +5,7 @@ apk="$out/app-default-x86-release.apk"
 collect() {
   adb logcat -d > "$out/logcat.txt" 2>&1 || true
   adb shell dumpsys meminfo is.xyz.mpv > "$out/meminfo.txt" 2>&1 || true
-  adb pull /sdcard/Download/mpv-probe.txt "$out/probe.txt" >/dev/null 2>&1 || true
+  adb pull /data/local/tmp/mpv-poc/mpv-probe.txt "$out/probe.txt" >/dev/null 2>&1 || true
   adb exec-out screencap -p > "$out/screen.png" 2>/dev/null || true
 }
 trap collect EXIT
@@ -15,16 +15,18 @@ echo "$install"
 grep -qx 'Success' <<< "$(tr -d '\r' <<< "$install" | tail -1)"
 adb root
 adb wait-for-device
-adb shell mkdir -p /data/data/is.xyz.mpv/files/scripts /sdcard/Download
+adb shell mkdir -p /data/data/is.xyz.mpv/files/scripts /data/local/tmp/mpv-poc
+adb shell chmod 777 /data/local/tmp/mpv-poc
 adb push scripts/mpv-api22/probe.lua /data/data/is.xyz.mpv/files/scripts/probe.lua
-adb shell 'uid=$(stat -c %u /data/data/is.xyz.mpv); gid=$(stat -c %g /data/data/is.xyz.mpv); chown -R "$uid:$gid" /data/data/is.xyz.mpv/files'
-adb push "$out/sample.mkv" /sdcard/Download/mycinema-sample.mkv
-adb shell rm -f /sdcard/Download/mpv-probe.txt
-start=$(adb shell am start -W -a android.intent.action.VIEW -d file:///sdcard/Download/mycinema-sample.mkv -t video/x-matroska -n is.xyz.mpv/.MPVActivity 2>&1 | tr -d '\r')
+adb shell chmod 755 /data/data/is.xyz.mpv/files/scripts
+adb shell chmod 644 /data/data/is.xyz.mpv/files/scripts/probe.lua
+adb push "$out/sample.mkv" /data/local/tmp/mpv-poc/mycinema-sample.mkv
+adb shell rm -f /data/local/tmp/mpv-poc/mpv-probe.txt
+start=$(adb shell am start -W -a android.intent.action.VIEW -d file:///data/local/tmp/mpv-poc/mycinema-sample.mkv -t video/x-matroska -n is.xyz.mpv/.MPVActivity 2>&1 | tr -d '\r')
 echo "$start"
 grep -q '^Status: ok' <<< "$start"
 for i in $(seq 1 60); do
-  adb shell cat /sdcard/Download/mpv-probe.txt 2>/dev/null | tr -d '\r' > "$out/probe-live.txt" || true
+  adb shell cat /data/local/tmp/mpv-poc/mpv-probe.txt 2>/dev/null | tr -d '\r' > "$out/probe-live.txt" || true
   if grep -qx DONE "$out/probe-live.txt"; then break; fi
   sleep 1
 done

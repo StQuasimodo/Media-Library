@@ -36,7 +36,7 @@ final class PlaybackController implements Closeable {
     private PlaybackRelay.Session davSession;
     private LibVLC vlc;private volatile MediaPlayer player;private VLCVideoLayout video;
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
-    private boolean loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered;
+    private boolean loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered,playbackRate=1f;
     private State state=State.STOPPED;private String message="";
     private volatile Snapshot snapshot=new Snapshot(State.STOPPED,0,0,0,"");
 
@@ -86,7 +86,7 @@ final class PlaybackController implements Closeable {
             else if(loaded&&engine.isPlaying()){if(wantPaused){sample();pauseWhenRestored();}else state(State.PLAYING,"");}
         }
         else if(event.type==MediaPlayer.Event.Playing){
-            loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;if(position>0){restoreAt=position;engine.setTime(position);}}
+            loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;engine.setRate(playbackRate);if(position>0){restoreAt=position;engine.setTime(position);}}
             if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
         }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
         else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();state(State.PAUSED,"");}
@@ -103,6 +103,13 @@ final class PlaybackController implements Closeable {
         if(player==null){if(state==State.CONNECTING){wantPaused=!wantPaused;message=wantPaused?"连接后保持暂停":"";publish();}else reconnect();return;}wantPaused=!wantPaused;
         if(!loaded)return;
         if(wantPaused){pauseWhenRestored();save();}else{if(mutedForRestore){mutedForRestore=false;player.setVolume(100);}if(state==State.ENDED){position=0;restoreApplied=false;player.setTime(0);}player.play();if(player.isPlaying())state(State.PLAYING,"");}
+    }
+    float playbackRate(){return playbackRate;}
+    boolean setPlaybackRate(float rate){
+        if(player==null||!loaded||Float.isNaN(rate)||Float.isInfinite(rate)||rate<0.5f||rate>2f)return false;
+        float previous=playbackRate;player.setRate(rate);float actual=player.getRate();
+        if(Float.isNaN(actual)||Float.isInfinite(actual)||Math.abs(actual-rate)>0.01f){player.setRate(previous);return false;}
+        playbackRate=rate;return true;
     }
     boolean seek(long delta){
         if(player==null||!player.isSeekable())return false;sample();long target=Math.max(0,position+delta);if(duration>0)target=Math.min(target,Math.max(0,duration-1000));player.setTime(target);return true;

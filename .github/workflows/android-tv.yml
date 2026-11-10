@@ -56,12 +56,16 @@ jobs:
       - name: Enable emulator acceleration
         run: sudo chmod a+rw /dev/kvm
       - name: Prepare full UI protocol fixture without application hooks
+        timeout-minutes: 6
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            timeout 120s sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
+            timeout 120s sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y -qq ffmpeg
+          fi
+          ffmpeg -version
           node scripts/prepare-tv-regression.mjs
           python3 scripts/tv-regression-server.py prepare
-          bash scripts/prepare-tv-playback.sh
+          timeout 120s bash scripts/prepare-tv-playback.sh
           sudo python3 scripts/tv-regression-server.py serve > .harness/tv-regression/fixture-server.log 2>&1 &
       - name: Install, launch and exercise actual API 22
         uses: reactivecircus/android-emulator-runner@v2

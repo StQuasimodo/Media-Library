@@ -58,7 +58,10 @@ const releases=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`]));
 let release=releases.find(release=>release.tag_name===tag);
 if(release){assert.ok(release.draft || (release.prerelease && release.assets.length===3));if(release.draft)assert.equal(release.target_commitish,source);}
 const notes=join(output,'release-notes.md');
-writeFileSync(notes,readFileSync('docs/TV-RELEASE-NOTES.md','utf8')+`\n\n构建源码：${source}。\n原始构建：https://github.com/${repo}/actions/runs/${runId}\n`);
+const currentNotes=readFileSync('docs/TV-RELEASE-NOTES.md','utf8').split(/(?=^# My Cinema TV )/m)
+  .find(section=>section.split(/\r?\n/,1)[0].split('（',1)[0].trim()===`# My Cinema TV ${build.version}`);
+assert.ok(currentNotes,'Release notes must describe the retained APK version.');
+writeFileSync(notes,currentNotes.trim()+`\n\n构建源码：${source}。\n原始构建：https://github.com/${repo}/actions/runs/${runId}\n`);
 if(!release){gh(['release','create',tag,'--repo',repo,'--target',source,'--title',`My Cinema TV ${build.version}（Android 5.1 开发预览）`,'--prerelease','--draft','--notes-file',notes]);
   release=await retryRead(()=>{const created=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`])).find(release=>release.tag_name===tag);assert.ok(created);return created;});}
 assert.ok(release);

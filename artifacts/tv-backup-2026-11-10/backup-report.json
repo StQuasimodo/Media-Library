@@ -1,0 +1,30 @@
+{
+  "buildRun": "42814428400",
+  "apiLevel": 22,
+  "sharedStorageState": "mounted",
+  "atomicFileRecoveryVerified": true,
+  "atomicRollbackVerified": true,
+  "result": "passed",
+  "nativeDocumentPickerUiVerified": false,
+  "separateDocumentProviderVerified": true,
+  "physicalTelevisionVerified": false,
+  "realAccountVerified": false,
+  "checks": [
+    "v2 snapshot includes stable Quark\/WebDAV identities, manual links\/unlinks and progress; excludes account secrets, unknown headers and temporary routes",
+    "remote settings export issues ACTION_CREATE_DOCUMENT and writes a readable v2 file through a separate test document provider",
+    "document import confirmation\/cancel and v2 restore preserve review, manual link\/unlink and exact progress; complete recovery snapshot is saved first",
+    "interrupted private backup output recovers the prior complete AtomicFile snapshot",
+    "API22 remote settings export to shared Download\/MyCinema and restore selected file through confirmation",
+    "legacy v1 collection backup remains readable and restores only collection while retaining current media\/progress",
+    "downloads import discovers legacy JSON filenames as well as current exports",
+    "unknown version rejected without data change",
+    "fractional version is rejected instead of rounded down",
+    "duplicate media identity rejected before restore",
+    "truncated JSON rejected without data change",
+    "provider write failure does not change live data",
+    "provider read failure does not change live data",
+    "oversized input rejected without data change",
+    "late media insert failure rolls back both SQLite databases",
+    "TMDB, Quark and WebDAV encrypted login stores remain unchanged"
+  ]
+}

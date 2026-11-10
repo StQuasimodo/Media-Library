@@ -1,5 +1,11 @@
 # 验证与交付
 
+## TV可导出备份与统一恢复（2026-11-10）
+
+[API22备份聚焦流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42814428400)通过，实际构建/测试源码`296cc0d841b2f2acffbaf57b9a94ff2e9e2182b6`。16项检查覆盖完整JSON导出/恢复、确认取消、下载目录往返、格式1与旧文件名、账号凭据保持及过滤、损坏/过大/异常版本/重复身份、文件服务读写失败、两库后半段写入失败回滚和本机AtomicFile中断恢复。同轮命名29组/匹配9项/SQLite保留5项、基础收藏/Keystore/界面/遥控器冒烟、公开无效Key401通过；Gradle/Lint（0错误/18警告）、API21/v1签名与ARMv7/x86打包检查通过。[原始证据、截图与失败记录](TV-BACKUP-2026-11-10.md)。
+
+文件服务真实跨进程I/O已验证，原生文件选择器界面由测试监视器提供结果，未完整验收。未重跑90秒取流/系统重启、Windows、ARMv7运行或长虹实机；未测试物理断电、存储耗尽及大库性能。数据库schema与凭据身份不变，新增备份格式2；仍无新安装包，固定分发签名及覆盖升级待完成。
+
 ## TV文件名与特别篇匹配（2026-11-10）
 
 [API22聚焦流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42808340397)通过，实际构建/测试源码`cb7c3aac75a1219aac0a57f10bf236e9ac1a9af3`。29组命名样本、9项匹配约束、5项真实SQLite数据保留检查通过；同轮基础收藏/Keystore/界面/遥控器冒烟、公开无效Key401、Gradle/Lint（0错误/18警告）、API21/v1签名/ARMv7与x86打包检查通过。Windows解析代码在Linux上的相关Vitest共3文件/53项通过，TypeScript与Java8编译检查通过。[行为、失败记录与证据](TV-RESOURCE-NAMES-2026-11-10.md)。

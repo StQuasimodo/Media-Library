@@ -7,6 +7,7 @@
 | [PROJECT-PROGRESS-2026-11-10.md](PROJECT-PROGRESS-2026-11-10.md) | 主线/发布/实验进度、证据边界、阻塞项及后续里程碑 | 查看当前真实进度和下一步开发顺序 |
 | [TV-BROWSER-LIFECYCLE-2026-11-10.md](TV-BROWSER-LIFECYCLE-2026-11-10.md) | 目录请求取消、旧页面回调、独立DAV会话与API22回归 | 查看进度审计后第一批稳定性修复及签名阻塞原因 |
 | [TV-RESOURCE-NAMES-2026-11-10.md](TV-RESOURCE-NAMES-2026-11-10.md) | 数字片名、标签词边界、特别篇匹配及数据保留 | 查看命名修复与两端共享样本的API22验证 |
+| [TV-BACKUP-2026-11-10.md](TV-BACKUP-2026-11-10.md) | 可导出备份、媒体关联/进度、联合恢复及旧格式兼容 | 导出电视收藏、准备迁移或核对恢复验收 |
 | [USAGE.md](USAGE.md) | 安装、TMDB 配置、资源记录、备份与快捷键 | 首次使用应用 |
 | [VERSIONING.md](VERSIONING.md) | 应用版本、预览编号、Tag 与发布检查规则 | 打包或向用户分发前 |
 | [ANDROID-TV.md](ANDROID-TV.md) | API21/22原生电视端、独立收藏、遥控器与夸克直连播放计划 | 开发或安装电视预览 |

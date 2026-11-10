@@ -3,6 +3,7 @@ package io.mycinema.tv;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Set;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
@@ -12,12 +13,19 @@ import okhttp3.Response;
 /** One connection attempt or HTTP request owns its calls, including response-body reads. */
 final class NetworkScope implements Closeable {
     private final Set<Call> calls=new HashSet<>();
+    private final Set<Closeable> resources=new HashSet<>();
     private boolean closed;
 
     synchronized void check() throws IOException {
         if(closed||Thread.currentThread().isInterrupted())throw new IOException("Request cancelled");
     }
     synchronized boolean cancelled(){return closed||Thread.currentThread().isInterrupted();}
+
+    void own(Closeable resource) throws IOException {
+        synchronized(this){if(!closed&&!Thread.currentThread().isInterrupted()){resources.add(resource);return;}}
+        resource.close();throw new IOException("Request cancelled");
+    }
+    synchronized void disown(Closeable resource){resources.remove(resource);}
 
     Exchange open(OkHttpClient client,Request request) throws IOException {
         Call call=client.newCall(request);
@@ -41,7 +49,11 @@ final class NetworkScope implements Closeable {
         }
     }
 
-    @Override public synchronized void close(){
-        if(closed)return;closed=true;for(Call call:calls)call.cancel();calls.clear();
+    @Override public void close(){
+        ArrayList<Call> active;ArrayList<Closeable> owned;
+        synchronized(this){if(closed)return;closed=true;active=new ArrayList<>(calls);calls.clear();owned=new ArrayList<>(resources);resources.clear();}
+        for(Call call:active)call.cancel();
+        // Never invoke another owner's close while holding this scope's monitor.
+        for(Closeable resource:owned)try{resource.close();}catch(IOException ignored){}
     }
 }

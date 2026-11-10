@@ -60,7 +60,7 @@ final class MediaSources {
     void saveDav(String url,String user,String password) throws Exception {
         HttpUrl base=davUrl(url);if(user.contains(":")||user.contains("\r")||user.contains("\n"))throw new IllegalArgumentException("WebDAV用户名格式无效。");
         JSONObject config=new JSONObject();Json.put(config,"url",base.toString());Json.put(config,"user",user);Json.put(config,"password",password);
-        listDav(config,base.toString());dav.save(config.toString());
+        listDav(config,base.toString());scope.check();dav.save(config.toString());
     }
     void saveQuark(String cookie) throws Exception {
         validateCookie(cookie);listQuark(cookie,"0");quark.save(cookie);CinemaApplication.dav(context).disable();
@@ -68,7 +68,7 @@ final class MediaSources {
     private static void validateCookie(String cookie){if(cookie.isEmpty()||cookie.length()>20000||!cookie.matches("[\\x20-\\x7e]+"))throw new IllegalArgumentException("尚未取得可用的夸克登录状态。");}
     List<Entry> list(String source,String parent) throws Exception {
         if(!connected(source))throw new IllegalStateException("请先到设置连接媒体源。");
-        return source.equals("quark")?(CinemaApplication.dav(context).enabled()?CinemaApplication.dav(context).list(parent):rawQuarkList(parent)):listDav(Json.object(dav.read()),parent);
+        scope.check();return source.equals("quark")?(CinemaApplication.dav(context).enabled()?CinemaApplication.dav(context).list(parent,scope):rawQuarkList(parent)):listDav(Json.object(dav.read()),parent);
     }
     private JSONObject quarkRequest(String cookie,HttpUrl url,RequestBody body) throws Exception {
         Request.Builder request=new Request.Builder().url(url).header("Cookie",cookie).header("Referer","https://pan.quark.cn/").header("User-Agent",UA);
@@ -107,10 +107,13 @@ final class MediaSources {
         if(url==null||!sameOrigin(root,url)||!url.username().isEmpty()||!url.password().isEmpty()||url.query()!=null||url.fragment()!=null||!url.encodedPath().startsWith(root.encodedPath()))throw new IllegalStateException("WebDAV返回了配置目录以外的地址，已停止读取。");return url;
     }
     List<Entry> listDav(JSONObject config,String parent) throws Exception {
+        return listDav(config,parent,basic(config));
+    }
+    List<Entry> listDav(JSONObject config,String parent,String authorization) throws Exception {
         HttpUrl root=davUrl(Json.text(config,"url")),folder=davChild(root,parent);
         String xml="<?xml version=\"1.0\"?><d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:displayname/></d:prop></d:propfind>";
         Request.Builder builder=new Request.Builder().url(folder).header("Depth","1").method("PROPFIND",RequestBody.create(MediaType.parse("application/xml; charset=utf-8"),xml));
-        if(!basic(config).isEmpty())builder.header("Authorization",basic(config));Request request=builder.build();
+        if(!authorization.isEmpty())builder.header("Authorization",authorization);Request request=builder.build();
         try(NetworkScope.Exchange exchange=scope.open(HTTP,request)){Response response=exchange.response;
             if(response.code()!=207){requireSuccess(response,"WebDAV");throw new IllegalStateException("该地址没有返回WebDAV目录，请检查地址。");}
             byte[] bytes=TmdbClient.read(response.body().byteStream(),2*1024*1024);

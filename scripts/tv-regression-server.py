@@ -40,7 +40,8 @@ def prepare(root):
 def serve(root, log):
     state = {'mode': 'normal', 'requests': 0, 'downloads': 0, 'ranges': 0, 'mediaRequests': 0,
              'fault': 'none', 'drops': 0, 'expiredLease': -1, 'expiredReplies': 0,
-             'pendingDownloads': 0, 'quarkGets': 0, 'unboundedQuarkGets': 0, 'maxQuarkRangeBytes': 0}
+             'pendingDownloads': 0, 'quarkGets': 0, 'unboundedQuarkGets': 0, 'maxQuarkRangeBytes': 0,
+             'slowListStarts': 0, 'slowDavStarts': 0}
     lock = threading.Lock()
     expired_pair = threading.Barrier(2)
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -65,6 +66,10 @@ def serve(root, log):
             if path not in ['/dav/', '/bad-dav/', '/public-dav/']:
                 self.reply({},404)
                 return
+            with lock:
+                slow = state['fault'] == 'slow_dav'
+                if slow: state['slowDavStarts'] += 1
+            if slow: time.sleep(10)
             href='https://example.invalid/stolen.mp4' if path == '/bad-dav/' else path+'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
             xml=('<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>'+href+'</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>1024</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>').encode()
             self.send_response(207)
@@ -186,7 +191,7 @@ def serve(root, log):
                 if uri.path == '/control':
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     with lock:
@@ -209,6 +214,10 @@ def serve(root, log):
                     self.reply({},401)
                 else:
                     parent=query.get('pdir_fid',['0'])[0]
+                    with lock:
+                        slow = state['fault'] == 'slow_list'
+                        if slow: state['slowListStarts'] += 1
+                    if slow: time.sleep(10)
                     rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
                     if state['mode']=='bridge_tree':
                         if parent=='0':rows=[{'fid':'tv-root','file_name':'影视 & 中文','file':False},{'fid':'outside','file_name':'不在挂载范围','file':False}]

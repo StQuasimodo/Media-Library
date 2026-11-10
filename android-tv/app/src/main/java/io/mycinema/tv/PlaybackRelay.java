@@ -45,9 +45,9 @@ final class PlaybackRelay implements Closeable {
     String password(){return password;}
     String authorization(){return "Basic "+Base64.encodeToString((username()+":"+password).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);}
     final class Session implements Closeable {
-        final MediaSources.Lease endpoint;final String fileId,auth;
+        final MediaSources.Lease endpoint;final String fileId,auth;private final boolean directory;
         private final Set<NetworkScope> owned=new HashSet<>();private boolean ended;
-        private Session(String fileId,HttpUrl url){this.fileId=fileId;auth="Basic "+Base64.encodeToString(("playback:"+UUID.randomUUID()).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",auth);endpoint=new MediaSources.Lease(url,headers);}
+        private Session(String fileId,HttpUrl url,boolean directory){this.fileId=fileId;this.directory=directory;auth="Basic "+Base64.encodeToString(((directory?"listing:":"playback:")+UUID.randomUUID()).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",auth);endpoint=new MediaSources.Lease(url,headers);}
         private synchronized void attach(NetworkScope scope) throws IOException {if(ended)throw new IOException("Playback session ended");owned.add(scope);}
         private synchronized void detach(NetworkScope scope){owned.remove(scope);}
         @Override public void close(){
@@ -56,7 +56,13 @@ final class PlaybackRelay implements Closeable {
         }
     }
     Session openSession(String fileId,HttpUrl endpoint) throws IOException {
-        synchronized(sessions){if(closed||sessions.size()>=4)throw new IOException("Playback session unavailable");Session session=new Session(fileId,endpoint);sessions.put(session.auth,session);return session;}
+        return openSession(fileId,endpoint,false);
+    }
+    Session openDirectorySession(String folderId,HttpUrl endpoint) throws IOException {
+        return openSession(folderId,endpoint,true);
+    }
+    private Session openSession(String fileId,HttpUrl endpoint,boolean directory) throws IOException {
+        synchronized(sessions){if(closed||sessions.size()>=4)throw new IOException("Playback session unavailable");Session session=new Session(fileId,endpoint,directory);sessions.put(session.auth,session);return session;}
     }
     String error(){String streaming=transfer.error();return streaming.isEmpty()?error:streaming;}
     String error(JSONObject target){return transfer.error(target);}
@@ -76,20 +82,22 @@ final class PlaybackRelay implements Closeable {
                 String auth=value(headers,"authorization","");boolean baseAuth=MessageDigest.isEqual(authorization().getBytes(StandardCharsets.US_ASCII),auth.getBytes(StandardCharsets.UTF_8));
                 if(!baseAuth){synchronized(sessions){session=sessions.get(auth);}if(session==null){reply(output,401,"","",new byte[0],"WWW-Authenticate: Basic realm=\"My Cinema Quark WebDAV\"\r\n");return;}session.attach(scope);}
                 String base="/"+token+"/";if(!path.startsWith(base)){status(output,404);return;}
+                // A browser lease is PROPFIND-only and anchored at exactly one directory.
+                if(session!=null&&session.directory&&(!method.equals("PROPFIND")||!path.equals(session.endpoint.url.encodedPath()))){status(output,403);return;}
                 if(!method.equals("OPTIONS")&&!method.equals("PROPFIND")&&!method.equals("GET")&&!method.equals("HEAD")){reply(output,405,"","",new byte[0],"Allow: OPTIONS, PROPFIND, GET, HEAD\r\n");return;}
                 if(headers.containsKey("transfer-encoding")){status(output,501);return;}
                 long body=0;try{body=Long.parseLong(value(headers,"content-length","0"));}catch(NumberFormatException invalid){status(output,400);return;}if(body<0||body>65536){status(output,413);return;}
                 if(headers.containsKey("expect")){status(output,417);return;}
                 byte[] buffer=new byte[4096];while(body>0){int read=input.read(buffer,0,(int)Math.min(buffer.length,body));if(read<0)throw new IOException();body-=read;}
                 QuarkDavTree.Node node=dav.resolve(path.substring(base.length()),scope);
-                if(session!=null&&(!session.fileId.equals(node.entry.id)||node.entry.directory||!method.equals("GET")&&!method.equals("HEAD"))){status(output,403);return;}
+                if(session!=null&&(!session.fileId.equals(node.entry.id)||session.directory!=node.entry.directory||!session.directory&&!method.equals("GET")&&!method.equals("HEAD"))){status(output,403);return;}
                 if(method.equals("OPTIONS")){reply(output,200,"","",new byte[0],"DAV: 1\r\nAllow: OPTIONS, PROPFIND, GET, HEAD\r\n");return;}
                 if(method.equals("PROPFIND")){String depth=value(headers,"depth","1");if(!depth.equals("0")&&!depth.equals("1")){reply(output,depth.equalsIgnoreCase("infinity")?403:400,"","application/xml; charset=utf-8","<?xml version=\"1.0\"?><d:error xmlns:d=\"DAV:\"><d:propfind-finite-depth/></d:error>".getBytes(StandardCharsets.UTF_8),"");return;}byte[] xml=dav.propfind(node,base,depth.equals("1"),scope);reply(output,207,"","application/xml; charset=utf-8",xml,"DAV: 1\r\n");return;}
                 if(node.entry.directory){status(output,405);return;}target=node.entry.json();
             }else if(!path.equals("/"+token)||!(method.equals("GET")||method.equals("HEAD"))){status(output,404);return;}
             transfer.serve(target,value(headers,"range",""),method.equals("HEAD"),output,scope);
         }catch(QuarkDavTree.Missing missing){try{status(socket.getOutputStream(),404);}catch(IOException ignored){}}
-        catch(Exception failure){if(!closed){error="媒体读取中断，有限重试未能完成。请检查网络、登录状态或更换资源后重试。";try{status(socket.getOutputStream(),502);}catch(IOException ignored){}}}
+        catch(Exception failure){if(!closed&&!scope.cancelled()){error="媒体读取中断，有限重试未能完成。请检查网络、登录状态或更换资源后重试。";try{status(socket.getOutputStream(),502);}catch(IOException ignored){}}}
         }catch(IOException ignored){}
         finally{if(session!=null)session.detach(scope);synchronized(sockets){sockets.remove(socket);}synchronized(requests){requests.remove(scope);}}
     }

@@ -24,7 +24,7 @@ import okhttp3.Response;
 /** Controlled HTTPS source + real embedded LibVLC on a disposable API22 emulator. */
 final class PlaybackScenario {
     private final String buildRun;private final Instrumentation test;private final Context context;private final List<String> checks=new ArrayList<>();
-    private PlayerActivity playerActivity;private MediaBrowserActivity browser;
+    private PlayerActivity playerActivity;private MediaBrowserActivity browser;private MainActivity orientationAnchor;
     PlaybackScenario(Instrumentation test,String buildRun){this.buildRun=buildRun;this.test=test;context=test.getTargetContext();}
     private void check(boolean value,String message){if(!value)throw new AssertionError(message);}
     private MediaPlayer player(){try{java.lang.reflect.Field field=PlayerActivity.class.getDeclaredField("controller");field.setAccessible(true);PlaybackController controller=(PlaybackController)field.get(playerActivity);return controller==null?null:controller.engine();}catch(Exception error){throw new IllegalStateException(error);}}
@@ -76,8 +76,11 @@ final class PlaybackScenario {
         playerActivity=(PlayerActivity)test.startActivitySync(new Intent(context,PlayerActivity.class).putExtra("mediaKey",key).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));await(()->player()!=null&&player().isPlaying()&&player().getTime()>=19000,"activity recreates decoder and accepts saved time");Thread.sleep(2000);check(player().getTime()>=21000,"resumed playback clock advances beyond requested position");
         test.runOnMainSync(playerActivity::finish);test.waitForIdleSync();playerActivity=null;
         checks.add("real LibVLC3.7.7 API22/x86 HTTPS1080p H264/AAC decoded video/audio/displayed frames; two audio tracks and embedded subtitle; seek, remote pause/resume, DB reopen and new-activity resume");
+        // Keep a visible landscape app below the browser so fixture references survive rotation.
+        orientationAnchor=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));test.waitForIdleSync();
         new QuarkDavScenario(test,buildRun).run();checks.add("TV-hosted Quark WebDAV OPTIONS/PROPFIND/GET/HEAD, scope/read-only/auth, native decode/seek/resume across gateway restart");
+        new BrowserLifecycleScenario(test).run(report);checks.add("raw Quark, external DAV and local DAV cancel real blocked reads; destroyed browser scan stops without changing prior catalog/progress or revoking another playback lease");
         browser=(MediaBrowserActivity)test.startActivitySync(new Intent(context,MediaBrowserActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));test.waitForIdleSync();Thread.sleep(600);shot("p02-sources");test.runOnMainSync(browser::finish);browser=null;
         Json.put(report,"result","passed");Json.put(report,"apiLevel",22);Json.put(report,"player","LibVLC3.7.7");Json.put(report,"sample","synthetic 1920x1080 15fps H264/AAC, two audio tracks, mov_text subtitle");Json.put(report,"emulatorOnly",true);Json.put(report,"realQuarkAccountVerified",false);Json.put(report,"oldWebViewLoginVerified",false);Json.put(report,"actualTelevisionVerified",false);Json.put(report,"checks",new JSONArray(checks));write(report);result.putString("result","passed");test.finish(Activity.RESULT_OK,result);
-    }catch(Throwable error){try{Json.put(report,"result","failed");Json.put(report,"apiLevel",22);Json.put(report,"error",error.toString());Json.put(report,"checks",new JSONArray(checks));write(report);}catch(Exception ignored){}result.putString("result","failed");result.putString("error",error.toString());test.finish(Activity.RESULT_CANCELED,result);}finally{if(playerActivity!=null)test.runOnMainSync(playerActivity::finish);if(browser!=null)test.runOnMainSync(browser::finish);}}
+    }catch(Throwable error){try{Json.put(report,"result","failed");Json.put(report,"apiLevel",22);Json.put(report,"error",error.toString());Json.put(report,"checks",new JSONArray(checks));write(report);}catch(Exception ignored){}result.putString("result","failed");result.putString("error",error.toString());test.finish(Activity.RESULT_CANCELED,result);}finally{if(playerActivity!=null)test.runOnMainSync(playerActivity::finish);if(browser!=null)test.runOnMainSync(browser::finish);if(orientationAnchor!=null)test.runOnMainSync(orientationAnchor::finish);}}
 }

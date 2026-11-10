@@ -22,10 +22,12 @@ final class QuarkDavManager {
     synchronized int recoveries(){return server==null?0:server.recoveries();}
     synchronized int segments(){return server==null?0:server.segments();}
     void enable(String id,String name) throws Exception {
+        try(NetworkScope scope=new NetworkScope()){enable(id,name,scope);}
+    }
+    void enable(String id,String name,NetworkScope scope) throws Exception {
         if(id.isEmpty()||id.length()>1024||name.isEmpty()||name.length()>1024)throw new IllegalArgumentException("请选择有效的夸克文件夹。");
-        new MediaSources(context).rawQuarkList(id); // Validate first; a failed selection keeps the prior mount.
-        MediaSources.interrupted();
-        synchronized(this){if(!prefs.edit().putString("folderId",id).putString("folderName",name).putBoolean("enabled",true).commit())throw new IllegalStateException("无法保存夸克WebDAV文件夹。");stop();ensure();}
+        new MediaSources(context).withScope(scope).rawQuarkList(id); // Failed/cancelled selection keeps the prior mount.
+        synchronized(this){scope.check();if(!prefs.edit().putString("folderId",id).putString("folderName",name).putBoolean("enabled",true).commit())throw new IllegalStateException("无法保存夸克WebDAV文件夹。");stop();ensure();}
     }
     synchronized void disable(){stop();prefs.edit().clear().apply();}
     synchronized void stop(){if(server!=null)server.close();server=null;tree=null;}
@@ -37,13 +39,21 @@ final class QuarkDavManager {
     synchronized MediaSources.Lease endpoint() throws Exception {PlaybackRelay active=ensure();Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",active.authorization());return new MediaSources.Lease(HttpUrl.parse(active.url()),headers);}
     synchronized String connectionInfo() throws Exception {PlaybackRelay active=ensure();return "地址："+active.url()+"\n用户名："+active.username()+"\n密码："+active.password()+"\n\n仅限电视本机；My Cinema退到后台后停止。重新启动时地址和密码可能变化。";}
     List<MediaSources.Entry> list(String id) throws Exception {
+        try(NetworkScope scope=new NetworkScope()){return list(id,scope);}
+    }
+    List<MediaSources.Entry> list(String id,NetworkScope scope) throws Exception {
         PlaybackRelay active;QuarkDavTree mounted;synchronized(this){active=ensure();mounted=tree;}
-        String path=mounted.locate(id);JSONObject config=new JSONObject();Json.put(config,"url",active.url());Json.put(config,"user",active.username());Json.put(config,"password",active.password());
-        List<MediaSources.Entry> rows=new MediaSources(context).listDav(config,active.url()+path),result=new ArrayList<>();
-        HttpUrl base=HttpUrl.parse(active.url());
-        for(MediaSources.Entry row:rows){String relative=HttpUrl.parse(row.id).encodedPath().substring(base.encodedPath().length());QuarkDavTree.Node node=mounted.resolve(relative);
-            result.add(new MediaSources.Entry("quark",node.entry.id,row.name,node.entry.parent,row.directory,row.size,relative,mounted.rootId));}
-        return result;
+        String path=mounted.locate(id,scope);JSONObject config=new JSONObject();Json.put(config,"url",active.url());
+        // Closing the client socket alone cannot cancel the relay's blocked upstream call.
+        PlaybackRelay.Session session=active.openDirectorySession(id,HttpUrl.parse(active.url()+path));
+        try(PlaybackRelay.Session owned=session){
+            scope.own(session);
+            List<MediaSources.Entry> rows=new MediaSources(context).withScope(scope).listDav(config,active.url()+path,session.endpoint.headers.get("Authorization")),result=new ArrayList<>();
+            HttpUrl base=HttpUrl.parse(active.url());
+            for(MediaSources.Entry row:rows){scope.check();String relative=HttpUrl.parse(row.id).encodedPath().substring(base.encodedPath().length());QuarkDavTree.Node node=mounted.resolve(relative,scope);
+                result.add(new MediaSources.Entry("quark",node.entry.id,row.name,node.entry.parent,row.directory,row.size,relative,mounted.rootId));}
+            scope.check();return result;
+        }finally{scope.disown(session);}
     }
     MediaSources.Lease playback(JSONObject file,NetworkScope scope) throws Exception {
         PlaybackRelay active;QuarkDavTree mounted;synchronized(this){active=ensure();mounted=tree;}

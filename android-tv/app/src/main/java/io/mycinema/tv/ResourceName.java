@@ -8,13 +8,14 @@ import java.util.regex.Pattern;
 
 /** Conservative filename facts; ambiguous titles are left for user association. */
 final class ResourceName {
+    private static final String NUMBER="(?:[0-9]{1,3}|零|[一二三四五六七八九两]?十[一二三四五六七八九]?|[一二三四五六七八九两])";
     private static String token(String pattern){return "(?<![a-z0-9])(?:"+pattern+")(?![a-z0-9])";}
     private static String find(String name,String pattern){Matcher matcher=Pattern.compile(pattern,Pattern.CASE_INSENSITIVE).matcher(name);return matcher.find()?matcher.group():"";}
     static JSONObject parse(String name){
         JSONObject info=new JSONObject();String clean=name.replaceAll("(?i)\\.(?:mkv|mp4|m4v|avi|mov|ts|m2ts|mts|wmv|webm|mpg|mpeg|flv)$","");
-        Matcher season=Pattern.compile("(?i)(?:(?<![a-z0-9])S(\\d{1,2})(?:E\\d{1,3})*(?![a-z0-9])|(?<![a-z0-9])Season[ ._-]*(\\d{1,2})(?![a-z0-9])|第([0-9零一二三四五六七八九十两]+)季)").matcher(clean);
+        Matcher season=Pattern.compile("(?i)(?:(?<![a-z0-9])S(\\d{1,2})(?:E\\d{1,3})*(?![a-z0-9])|(?<![a-z0-9])Season[ ._-]*(\\d{1,2})(?![a-z0-9])|第("+NUMBER+")季)").matcher(clean);
         boolean seasonKnown=season.find();int seasonNumber=0;if(seasonKnown){String number=season.group(1)!=null?season.group(1):season.group(2)!=null?season.group(2):season.group(3);seasonNumber=number(number);}
-        Matcher episode=Pattern.compile("(?i)(?:(?<![a-z0-9])S\\d{1,2}E(\\d{1,3})(?=$|[^a-z0-9]|E\\d)|(?<![a-z0-9])E(?:P)?[ ._-]*(\\d{1,3})(?![a-z0-9])|第([0-9零一二三四五六七八九十两]+)集)").matcher(clean);
+        Matcher episode=Pattern.compile("(?i)(?:(?<![a-z0-9])S\\d{1,2}E(\\d{1,3})(?=$|[^a-z0-9]|E\\d)|(?<![a-z0-9])E(?:P)?[ ._-]*(\\d{1,3})(?![a-z0-9])|第("+NUMBER+")集)").matcher(clean);
         boolean episodeKnown=episode.find();int episodeNumber=0;if(episodeKnown)episodeNumber=number(episode.group(1)!=null?episode.group(1):episode.group(2)!=null?episode.group(2):episode.group(3));
         String quality=find(clean,"(?<![a-z0-9])(?:4320p|2160p|1080[pi]|720p|480p|8k|4k|uhd)(?![a-z0-9])");
         String dimensions=find(clean,token("(?:7680|4096|3840|2560|2048|1920|1280|720)[x×](?:4320|2160|1440|1080|720|576|480)"));

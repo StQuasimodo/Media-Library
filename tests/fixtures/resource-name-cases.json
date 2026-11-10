@@ -27,6 +27,9 @@
     {"id":"chinese-zero-specials","filename":"绝命毒师.第零季.第1集.mkv","hint":{"title":"绝命毒师","year":null,"season":0,"episode":1}},
     {"id":"folder-year-suffix","filename":"Movie.2019","hint":{"title":"Movie","year":2019,"season":null,"episode":null}},
     {"id":"dotted-folder-title","filename":"Mr.Robot","hint":{"title":"Mr Robot","year":null,"season":null,"episode":null}},
-    {"id":"no-audio-in-ordinary-title","filename":"Paddington.mkv","hint":{"title":"Paddington","year":null,"season":null,"episode":null},"facts":{"audio":"","quality":"","codec":""}}
+    {"id":"no-audio-in-ordinary-title","filename":"Paddington.mkv","hint":{"title":"Paddington","year":null,"season":null,"episode":null},"facts":{"audio":"","quality":"","codec":""}},
+    {"id":"invalid-chinese-season-is-not-zero","filename":"Breaking.Bad.第一二季.第1集.mkv","hint":{"title":"Breaking Bad 第一二季","year":null,"season":null,"episode":1}},
+    {"id":"overflow-season-is-not-zero","filename":"Breaking.Bad.第999999999999季.mkv","hint":{"title":"Breaking Bad 第999999999999季","year":null,"season":null,"episode":null}},
+    {"id":"invalid-chinese-episode-is-not-zero","filename":"Breaking.Bad.第一二集.mkv","hint":{"title":"Breaking Bad 第一二集","year":null,"season":null,"episode":null}}
   ]
 }

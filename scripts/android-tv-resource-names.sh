@@ -19,6 +19,6 @@ from pathlib import Path
 report=json.load(open('.harness/tv-resource-names/report.json'))
 assert report['result']=='passed' and report['apiLevel']==22
 assert report['buildRun']==os.environ['GITHUB_RUN_ID']
-assert report['fixtureCount']>=26 and report['matchingChecks']==8 and report['catalogPreservationChecks']==5
+assert report['fixtureCount']>=29 and report['matchingChecks']==9 and report['catalogPreservationChecks']==5
 assert report['fixtureSha256']==hashlib.sha256(Path('tests/fixtures/resource-name-cases.json').read_bytes()).hexdigest()
 PY

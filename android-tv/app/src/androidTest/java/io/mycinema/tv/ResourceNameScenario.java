@@ -53,11 +53,12 @@ final class ResourceNameScenario {
             check(ResourceName.match("Breaking.Bad.E01.mp4","",seasons).isEmpty(),"unknown season is not assumed to be specials");
             check(ResourceName.match("Breaking.Bad.S00E01.mp4","",Arrays.asList(seasons.get(0),seasons.get(0))).isEmpty(),"ambiguous specials remain unassociated");
             check(ResourceName.match("Breaking.Bad.S00E01.mp4","",Arrays.asList(item("movie-bb","Breaking Bad","movie",2008))).isEmpty(),"explicit season zero cannot match a movie");
+            check(ResourceName.match("Breaking.Bad.第一二季.第1集.mkv","",seasons).isEmpty(),"malformed Chinese season cannot become specials");
             List<Library.Item> movies=Arrays.asList(item("movie-1917","1917","movie",2019),item("paddington","Paddington","movie",2014));
             check(ResourceName.match("1917.2019.1080p.mkv","",movies).equals("movie-1917"),"numeric movie title matches correct year");
             check(ResourceName.match("1917.2020.1080p.mkv","",movies).isEmpty(),"year conflict remains unassociated");
             check(ResourceName.match("Paddington.2014.1080p.AAC.mkv","",movies).equals("paddington"),"audio abbreviation does not truncate movie matching");
-            Json.put(report,"matchingChecks",8);
+            Json.put(report,"matchingChecks",9);
 
             try(MediaCatalog catalog=new MediaCatalog(context)){
                 MediaSources.Entry manual=file("manual","Paddington.2014.1080p.AAC.mkv");catalog.put(manual,"automatic");catalog.associate(manual.key(),"user-choice");catalog.progress(manual.key(),60000,180000);

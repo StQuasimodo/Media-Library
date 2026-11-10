@@ -75,7 +75,7 @@ def main():
                                  os.environ.get('TV_EXPECTED_SIGNER', ''))
     except (SigningError, OSError):
         # Constant diagnostic categories only. Never echo secret values or keytool output.
-        print('Pinned TV signer unavailable or invalid. Restore the original key; generating a replacement is refused.', file=sys.stderr)
+        print('Pinned TV signer unavailable or invalid. Restore the pinned key from protected storage; generating a replacement is refused.', file=sys.stderr)
         return 1
     print(f'Development certificate SHA-256: {digest}')
     print(f'Signing material source: {source}')

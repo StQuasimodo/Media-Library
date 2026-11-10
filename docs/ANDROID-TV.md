@@ -1,5 +1,8 @@
 # My Cinema 电视端
 
+2026-11-10：已按用户授权准备[新固定签名与0.2.0-alpha.5/code8](TV-FIXED-SIGNING-2026-11-10.md)。旧alpha.2/alpha.3不能直接覆盖升级；新密钥的GitHub Secret托管与新候选包回归尚未完成，当前下载仍是旧版。
+
+
 电视端按2026-10-27确认的方向独立管理收藏，不依赖Windows在线或云端数据库。当前为原生Android开发预览，源码在[android-tv](../android-tv)，保留Windows工程与数据结构。是否完成构建和实机验证，以本文末尾的交付记录为准。
 
 ## 兼容目标
@@ -49,7 +52,7 @@ cd android-tv
 
 当前交付为`0.1.0-alpha.3` **debug开发预览**，签名沿用alpha.2，支持从alpha.2覆盖升级。alpha.1默认Keystore未被成功缓存，其签名无法恢复；**alpha.2及后续不能直接覆盖alpha.1**。alpha.1已有收藏时请保留原安装，不要直接卸载；卸载会同时清除本机备份。开发签名不是生产签名。
 
-alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立准备任务共享；[固定公开证书指纹](../android-tv/development-signing.sha256)为`0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44`，缓存缺失时拒绝生成替代签名。缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，并补齐可导出备份。不要用开发签名作为长期正式发行方案。
+alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立准备任务共享；[旧公开证书指纹](../android-tv/legacy-development-signing.sha256)为`0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44`，缓存缺失时拒绝生成替代签名。缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，并补齐可导出备份。不要用开发签名作为长期正式发行方案。
 
 ## 当前夸克转换开发验证
 

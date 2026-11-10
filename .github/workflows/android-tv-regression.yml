@@ -58,11 +58,6 @@ jobs:
         with:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
-      - uses: actions/cache/restore@v4
-        with:
-          path: ~/.android/mycinema-tv-debug.keystore
-          key: my-cinema-tv-development-signing-v2
-          fail-on-cache-miss: false
       - name: Build separate test APK and select original or working application
         run: |
           bash scripts/tv-dev-signing.sh
@@ -110,3 +105,6 @@ jobs:
             .harness/tv-regression/*.txt
             .harness/tv-regression/*.png
             .harness/tv-regression/*.log
+      - name: Remove runner-only signing material
+        if: always()
+        run: rm -f ~/.android/mycinema-tv-debug.keystore

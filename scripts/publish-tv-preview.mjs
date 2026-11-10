@@ -22,10 +22,12 @@ assert.ok(checks.some(step=>['Verify API 21 minimum, v1 signature and universal 
 const output='.harness/tv-publish';mkdirSync(output,{recursive:true});
 const gradle=execFileSync('git',['show',`${source}:android-tv/app/build.gradle`],{encoding:'utf8'});
 const version=/versionName '([0-9.]+-(?:alpha|beta|rc)\.[0-9]+)'/.exec(gradle)?.[1];assert.ok(version);
+const versionCode=Number(/versionCode (\d+)/.exec(gradle)?.[1]);
 gh(['run','download',runId,'--repo',repo,'--name',`my-cinema-tv-${version}`,'--dir',output]);
 const build=JSON.parse(readFileSync(join(output,'BUILD.json'),'utf8'));
 assert.equal(build.source,source);assert.equal(build.run,runId);assert.equal(build.version,version);
 assert.equal(build.minSdk,21);assert.equal(build.v1SignatureVerified,true);
+if(versionCode>=8)assert.equal(build.pinnedSignerVerified,true,'New fixed-signature previews must pass the package signer gate.');
 if(build.nativeLibraries){
   assert.deepEqual(build.nativeAbis,['armeabi-v7a','x86']);assert.equal(build.player,'LibVLC 3.7.7');
   const evidence=join(output,'evidence');

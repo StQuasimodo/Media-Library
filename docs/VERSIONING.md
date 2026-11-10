@@ -6,7 +6,7 @@
 
 Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独立Android电视端以`android-tv/app/build.gradle`的versionName/versionCode为来源，初始`0.1.0-alpha.1` / 1，Tag使用`tv-v<versionName>`，避免与Windows Tag混淆；每个向用户分发的新APK递增versionCode，保持应用ID与正式签名身份。电视开发预览与签名限制见[电视说明](ANDROID-TV.md)。
 
-电视端已发布为`0.1.0-alpha.3` / 3，当前架构优化开发为`0.2.0-alpha.4` / 7，前一播放稳定性开发为`0.2.0-alpha.3` / 6，前一夸克转换开发为`0.2.0-alpha.2` / 5，上一播放开发为`0.2.0-alpha.1` / 4，沿用alpha.2起的开发签名；Windows当前正式版为`1.2.0`（schema v4），不再复用beta.2修订例外。alpha.1默认开发Keystore未成功缓存，无法用新签名覆盖；不移动原Tag、不替换旧资产、不要求用户盲目卸载。alpha.2起CI显式准备并校验[固定公开指纹](../android-tv/development-signing.sha256)，缓存丢失时构建失败，禁止静默换签。正式beta前仍需私有固定发布签名及备份，不把CI缓存视为永久托管。APK构建源码、后续回归驱动源码与发布脚本源码分别记录；即使源码不同，也必须以实际字节哈希证明所测应用与交付应用相同，不能只核对版本号。
+电视端已发布为`0.1.0-alpha.3` / 3，当前开发为`0.2.0-alpha.5` / 8；用户于2026-11-10明确授权[采用新固定签名](TV-FIXED-SIGNING-2026-11-10.md)，不能覆盖旧签名安装，尚未发布。前一架构优化开发为`0.2.0-alpha.4` / 7，前一播放稳定性开发为`0.2.0-alpha.3` / 6，前一夸克转换开发为`0.2.0-alpha.2` / 5，上一播放开发为`0.2.0-alpha.1` / 4，此前沿用alpha.2起的开发签名；Windows当前正式版为`1.2.0`（schema v4），不再复用beta.2修订例外。alpha.1默认开发Keystore未成功缓存，无法用新签名覆盖；不移动原Tag、不替换旧资产、不要求用户盲目卸载。alpha.2起的旧证书存档为[旧固定公开指纹](../android-tv/legacy-development-signing.sha256)，原缓存缺失会使旧构建失败。当前[固定指纹](../android-tv/development-signing.sha256)已按本次授权更换，后续不得静默换签。正式beta前仍需私有固定发布签名及备份，不把CI缓存视为永久托管。APK构建源码、后续回归驱动源码与发布脚本源码分别记录；即使源码不同，也必须以实际字节哈希证明所测应用与交付应用相同，不能只核对版本号。
 
 `package.json` 的 `version` 是应用版本的唯一来源。安装包、免安装 ZIP、应用「关于」与 GitHub Tag 必须一致，Tag 使用 `v<version>`。`1.1.0` 正式版使用 schema v2；`1.2.0-beta.1` 新增云端资源关联，使用 schema v3，升级前自动保存一致快照。
 
@@ -54,6 +54,6 @@ Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独�
 
 Android电视开发预览可由[Publish verified Android TV preview](../.github/workflows/publish-tv-preview.yml)发布，输入通过完整API22流程的原始build_run_id与build_source。只下载并校验原始APK，不重新构建、移动Tag或覆盖资产；发布脚本提交与APK构建提交分别记录。开发签名限制见[电视端说明](ANDROID-TV.md)，正式beta前需固定私有签名。签名改变不属于普通覆盖升级。
 
-TV固定签名可从私有Secret `TV_DEVELOPMENT_KEYSTORE_BASE64`恢复**原文件**，恢复前必须同时校验私人密钥和仓库固定证书指纹；缓存缺失不生成替代签名。原密钥缺失时暂停同身份安装包分发，数据导出与并行迁移方案见[签名恢复说明](TV-SIGNING-MIGRATION-2026-11-10.md)。迁移实验的 `tvMigrationPreview` 使用独立应用ID，仅允许该身份覆盖测试versionCode；不改变正式版本，不上传实验APK，不作为正式升级证明。
+TV固定签名须从私有Secret `TV_DEVELOPMENT_KEYSTORE_BASE64`恢复**当前固定密钥原文件**，恢复前必须同时校验私人密钥和仓库固定证书指纹；缓存缺失不生成替代签名。当前固定密钥缺失时暂停安装包分发，数据导出与并行迁移方案见[签名恢复说明](TV-SIGNING-MIGRATION-2026-11-10.md)。迁移实验的 `tvMigrationPreview` 使用独立应用ID，仅允许该身份覆盖测试versionCode；不改变正式版本，不上传实验APK，不作为正式升级证明。
 
 以 `1.1.0` 为例：`My-Cinema-1.1.0-Setup.exe`、`My-Cinema-1.1.0-portable-win64.zip`、Tag `v1.1.0`。`INSTALL.cmd` 和 `RUN-PORTABLE.cmd` 自动引用当前版本；SHA-256 必须来自本次实际打包产物。

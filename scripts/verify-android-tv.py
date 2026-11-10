@@ -16,6 +16,10 @@ version = re.search(r"versionName '([^']+)'", Path('android-tv/app/build.gradle'
 assert f"versionName='{version}'" in badging
 assert 'Verified using v1 scheme (JAR signing): true' in signature
 assert 'io.mycinema.tv' in badging
+signer = re.search(r'certificate SHA-256 digest: ([0-9a-f]+)', signature).group(1)
+pinned = signer == Path('android-tv/development-signing.sha256').read_text().strip()
+if os.environ.get('TV_PIN_DEVELOPMENT_SIGNING') == '1':
+    assert pinned, 'Built APK does not use the active pinned signer'
 with zipfile.ZipFile(apk) as archive:
     names = archive.namelist()
     assert 'assets/resource-name-cases.json' not in names, 'Parser fixtures belong only in the instrumentation APK'
@@ -38,7 +42,7 @@ report = {
     'source': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
     'run': os.environ.get('GITHUB_RUN_ID'), 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
     'bytes': apk.stat().st_size, 'actualTelevisionVerified': False,
-    'signerSha256': re.search(r'certificate SHA-256 digest: ([0-9a-f]+)', signature).group(1),
+    'signerSha256': signer, 'pinnedSignerVerified': pinned,
 }
 (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report, indent=2))

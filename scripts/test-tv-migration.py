@@ -48,7 +48,13 @@ def click(text):
 
 
 def enter(index, text):
-    editors = [n for n in nodes() if n.attrib.get('class') == 'android.widget.EditText']
+    editors = []
+    for _ in range(8):
+        editors = [n for n in nodes() if n.attrib.get('class') == 'android.widget.EditText']
+        if len(editors) > index:
+            break
+        time.sleep(.3)
+    assert len(editors) > index, 'Legacy native editor not visible'
     tap(editors[index])
     adb('shell', 'input', 'text', text.replace(' ', '%s'))
     if 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method'):
@@ -76,6 +82,12 @@ def main():
     assert os.environ.get('GITHUB_ACTIONS') == 'true'
     serial = adb('get-serialno').strip()
     assert serial.startswith('emulator-') and adb('shell', 'getprop', 'ro.build.version.sdk').strip() == '22'
+    # API22 ignores the emulator's -dpi-device flag on this image. Match the
+    # existing 720p TV smoke harness before measuring/tapping native controls.
+    adb('shell', 'wm', 'size', 'reset')
+    adb('shell', 'wm', 'density', '160')
+    adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
+    assert 'Override density: 160' in adb('shell', 'wm', 'density')
     OUT.mkdir(parents=True, exist_ok=True)
     PRIVATE.mkdir(parents=True, exist_ok=True)
     old = Path('.harness/tv-legacy-release/My-Cinema-TV-0.1.0-alpha.3-debug.apk')

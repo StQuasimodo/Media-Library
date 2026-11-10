@@ -1,0 +1,23 @@
+{
+  "result": "passed",
+  "workflowRun": "42844482999",
+  "source": "3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7",
+  "version": "0.2.0-alpha.5",
+  "versionCode": 8,
+  "apkSha256": "1c03fd9052ec49124dc679302bde543269a1f969288d58fb7e4286cdf43c5fda",
+  "pinnedSignerVerified": true,
+  "githubSecretRestoreVerified": true,
+  "api22RuntimeVerified": true,
+  "runtimeAbi": "x86",
+  "testAndDeliveryBytesIdentical": true,
+  "nativeAbis": [
+    "armeabi-v7a",
+    "x86"
+  ],
+  "legacySignerInPlaceUpgradeVerified": false,
+  "newSignerCrossVersionUpgradeVerified": false,
+  "physicalTelevisionVerified": false,
+  "realQuarkAccountVerified": false,
+  "windowsRerun": false,
+  "releasePublished": false
+}

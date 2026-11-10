@@ -10,11 +10,11 @@
 
 新签名不能覆盖旧签名的同应用ID安装。新用户可全新安装；若旧安装已有数据，先使用旧版可用的备份或[只读导出工具](TV-SIGNING-MIGRATION-2026-11-10.md)，确认备份有效后再迁移。账号登录信息不迁移。不把新证书签出的包描述成可保留旧安装直接升级。
 
-## 私有存储与当前限制
+## 私有存储与托管
 
-新 Keystore 已写到本环境的仓库外私有目录，目录权限700、文件权限600；Base64配置文件与 Keystore 同样私有。它们没有进入Git、日志或Actions产物。**这只是本环境保存，不等于长期备份已经完成。** 必须在环境回收前将原文件保存在私人位置，并配置GitHub Actions Secret。
+新 Keystore 已写到本环境的仓库外私有目录，目录权限700、文件权限600；Base64配置文件与 Keystore 同样私有。它们没有进入Git、日志或Actions产物。随后用户已将密钥保存到GitHub Actions Secret，独立签名准备和实际构建任务均成功恢复并匹配固定证书。环境私有目录仍不是离线备份，应另存原文件到私人备份位置。
 
-约定Secret名称为 `TV_DEVELOPMENT_KEYSTORE_BASE64`。本轮读取GitHub Secrets公钥接口返回 `403 Resource not accessible by integration`，通过 `gh secret set` 保存也失败；当前连接无此管理权限。因此尚未完成远端托管，常规固定签名构建继续拒绝缺失密钥，不生成替代签名。
+约定Secret名称为 `TV_DEVELOPMENT_KEYSTORE_BASE64`。初次读取GitHub Secrets公钥接口返回 `403 Resource not accessible by integration`，通过 `gh secret set` 保存也失败；当前连接无此管理权限。用户随后通过仓库设置完成保存，恢复任务已通过。当前连接仍无需管理Secret权限，Actions可通过受保护注入进行构建；缺失密钥时仍拒绝构建，不生成替代签名。
 
 仓库设置入口：<https://github.com/StQuasimodo/Media-Library/settings/secrets/actions/new>。Name填写上述名称；Secret填写私有配置文件内容。仅在GitHub受保护设置中保存，不把内容发到聊天或提交Git。
 
@@ -40,8 +40,12 @@ python3 scripts/upload-tv-signing-secret.py --keystore <私有Keystore文件路�
 
 新私人密钥已通过实际 keytool 检查；使用历史APK的临时副本做签名可用性检查，apksigner以minSdk21验证v1/v2通过，证书等于新固定指纹。该副本没有交付，不能当成新版本构建或Android运行结果。
 
-本机尝试获取SDK36失败，sdkmanager无法获取远端清单，未声称本机完成新应用构建。新固定签名的API22安装、同签名升级、完整播放与目标电视运行仍待验证；远端构建还需先完成受保护Secret配置。
+最初本机获取SDK36失败，未声称本机完成新应用构建。随后用户保存Secret，GitHub上的新固定签名候选完成实际构建、API22安装和完整播放回归；固定签名跨版本升级与目标电视仍待验收。
 
 [Actions验证](https://github.com/StQuasimodo/Media-Library/actions/runs/42841694886)通过，实际源码 `9d7205de9db14cea4d185fb05bcb15da4442874a`：18项工具检查、SDK36下Gradle构建/Lint（0错误/17警告）、API22历史旧APK导出/异签名拒绝/并行导入/测试身份code7→8升级通过。测试密钥仅用于实验；这个通过结果不表示新固定密钥已托管或已在Android运行。
 
-[构建身份](../artifacts/tv-fixed-signing-2026-11-10/BUILD.json) · [密钥本机检查](../artifacts/tv-fixed-signing-2026-11-10/LOCAL-CHECK.json) · [API22结果](../artifacts/tv-fixed-signing-2026-11-10/summary.json) · [本次作业的Secret未就绪报告](../artifacts/tv-fixed-signing-2026-11-10/active-signer.json)。没有生成新的Release或上传私人密钥。下一步为Secret配置后运行 `Android TV API 22 preview` 完整候选流程；固定签名包通过原播放/收藏回归后，才能从原始产物发布。
+[初次准备构建身份](../artifacts/tv-fixed-signing-2026-11-10/BUILD.json) · [密钥本机检查](../artifacts/tv-fixed-signing-2026-11-10/LOCAL-CHECK.json) · [迁移实验结果](../artifacts/tv-fixed-signing-2026-11-10/summary.json) · [初次作业的Secret未就绪报告](../artifacts/tv-fixed-signing-2026-11-10/active-signer.json)。这些是初次准备时的历史记录，私人密钥未上传为产物。
+
+## 用户保存Secret后的实际结果
+
+[完整固定签名流程42844482999](https://github.com/StQuasimodo/Media-Library/actions/runs/42844482999)通过，源码 `3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7`。独立准备/构建均从Secret恢复，实际APK证书与当前固定指纹一致；API22安装、LibVLC真实画面/音轨/字幕/续播、90秒连续播放、本机DAV范围/过期/断流/取消、16项备份、29组命名与收藏/进程/系统重启回归通过。[原包身份、结果和验收边界](TV-ALPHA5-VALIDATION-2026-11-10.md)。远端托管及固定签名运行门禁已解除，当前候选准备发布；实机和未来同签名跨版本覆盖升级仍待验收。

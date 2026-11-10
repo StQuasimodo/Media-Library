@@ -1,0 +1,21 @@
+{
+  "01-playing.png": "21c3d3bd657ac5171fe200e6bb07bef5d057e339a502ca22e1b6d23cd501b168",
+  "02-backup-settings.png": "9bc7b33bdcc9b866fa16f4f40862431c2ac71b0ad8f8de97ffd837bcbd4e1d3a",
+  "03-media-sources.png": "fb8be400a22012bb1313496d030b4523d78f99d6d0a625c5b6681b61807e8fcf",
+  "APK-SHA256SUMS.txt": "c18d337bf1d7212a647986ed3d3aa0e8f32a881c00a9b1222438296c3f8ef8d8",
+  "BUILD.json": "8a8bf4d6c551e06e6f37f6e220553a1c5045da56d3dd5677ec1f8673ba5d565a",
+  "backup-report.json": "4bab9407e96ccf8aa296c4443cc4a272b8ae6ee012b5e449c750e9f21e49b38e",
+  "badging.txt": "63f51ee38432a313a6a7a325e10ae0ffd3fe943d91a129008fe57facf47cea9a",
+  "collection-full.json": "a3435111e966339fce2830e4e652f27bd49d050e29be31d75e68329fc837482d",
+  "collection-process.json": "a9c0e52c674c6dbb49bb85b5b31ac28b89a74f648fcf6c850e6c356063236168",
+  "collection-reboot.json": "dd5a6f851bdfa0c28907f73613be1993ce6563113bdd7c67623bd94cd39f6ea5",
+  "collection-summary.json": "aa7e756d5df93a5d26f22d8e58488df3b428525dd531666fdf79b5446466e374",
+  "lint-results-debug.txt": "4182462ed542dc7d400222ee1acc3225ce0d2a9ca1a563590914556bd7586244",
+  "network-report.json": "7ef381f40c456b106ce9e609bd8ad830027528777a313b668e57ea375bac8ba9",
+  "playback-report.json": "4007fbdf23ebdd58a82e9055193c0aaefcca8f4a1972e96e35023d31ae1e35b3",
+  "quark-dav-report.json": "dd8d962857fa8c0dd53c362979e1b5adeffe1c710bc8cd13cecec6326e478acd",
+  "resource-names-report.json": "1b902474ca0efce17f99ab85eeaa91b343f81734ddb3ad17461a70657b13cf2e",
+  "signature.txt": "e3c43f562eaad8dea5ce54f827f934575bf24af946fb2777c0fabe7bc6399ed1",
+  "smoke-report.json": "08a91a6bf31c2e0723f5ccd3465f611a81d987c977194b48249e6fafd5e8c8c5",
+  "summary.json": "a017a8f343e04049062cc49a452b14becd5d841822e833cd7783070908f5057b"
+}

@@ -1,0 +1,15 @@
+{
+  "source": "9d7205de9db14cea4d185fb05bcb15da4442874a",
+  "run": "42841694886",
+  "version": "0.2.0-alpha.5",
+  "versionCode": 8,
+  "hostToolChecksPassed": 18,
+  "lintErrors": 0,
+  "lintWarnings": 17,
+  "apiLevel": 22,
+  "runtimeAbi": "x86",
+  "testSignerOnly": true,
+  "fixedSignerRuntimeVerified": false,
+  "installablePackagePublished": false,
+  "physicalTelevisionVerified": false
+}

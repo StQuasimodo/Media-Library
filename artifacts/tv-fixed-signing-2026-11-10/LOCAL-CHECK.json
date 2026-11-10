@@ -1,0 +1,14 @@
+{
+  "activeCertificateSha256": "be6ca6625b1cc4457d0e016fe8c7b300cd0285cf2cee0ae9ac9e8ed79a8249ad",
+  "algorithm": "RSA",
+  "keyBits": 3072,
+  "privateKeyEntryVerified": true,
+  "pinnedPrivateKeyRestoreVerified": true,
+  "signedFixtureOnly": true,
+  "fixtureMinSdkVerification": 21,
+  "fixtureV1SignatureVerified": true,
+  "fixtureV2SignatureVerified": true,
+  "newApplicationApkSigned": false,
+  "githubSecretStored": false,
+  "privateMaterialPublished": false
+}

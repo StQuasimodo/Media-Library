@@ -1,0 +1,12 @@
+{
+  "phase": "upgrade",
+  "buildRun": "42841694886",
+  "apiLevel": 22,
+  "packageId": "io.mycinema.tv.preview",
+  "versionCode": 8,
+  "collectionIdentitiesPreserved": true,
+  "keystoreCredentialPreserved": true,
+  "mediaProgressPreserved": true,
+  "physicalTelevisionVerified": false,
+  "result": "passed"
+}

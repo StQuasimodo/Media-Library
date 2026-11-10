@@ -30,6 +30,8 @@ python3 scripts/upload-tv-signing-secret.py --keystore <私有Keystore文件路�
 
 常规构建、独立签名准备和回归均从Secret恢复固定密钥，删除原签名缓存读取；不把缓存当作托管，也不自动保存密钥到缓存。作业结束清除runner上的密钥文件。恢复脚本继续核对私人密钥、证书指纹和调用方期望值，缺失或不匹配立即失败。
 
+这份密钥后续跨alpha、beta与正式版本继续使用。关闭debuggable、调整构建类型不要求换签；不能为了进入beta再生成另一份密钥。之后的身份变化仍需明确授权和迁移方案。
+
 包校验在固定签名模式核对实际APK证书；code8起发布脚本还要求 `pinnedSignerVerified=true`。原有API21/v1、ARMv7/x86、精确原包字节与完整API22播放回归门禁保留。只有新密钥托管就绪、实际候选包完整回归通过，才可发布预览。
 
 旧版导出/并行迁移实验改用存档指纹校验历史APK，测试身份仍显式使用code7→8，避免随正式开发版本变化而误判。该实验的临时测试签名始终不作分发签名。
@@ -39,3 +41,7 @@ python3 scripts/upload-tv-signing-secret.py --keystore <私有Keystore文件路�
 新私人密钥已通过实际 keytool 检查；使用历史APK的临时副本做签名可用性检查，apksigner以minSdk21验证v1/v2通过，证书等于新固定指纹。该副本没有交付，不能当成新版本构建或Android运行结果。
 
 本机尝试获取SDK36失败，sdkmanager无法获取远端清单，未声称本机完成新应用构建。新固定签名的API22安装、同签名升级、完整播放与目标电视运行仍待验证；远端构建还需先完成受保护Secret配置。
+
+[Actions验证](https://github.com/StQuasimodo/Media-Library/actions/runs/42841694886)通过，实际源码 `9d7205de9db14cea4d185fb05bcb15da4442874a`：18项工具检查、SDK36下Gradle构建/Lint（0错误/17警告）、API22历史旧APK导出/异签名拒绝/并行导入/测试身份code7→8升级通过。测试密钥仅用于实验；这个通过结果不表示新固定密钥已托管或已在Android运行。
+
+[构建身份](../artifacts/tv-fixed-signing-2026-11-10/BUILD.json) · [密钥本机检查](../artifacts/tv-fixed-signing-2026-11-10/LOCAL-CHECK.json) · [API22结果](../artifacts/tv-fixed-signing-2026-11-10/summary.json) · [本次作业的Secret未就绪报告](../artifacts/tv-fixed-signing-2026-11-10/active-signer.json)。没有生成新的Release或上传私人密钥。下一步为Secret配置后运行 `Android TV API 22 preview` 完整候选流程；固定签名包通过原播放/收藏回归后，才能从原始产物发布。

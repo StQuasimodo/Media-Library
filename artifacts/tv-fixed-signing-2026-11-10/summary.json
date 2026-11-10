@@ -1,0 +1,14 @@
+{
+  "result": "passed",
+  "buildRun": "42841694886",
+  "apiLevel": 22,
+  "historicalApkSha256": "83e074cba861a3dae1456a1763cee469e737b02f5c7f4a7df2424ce2b93e8bff",
+  "legacyNativeUiSeeded": true,
+  "readOnlyExportVerified": true,
+  "differentSignerUpdateRejected": true,
+  "originalDataUnchanged": true,
+  "parallelImportVerified": true,
+  "sameTestSignerUpgradeVerified": true,
+  "originalSignerUpgradeVerified": false,
+  "physicalTelevisionVerified": false
+}

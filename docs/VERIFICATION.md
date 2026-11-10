@@ -1,5 +1,9 @@
 # 验证与交付
 
+## TV新固定签名准备（2026-11-10）
+
+用户授权换签，开发版本升至0.2.0-alpha.5/code8。新私人密钥经keytool检查，历史APK临时副本的新签名在minSdk21下通过v1/v2验证；不是新版本运行证明。[源码9d7205d的Actions流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42841694886)通过18项工具检查、Gradle/Lint（0错误/17警告）、API22历史导出和测试身份升级；归档旧证书后原数据不变。实际新固定签名包未运行、未发布，Secret保存因GitHub权限403尚未完成。[当前配置、原始结果及下一步](TV-FIXED-SIGNING-2026-11-10.md)。
+
 ## TV签名恢复入口与隔离迁移（2026-11-10）
 
 [API22流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42835560364)通过，构建/测试源码`10403043043609d288c107800317fd2b510b254c`。真实已发布alpha.3 APK从原生界面创建收藏、评分和理由；只读导出、异签名覆盖拒绝、并行身份导入及同一临时测试签名code7→8升级通过，原库哈希不变。测试身份的合成加密凭据、媒体人工关联及45000ms进度保留。7项签名恢复/8项旧库转换测试、Gradle/Lint（0错误/17警告）、签名关系及API21门槛通过。[详细报告、首轮失败原因与原始证据](TV-SIGNING-MIGRATION-2026-11-10.md)。

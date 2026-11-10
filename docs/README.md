@@ -4,6 +4,7 @@
 
 | 文档 | 内容 | 什么时候看 |
 |---|---|---|
+| [PROJECT-PROGRESS-2026-11-10.md](PROJECT-PROGRESS-2026-11-10.md) | 主线/发布/实验进度、证据边界、阻塞项及后续里程碑 | 查看当前真实进度和下一步开发顺序 |
 | [USAGE.md](USAGE.md) | 安装、TMDB 配置、资源记录、备份与快捷键 | 首次使用应用 |
 | [VERSIONING.md](VERSIONING.md) | 应用版本、预览编号、Tag 与发布检查规则 | 打包或向用户分发前 |
 | [ANDROID-TV.md](ANDROID-TV.md) | API21/22原生电视端、独立收藏、遥控器与夸克直连播放计划 | 开发或安装电视预览 |
@@ -36,7 +37,9 @@
 - 新增 IPC 通道、数据库迁移或目录变化时更新 ARCHITECTURE.md 的对应表格。
 - 每次交付前把真实执行结果（测试数量、构建产物、截图）写进 VERIFICATION.md，不写「预计」「应该」。
 
-## 当前状态（2026-10-28）
+## 当前状态（2026-11-10）
+
+详见[项目进度审计与后续计划](PROJECT-PROGRESS-2026-11-10.md)。以下区分已发布包、主线开发与实验能力；历史验证报告保留原构建身份。
 
 | 项目 | 状态 |
 |---|---|
@@ -47,6 +50,8 @@
 | Windows发行产物 | [1.2.0正式版](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0)已发布并设Latest，真实安装器与旧凭据兼容通过，五个公开文件与受测产物逐字节一致 |
 | Android电视 | [0.1.0-alpha.3开发预览](ANDROID-TV.md)，minSdk21/v1签名/无原生库，独立SQLite v1；新选图、720p/96MiB与1080p/64MiB应用堆、完整操作/进程和内核重启通过；长虹实机与真实Key待验收，与alpha.2签名相同，不能覆盖alpha.1 |
 | 电视播放开发 | 0.2.0-alpha.4，电视本机夸克转WebDAV、4MiB顺序取流与独立播放控制，ARMv7/x86；[架构及完整回归](TV-PLAYBACK-ARCHITECTURE-VALIDATION-2026-10-29.md)，真实夸克扫码和长虹硬解仍待验收 |
+| TV 主线增强 | LibVLC 媒体轨道/帧统计信息、音频/单字幕同步菜单、0.5–2倍速与重连保留；尚无对应新 Release，当前下载的 alpha.3 不含播放 |
+| mpv 实验 | API22 x86 双字幕、定位/暂停恢复、测试 APK 内夸克本机会话取流/Surface/AudioTrack切轨通过；尚未进入主应用，ARMv7 运行、真实声音/账号/电视及完整样式未验收 |
 | 待验收 | 个人电脑完整升级、字体与缩放；真实TMDB带Key在线匹配；夸克真实账号目录与会话重启 |
 
 详细证据见[验证说明](VERIFICATION.md)与[修复记录](REPAIRS-2026-10-24.md)。

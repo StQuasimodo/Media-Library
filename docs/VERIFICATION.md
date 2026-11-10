@@ -1,5 +1,11 @@
 # 验证与交付
 
+## 主线进度复核（2026-11-10）
+
+本轮审计基线 `c92f59f8ee659b48a4749f2e27f6f682e929346b`。Linux 隔离副本复用工作区已有 Node 依赖执行 TypeScript 检查、Vitest（15 文件/170 项通过）及 `node scripts/build.mjs`（主进程/preload/Vite 生产构建通过）。核对 GitHub 发布资产和近期 Actions，未重新执行 Windows 安装器、Android 模拟器或目标电视；本轮没有新安装包。
+
+最新 TV Release 仍为 **0.1.0-alpha.3**，不包含主线开发中的播放/WebDAV。主线 LibVLC 增加媒体信息、同步菜单和倍速；mpv 双字幕、Surface、AudioTrack 切轨仍为实验测试 APK 的能力，API22 x86 通过不能替代 ARMv7、可听音频、真实夸克或长虹验收。证据、发布/签名与备份缺口、具体后续门槛见[项目进度审计与计划](PROJECT-PROGRESS-2026-11-10.md)。以下历史结果保持原构建身份。
+
 ## 电视0.2.0-alpha.4：播放/WebDAV架构（2026-10-29）
 
 [完整流程](https://github.com/StQuasimodo/Media-Library/actions/runs/40814162433)成功，构建源码`6e4b7d8bca66295445d43aaa7a6668c0dc617260`。顺序4MiB跨段字节一致、HEAD探测/尾部Range、并发过期只刷新一次、阻塞API取消、独立会话撤销、暂停恢复、快速重连、播完重播、原生90秒播放及收藏/进程/内核重启通过。观测90,298ms，时钟推进90,246ms，显示1,253帧；PSS起止164,933/158,818KiB，非峰值或流畅度承诺。真实夸克、实际提速和长虹ARM仍未验收，APK为Actions开发产物。[来源、失败记录、签名与哈希](TV-PLAYBACK-ARCHITECTURE-VALIDATION-2026-10-29.md)。

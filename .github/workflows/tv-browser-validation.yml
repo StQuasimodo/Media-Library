@@ -70,14 +70,7 @@ jobs:
           pre-emulator-launch-script: python3 scripts/configure-tv-avd.py
           disable-animations: true
           emulator-options: -writable-system -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
-          script: |
-            bash scripts/android-tv-smoke.sh
-            if [ "$TV_TEST_SUITE" = resource_names ]; then
-              bash scripts/android-tv-resource-names.sh
-            else
-              bash scripts/android-tv-playback.sh
-              bash scripts/android-tv-regression.sh
-            fi
+          script: bash scripts/android-tv-validation.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

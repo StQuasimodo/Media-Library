@@ -1,0 +1,31 @@
+{
+  "id": 440554093,
+  "tag_name": "tv-v0.2.0-alpha.5",
+  "html_url": "https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.2.0-alpha.5",
+  "published_at": "2026-11-10T15:39:13Z",
+  "draft": false,
+  "prerelease": true,
+  "source": "3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7",
+  "publishRun": "42846487012",
+  "publisherSource": "7d6ed76a095230055424c2d4ff61c9169ad0a970",
+  "assets": [
+    {
+      "name": "BUILD.json",
+      "size": 600,
+      "digest": "sha256:8a8bf4d6c551e06e6f37f6e220553a1c5045da56d3dd5677ec1f8673ba5d565a",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.2.0-alpha.5/BUILD.json"
+    },
+    {
+      "name": "My-Cinema-TV-0.2.0-alpha.5-debug.apk",
+      "size": 48749074,
+      "digest": "sha256:1c03fd9052ec49124dc679302bde543269a1f969288d58fb7e4286cdf43c5fda",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.2.0-alpha.5/My-Cinema-TV-0.2.0-alpha.5-debug.apk"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 180,
+      "digest": "sha256:c18d337bf1d7212a647986ed3d3aa0e8f32a881c00a9b1222438296c3f8ef8d8",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.2.0-alpha.5/SHA256SUMS.txt"
+    }
+  ]
+}

@@ -19,5 +19,8 @@
   "physicalTelevisionVerified": false,
   "realQuarkAccountVerified": false,
   "windowsRerun": false,
-  "releasePublished": false
+  "releasePublished": true,
+  "publishRun": "42846487012",
+  "publishedAssetsMatchOriginalBytes": true,
+  "releaseUrl": "https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.2.0-alpha.5"
 }

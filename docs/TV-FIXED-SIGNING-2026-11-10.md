@@ -1,6 +1,6 @@
 # TV 新固定签名（2026-11-10）
 
-用户明确授权改用新签名，尚未实机测试，不再等待恢复旧签名。开发版本升为 **0.2.0-alpha.5 / code8**；Windows版本、数据库schema和应用ID `io.mycinema.tv` 保持不变。尚未发布新安装包。
+用户明确授权改用新签名，尚未实机测试，不再等待恢复旧签名。开发版本升为 **0.2.0-alpha.5 / code8**；Windows版本、数据库schema和应用ID `io.mycinema.tv` 保持不变。已[发布新固定签名开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.2.0-alpha.5)。
 
 ## 当前身份
 
@@ -48,4 +48,4 @@ python3 scripts/upload-tv-signing-secret.py --keystore <私有Keystore文件路�
 
 ## 用户保存Secret后的实际结果
 
-[完整固定签名流程42844482999](https://github.com/StQuasimodo/Media-Library/actions/runs/42844482999)通过，源码 `3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7`。独立准备/构建均从Secret恢复，实际APK证书与当前固定指纹一致；API22安装、LibVLC真实画面/音轨/字幕/续播、90秒连续播放、本机DAV范围/过期/断流/取消、16项备份、29组命名与收藏/进程/系统重启回归通过。[原包身份、结果和验收边界](TV-ALPHA5-VALIDATION-2026-11-10.md)。远端托管及固定签名运行门禁已解除，当前候选准备发布；实机和未来同签名跨版本覆盖升级仍待验收。
+[完整固定签名流程42844482999](https://github.com/StQuasimodo/Media-Library/actions/runs/42844482999)通过，源码 `3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7`。独立准备/构建均从Secret恢复，实际APK证书与当前固定指纹一致；API22安装、LibVLC真实画面/音轨/字幕/续播、90秒连续播放、本机DAV范围/过期/断流/取消、16项备份、29组命名与收藏/进程/系统重启回归通过。[原包身份、结果和验收边界](TV-ALPHA5-VALIDATION-2026-11-10.md)。远端托管及固定签名运行门禁已解除，已通过原始产物发布流程交付；实机和未来同签名跨版本覆盖升级仍待验收。

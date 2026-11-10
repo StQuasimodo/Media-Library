@@ -1,6 +1,6 @@
-# TV 0.2.0-alpha.5 固定签名候选验证
+# TV 0.2.0-alpha.5 固定签名发布验证
 
-`0.2.0-alpha.5 / code8` 的实际APK已通过[完整API22流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42844482999)。构建源码为 `3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7`，报告/发布说明提交不是APK构建源码。当前候选已验证，发布状态随后记录。
+`0.2.0-alpha.5 / code8` 的实际APK已通过[完整API22流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42844482999)，并[发布为GitHub开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.2.0-alpha.5)。构建源码为 `3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7`，报告/发布说明提交不是APK构建源码。[发布流程42846487012](https://github.com/StQuasimodo/Media-Library/actions/runs/42846487012)使用原始已验证字节，未重新打包。
 
 ## 产物身份
 
@@ -11,6 +11,8 @@
 - GitHub Secret恢复在独立准备任务和构建任务中均通过；实际构建包的 `pinnedSignerVerified=true`。本地重新核对原始APK与BUILD/SHA清单，收藏回归的目标包哈希与候选一致。
 
 [BUILD身份](../artifacts/tv-alpha5-2026-11-10/BUILD.json) · [包哈希清单](../artifacts/tv-alpha5-2026-11-10/APK-SHA256SUMS.txt) · [证书验证](../artifacts/tv-alpha5-2026-11-10/signature.txt) · [汇总](../artifacts/tv-alpha5-2026-11-10/summary.json)。仓库只保存公开元数据、合成数据结果及截图，不保存签名密钥或测试私有证书。
+
+Release包含APK、BUILD.json、SHA256SUMS.txt共3项；GitHub资产digest逐项与原始构建文件相同，Tag固定在上述构建源码。发布脚本源码为 `7d6ed76a095230055424c2d4ff61c9169ad0a970`。本地原始产物核对与服务端digest均通过；Windows Latest仍为v1.2.0。[公开发布回执](../artifacts/tv-alpha5-2026-11-10/published-release.json)。
 
 ## 实际运行结果
 

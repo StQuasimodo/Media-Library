@@ -9,12 +9,14 @@ concurrency:
 jobs:
   signing:
     uses: ./.github/workflows/tv-development-signing.yml
+    secrets: inherit
   android-tv:
     needs: signing
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
       TV_PIN_DEVELOPMENT_SIGNING: '1'
+      TV_DEVELOPMENT_KEYSTORE_BASE64: ${{ secrets.TV_DEVELOPMENT_KEYSTORE_BASE64 }}
       TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
       TV_APK_TARGET: working
       TV_PROFILE: api22-hd-1gb
@@ -35,7 +37,7 @@ jobs:
         with:
           path: ~/.android/mycinema-tv-debug.keystore
           key: my-cinema-tv-development-signing-v2
-          fail-on-cache-miss: true
+          fail-on-cache-miss: false
       - name: Check restored signing identity and application version
         id: app
         run: |

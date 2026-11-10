@@ -1,14 +1,24 @@
 plugins { id 'com.android.application' }
 
+// Disposable migration validation only. The production application ID stays unchanged.
+def migrationPreview = project.hasProperty('tvMigrationPreview')
+if (project.hasProperty('tvUpgradeTestVersionCode') && !migrationPreview) {
+    throw new GradleException('Upgrade test versions require the isolated migration preview ID')
+}
+
 android {
     namespace 'io.mycinema.tv'
     compileSdk 36
     defaultConfig {
-        applicationId 'io.mycinema.tv'
+        applicationId migrationPreview ? 'io.mycinema.tv.preview' : 'io.mycinema.tv'
+        manifestPlaceholders = [appLabel: migrationPreview ? 'My Cinema · 迁移验证' : 'My Cinema']
         minSdk 21
         ndk { abiFilters 'armeabi-v7a', 'x86' }
         targetSdk 35
         versionCode 7
+        if (migrationPreview && project.hasProperty('tvUpgradeTestVersionCode')) {
+            versionCode Integer.parseInt(project.property('tvUpgradeTestVersionCode'))
+        }
         versionName '0.2.0-alpha.4'
         testInstrumentationRunner 'io.mycinema.tv.SmokeInstrumentation'
     }

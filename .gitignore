@@ -35,6 +35,10 @@ artifacts/edge-probe.png
 *.db-shm
 *.sqlite
 credentials.json
+*.keystore
+*.jks
+*.p12
+*.pfx
 library.db*
 
 # Editors / OS

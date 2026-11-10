@@ -1,0 +1,137 @@
+name: TV signing policy and migration validation
+on:
+  push:
+    branches: [fix/tv-signing-migration]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tv-signing-migration
+  cancel-in-progress: false
+jobs:
+  signing-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Test pinned-key restoration and read-only conversion
+        run: |
+          mkdir -p .harness/tv-signing
+          python3 -m unittest discover -s tests -p 'test_tv_signing.py' -v
+          python3 -m unittest discover -s tests -p 'test_tv_legacy_export.py' -v
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/mycinema-tv-debug.keystore
+          key: my-cinema-tv-development-signing-v2
+          fail-on-cache-miss: false
+      - name: Report original signer readiness without publishing private material
+        env:
+          TV_DEVELOPMENT_KEYSTORE_BASE64: ${{ secrets.TV_DEVELOPMENT_KEYSTORE_BASE64 }}
+        run: |
+          python3 - <<'PY'
+          import importlib.util,json,os
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('signer','scripts/prepare-tv-signer.py')
+          signer=importlib.util.module_from_spec(spec);spec.loader.exec_module(signer)
+          encoded=os.environ.get('TV_DEVELOPMENT_KEYSTORE_BASE64','')
+          report={'secretConfigured':bool(encoded),'originalSignerReady':False,'privateMaterialPublished':False}
+          try:
+              digest,source=signer.prepare(Path.home()/'.android/mycinema-tv-debug.keystore',Path('android-tv/development-signing.sha256'),encoded)
+              report.update(originalSignerReady=True,certificateSha256=digest,source=source)
+          except (signer.SigningError,OSError):
+              report['status']='Original key unavailable or invalid; no replacement generated'
+          Path('.harness/tv-signing/original-signer.json').write_text(json.dumps(report,indent=2)+'\n')
+          print(json.dumps(report))
+          PY
+      - name: Remove runner-only signing material
+        if: always()
+        run: rm -f ~/.android/mycinema-tv-debug.keystore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tv-original-signer-readiness
+          path: .harness/tv-signing/*.json
+  migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TV_PROFILE: api22-migration
+      TV_HEAP_MIB: '96'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Acquire exact published legacy APK
+        run: |
+          mkdir -p .harness/tv-legacy-release .harness/tv-migration-private .harness/tv-migration
+          gh release download tv-v0.1.0-alpha.3 -R "$GITHUB_REPOSITORY" -p '*.apk' -D .harness/tv-legacy-release
+          echo '83e074cba861a3dae1456a1763cee469e737b02f5c7f4a7df2424ce2b93e8bff  .harness/tv-legacy-release/My-Cinema-TV-0.1.0-alpha.3-debug.apk' | sha256sum -c -
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Build disposable default and isolated upgrade candidates
+        working-directory: android-tv
+        run: |
+          ./gradlew --no-daemon lintDebug assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../.harness/tv-migration-private/current-default.apk
+          ./gradlew --no-daemon -PtvMigrationPreview assembleDebug assembleDebugAndroidTest
+          cp app/build/outputs/apk/debug/app-debug.apk ../.harness/tv-migration-private/preview-v7.apk
+          cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk ../.harness/tv-migration-private/preview-test.apk
+          ./gradlew --no-daemon -PtvMigrationPreview -PtvUpgradeTestVersionCode=8 assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../.harness/tv-migration-private/preview-v8.apk
+      - name: Verify signer relationships and isolated package IDs
+        run: |
+          python3 - <<'PY'
+          import json,os,re,subprocess
+          from pathlib import Path
+          tools=Path(os.environ['ANDROID_HOME'])/'build-tools/35.0.0'
+          def signer(path):
+              value=subprocess.check_output([str(tools/'apksigner'),'verify','--print-certs','--min-sdk-version','21',str(path)],text=True)
+              return re.search(r'certificate SHA-256 digest: ([a-f0-9]+)',value).group(1)
+          root=Path('.harness/tv-migration-private')
+          old=signer('.harness/tv-legacy-release/My-Cinema-TV-0.1.0-alpha.3-debug.apk')
+          test=signer(root/'preview-v7.apk')
+          assert old==Path('android-tv/development-signing.sha256').read_text().strip()
+          assert old!=test and signer(root/'preview-v8.apk')==signer(root/'preview-test.apk')==test
+          for name,code in [('preview-v7.apk',7),('preview-v8.apk',8)]:
+              badging=subprocess.check_output([str(tools/'aapt'),'dump','badging',str(root/name)],text=True)
+              assert "name='io.mycinema.tv.preview'" in badging and f"versionCode='{code}'" in badging and "sdkVersion:'21'" in badging
+          Path('.harness/tv-migration/signatures.json').write_text(json.dumps({'publishedSigner':old,'testSigner':test,'testSignerIsEphemeral':True,'installablePackagePublished':False},indent=2)+'\n')
+          PY
+      - name: Enable disposable emulator acceleration
+        run: sudo chmod a+rw /dev/kvm
+      - name: Validate real old-package export, rejection and parallel upgrade on API22
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          emulator-build: 11237101
+          api-level: 22
+          target: default
+          arch: x86
+          profile: Nexus 5
+          sdcard-path-or-size: 512M
+          ram-size: 1024M
+          heap-size: 96M
+          pre-emulator-launch-script: python3 scripts/configure-tv-avd.py
+          disable-animations: true
+          emulator-options: -writable-system -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
+          script: python3 scripts/test-tv-migration.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tv-migration-validation
+          if-no-files-found: warn
+          path: |
+            .harness/tv-migration/*.json
+            .harness/tv-migration/*.png
+            .harness/tv-migration/*instrumentation.txt
+            .harness/tv-migration/logcat.txt
+            android-tv/app/build/reports/lint-results-debug.*

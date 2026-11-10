@@ -44,6 +44,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();try{
             context=getTargetContext();check("true".equals(arguments.getString("disposableEmulator")),"fixture must be explicitly selected");check(BuildConfig.DEBUG,"only debug application may run fixtures");check(android.os.Build.VERSION.SDK_INT==22,"must run on actual API 22 runtime");
+            if(arguments.getString("migration")!=null){new UpgradeScenario(this).run(arguments.getString("migration"),arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("backup"))){new BackupScenario(this).run(arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("resourceNames"))){new ResourceNameScenario(this).run(arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("playback"))){new PlaybackScenario(this,arguments.getString("buildRun","")).run();return;}

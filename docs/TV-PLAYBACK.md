@@ -25,11 +25,11 @@
 ## 实现
 
 - `MediaSources`：夸克分页与取流；WebDAV Depth1/XML，拒绝跨域/越界href，限制响应与目录大小，不回显凭据或服务端原始响应。
-- `MediaBrowserActivity`：原生遥控器目录浏览，ListView复用行，后台扫描与事务关联。
+- `MediaBrowserActivity`：原生遥控器目录浏览，ListView复用行，后台扫描与事务关联。目录/扫描各自持有可取消请求，退出、重建页面或销毁时撤销；旧界面回调不再提交任务。[取消与生命周期修复](TV-BROWSER-LIFECYCLE-2026-11-10.md)。
 - `MediaCatalog`：新增独立SQLite文件，稳定文件身份与续播；原收藏库无需迁移。
 - `PlaybackRelay`：127.0.0.1只读HTTP/DAV协议、挂载范围和临时鉴权，最多3路工作线程及有限队列。内置播放器另有仅供本文件GET/HEAD的鉴权，退出/重连撤销并取消相应请求；临时URL/密码/CDN地址不进收藏或Intent。
 - `MediaTransfer`：通过Provider获取短期地址，每文件锁合并过期地址刷新；夸克顺序4MiB闭合Range、64KiB流式转发，保留正确全长，HEAD经1字节GET探测、尾部Range和首段/后续段核对。单个响应最多续接两次，每次取流请求401/403最多更新一次地址；跨源不带鉴权、HTTPS不降级。无全片内存或磁盘缓存。
-- `NetworkScope`：连接尝试和每个HTTP请求的真实Call/响应体取消，覆盖目录、取流API及视频读取；不只取消Future。
+- `NetworkScope`：连接尝试和每个HTTP请求的真实Call/响应体取消，覆盖目录、取流API及视频读取；不只取消Future。浏览任务同时拥有仅限指定目录PROPFIND的临时会话，取消可传至本机DAV服务端及夸克上游；播放文件会话与共享服务保持独立。
 - `PlaybackController`：LibVLC3.7.7、状态快照、恢复位置、暂停意图、静音准备及按会话处理回调。只有最新连接解析完成才创建解码器；缓冲完成回到播放，结束归零、退出释放。夸克直接连接本机DAV，外部WebDAV保持原转发方式，网络缓存1500ms。
 - `PlayerActivity`：原生界面、遥控器/轨道菜单及进度存储回调；[架构图与参考来源](TV-PLAYBACK-ARCHITECTURE.md)。
 

@@ -1,5 +1,11 @@
 # 验证与交付
 
+## TV目录浏览取消与生命周期（2026-11-10）
+
+[完整API22流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42801559632)通过，实际构建/测试源码`1247c06d46f167f6fbd22fa3732783d1f95c5fcc`。Gradle/Lint（0错误/18警告）、API21/v1签名/ARMv7与x86打包检查、真实API22 x86的原始夸克/外部DAV/本机DAV阻塞取消、目录会话范围及撤销、扫描中销毁/旧按钮/关联与进度保留、独立播放会话取流通过；原LibVLC90秒、断流/重连及收藏/进程/模拟器重启回归通过。[修复、原始JSON与边界](TV-BROWSER-LIFECYCLE-2026-11-10.md)。
+
+只交付源码及证据，没有发布新安装包；一次性测试签名不替代原分发身份。已从失败日志确认固定密钥缓存缺失，当前查询为空；仓库Secrets元数据访问403，不能判断其他备份。真实账号、ARMv7运行和目标电视仍未验收。
+
 ## 主线进度复核（2026-11-10）
 
 本轮审计基线 `c92f59f8ee659b48a4749f2e27f6f682e929346b`。Linux 隔离副本复用工作区已有 Node 依赖执行 TypeScript 检查、Vitest（15 文件/170 项通过）及 `node scripts/build.mjs`（主进程/preload/Vite 生产构建通过）。核对 GitHub 发布资产和近期 Actions，未重新执行 Windows 安装器、Android 模拟器或目标电视；本轮没有新安装包。

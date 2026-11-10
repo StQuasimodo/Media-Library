@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
+      # Validation only: ephemeral signer; no APK is uploaded or published.
       TV_APK_TARGET: working
       TV_PROFILE: api22-hd-1gb
       TV_DENSITY: '160'
@@ -76,5 +77,5 @@ jobs:
             .harness/tv-playback/instrumentation.txt
             .harness/tv-playback/logcat.txt
             .harness/android-tv-package/report.json
-            .harness/tv-regression/*report*.json
+            .harness/tv-regression/*.json
             android-tv/app/build/reports/lint-results-debug.*

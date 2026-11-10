@@ -76,6 +76,14 @@ final class BackupScenario {
             try(MediaCatalog catalog=new MediaCatalog(context)){check(Json.text(catalog.get("quark:backup-file"),"filmId").equals(film)&&catalog.position("quark:backup-file")==60000,"manual link and progress restored");check(catalog.get("quark:backup-unlink").optBoolean("associationManual")&&Json.text(catalog.get("quark:backup-unlink"),"filmId").isEmpty(),"manual unlink restored");}
             try(Library library=new Library(context)){check(Json.text(library.get(film).entry,"personalReview").equals("测试短评 · 中文")&&library.get(film).entry.optInt("personalRating")==9,"collection review and rating restored");}
             check(backup.readLocal("before-restore.json").optInt("formatVersion")==2,"recovery copy covers both databases");checks.add("document import confirmation/cancel and v2 restore preserve review, manual link/unlink and exact progress; complete recovery snapshot is saved first");
+            android.util.AtomicFile interrupted=new android.util.AtomicFile(new File(context.getFilesDir(),"backup-fixture-recovery.json"));
+            try{
+                backup.writeLocal("backup-fixture-recovery.json",portable);
+                // Leave a partial new base and the prior .bak, as after interrupted AtomicFile output.
+                try(FileOutputStream output=interrupted.startWrite()){output.write('{');}
+                check(backup.readLocal("backup-fixture-recovery.json").optInt("formatVersion")==2,"interrupted local write recovers the prior complete backup");
+                Json.put(report,"atomicFileRecoveryVerified",true);checks.add("interrupted private backup output recovers the prior complete AtomicFile snapshot");
+            }finally{interrupted.delete();}
 
             button("导出到下载目录");await(()->!working(),"legacy downloads export");List<File> downloads=backup.downloadBackups();check(!downloads.isEmpty(),"public downloads file exists");exported=downloads.get(0);check(backup.readFile(exported).optInt("formatVersion")==2,"download file can be read back");
             button("从下载目录恢复");await(()->!working(),"download listing");dialog(exported.getName());await(()->!working(),"download file preview");dialog("确认");await(()->!working(),"download restore");checks.add("API22 remote settings export to shared Download/MyCinema and restore selected file through confirmation");

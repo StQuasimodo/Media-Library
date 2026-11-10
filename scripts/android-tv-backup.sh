@@ -19,6 +19,6 @@ python3 - <<'PY'
 import json,os
 report=json.load(open('.harness/tv-backup/report.json'))
 assert report['result']=='passed' and report['apiLevel']==22 and report['buildRun']==os.environ['GITHUB_RUN_ID']
-assert report['atomicRollbackVerified'] and report['separateDocumentProviderVerified'] and len(report['checks'])>=13
+assert report['atomicRollbackVerified'] and report['atomicFileRecoveryVerified'] and report['separateDocumentProviderVerified'] and len(report['checks'])>=16
 assert not report['nativeDocumentPickerUiVerified'] and not report['physicalTelevisionVerified']
 PY

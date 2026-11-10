@@ -120,7 +120,7 @@ final class TvBackup {
     void exportDocument(Uri uri) throws Exception {content(uri);byte[] bytes=encode(snapshot());try(OutputStream output=context.getContentResolver().openOutputStream(uri,"wt")){if(output==null)throw new FileNotFoundException("无法写入备份文件。");output.write(bytes);output.flush();}}
     private static void content(Uri uri){if(uri==null||!"content".equals(uri.getScheme()))throw new IllegalArgumentException("请选择系统文件服务中的备份文件。");}
     void writeLocal(String name,JSONObject value) throws Exception {write(new File(context.getFilesDir(),name),encode(value));}
-    JSONObject readLocal(String name) throws Exception {return readFile(new File(context.getFilesDir(),name));}
+    JSONObject readLocal(String name) throws Exception {try(InputStream input=new AtomicFile(new File(context.getFilesDir(),name)).openRead()){return read(input);}}
     JSONObject readFile(File file) throws Exception {try(InputStream input=new FileInputStream(file)){return read(input);}}
     private static void write(File target,byte[] bytes) throws Exception {
         AtomicFile file=new AtomicFile(target);FileOutputStream output=null;

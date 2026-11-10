@@ -1,13 +1,13 @@
 name: TV API22 validation
 on:
   push:
-    branches: [fix/tv-browser-lifecycle, fix/tv-resource-names]
+    branches: [fix/tv-browser-lifecycle, fix/tv-resource-names, feat/tv-portable-backup]
   workflow_dispatch:
     inputs:
       suite:
         description: Full playback regression or focused resource-name and catalog validation
         type: choice
-        options: [full, resource_names]
+        options: [full, resource_names, backup]
         default: full
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 35
     env:
       # Validation only: ephemeral signer; no APK is uploaded or published.
-      TV_TEST_SUITE: ${{ github.ref_name == 'fix/tv-resource-names' && 'resource_names' || inputs.suite || 'full' }}
+      TV_TEST_SUITE: ${{ github.ref_name == 'feat/tv-portable-backup' && 'backup' || github.ref_name == 'fix/tv-resource-names' && 'resource_names' || inputs.suite || 'full' }}
       TV_APK_TARGET: working
       TV_PROFILE: api22-hd-1gb
       TV_DENSITY: '160'
@@ -84,6 +84,7 @@ jobs:
             .harness/android-tv-package/report.json
             .harness/tv-regression/*.json
             .harness/tv-resource-names/*
+            .harness/tv-backup/*
             .harness/android-tv-emulator/report.json
             .harness/android-tv-emulator/network-report.json
             .harness/android-tv-emulator/instrumentation.txt

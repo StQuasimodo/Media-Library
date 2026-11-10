@@ -30,6 +30,7 @@ with zipfile.ZipFile(apk) as archive:
     for name in names:
         if re.fullmatch(r'classes\d*\.dex', name):
             assert archive.read(name)[:8] == b'dex\n035\x00', 'DEX must work on API 21/22'
+            assert b'BackupTestProvider' not in archive.read(name), 'Test document provider must never ship in the app'
 report = {
     'version': version, 'developmentBuild': True, 'minSdk': 21, 'targetSdk': 35,
     'v1SignatureVerified': True, 'nativeLibraries': True, 'cpuAbiIndependent': False,

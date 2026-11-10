@@ -25,12 +25,9 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.util.AtomicFile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,6 +60,7 @@ public final class MainActivity extends Activity {
     private int yearFilter;
     private int focusedSeason=-1;
     private boolean disposed,working;
+    private static final int EXPORT_BACKUP=701,IMPORT_BACKUP=702;
     private static final class Page {final String screen,value;Page(String screen,String value){this.screen=screen;this.value=value;}}
     interface Work<T>{T run() throws Exception;}
     interface Done<T>{void run(T value);}
@@ -103,9 +101,10 @@ public final class MainActivity extends Activity {
     }
     private TmdbClient tmdb(){return new TmdbClient(secrets,language);}
     private <T> void job(String label,Work<T> work,Done<T> done){
+        if(disposed||isFinishing())return;
         if(working){toast("上一项操作仍在进行，请稍候。");return;}working=true;busy.setText(label);int owner=generation;
         jobs.execute(()->{T result=null;Exception failure=null;try{result=work.run();}catch(Exception error){failure=error;}final T answer=result;final Exception error=failure;
-            runOnUiThread(()->{if(disposed)return;working=false;busy.setText("");if(error!=null){toast(message(error));return;}if(owner==generation)done.run(answer);else toast("操作已完成，收藏已保存在本机。");});
+            runOnUiThread(()->{if(disposed)return;working=false;busy.setText("");if(error!=null){toast(message(error));return;}if(owner==generation)done.run(answer);else toast("操作已完成，请返回原页面查看。");});
         });
     }
     private static String message(Exception error){String text=error.getMessage();return error instanceof IllegalArgumentException||error instanceof IllegalStateException?text==null?"操作失败，请重试。":text:"操作未完成，请检查网络、存储空间或输入内容。";}
@@ -244,13 +243,29 @@ public final class MainActivity extends Activity {
         content.addView(button(secrets.exists()?"TMDB配置：已保存 · 重新配置":"配置TMDB API Key",this::configureKey));if(secrets.exists())content.addView(button("清除TMDB配置",()->confirm("清除TMDB配置？","本地收藏和图片会保留。",()->{secrets.clear();show("settings","");})));
         content.addView(button("资料语言："+(language.equals("zh-CN")?"简体中文":"English"),()->{language=language.equals("zh-CN")?"en-US":"zh-CN";getPreferences(0).edit().putString("language",language).apply();show("settings","");}));
         content.addView(button("媒体源 · 夸克 / WebDAV",this::mediaSources));
-        content.addView(text("收藏与备份",19,PRIMARY));content.addView(button("创建本机备份",()->job("备份收藏…",()->{writeBackup("collection-backup.json",library.snapshot());return true;},done->toast("已保存本机收藏备份；不包含TMDB凭据。"))));
-        content.addView(button("恢复上次本机备份",()->confirm("恢复收藏备份？","当前收藏会先另存为恢复前备份，TMDB配置保留。",()->job("恢复收藏…",()->{AtomicFile file=new AtomicFile(new File(getFilesDir(),"collection-backup.json"));if(!file.getBaseFile().isFile())throw new IllegalArgumentException("还没有创建本机备份。");JSONObject data=Json.object(new String(file.readFully(),StandardCharsets.UTF_8));writeBackup("before-restore.json",library.snapshot());library.restore(data);return true;},done->{show("settings","");toast("收藏已恢复。");}))));
+        content.addView(text("收藏与备份",19,PRIMARY));content.addView(text("备份包含收藏、媒体关联和播放进度，不包含图片缓存与账号登录信息。换机后需重新连接媒体源。",14,SECONDARY));
+        content.addView(button("创建本机备份",()->job("备份收藏与播放记录…",()->{TvBackup backup=new TvBackup(this);backup.writeLocal("collection-backup.json",backup.snapshot());return true;},done->toast("已保存本机备份，包含媒体关联与播放进度。"))));
+        content.addView(button("导出备份文件",()->backupDocument(true)));content.addView(button("从备份文件恢复",()->backupDocument(false)));
+        if(android.os.Build.VERSION.SDK_INT<=22){content.addView(button("导出到下载目录",()->job("导出备份…",()->new TvBackup(this).exportDownloads(),file->toast("已导出到 下载/MyCinema/"+file.getName()+"，可用文件管理器复制到U盘。"))));content.addView(button("从下载目录恢复",this::downloadBackups));}
+        content.addView(button("恢复上次本机备份",()->restoreLocal("collection-backup.json")));content.addView(button("恢复操作前备份",()->restoreLocal("before-restore.json")));
         content.addView(text("使用遥控器方向键浏览，确认键选择，返回键退回上一页。收藏和图片保存在电视本机；卸载会清除应用数据。",14,SECONDARY));
         content.addView(text("影视资料与图片来自TMDB。本产品未获得TMDB认可或认证。",12,SECONDARY));
     }
     private void configureKey(){LinearLayout form=column();EditText field=field(form,"TMDB API Key / Read Access Token","",false);field.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);form.addView(text("验证成功后由Android Keystore保护保存。",13,SECONDARY));formDialog("配置TMDB",form,()->{String key=field.getText().toString().trim();if(key.isEmpty())throw new IllegalArgumentException("请输入TMDB凭据。");job("验证TMDB…",()->{TmdbClient.verifyKey(key,language);secrets.save(key);return true;},done->{show("settings","");toast("TMDB配置已验证并安全保存。");});});}
-    private void writeBackup(String name,JSONObject data) throws Exception {AtomicFile file=new AtomicFile(new File(getFilesDir(),name));FileOutputStream output=null;try{output=file.startWrite();output.write(data.toString().getBytes(StandardCharsets.UTF_8));file.finishWrite(output);}catch(Exception error){if(output!=null)file.failWrite(output);throw error;}}
+    private void backupDocument(boolean export){
+        if(disposed||isFinishing()||working){toast("请等待当前操作完成。");return;}
+        Intent request=new Intent(export?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(export?"application/json":"*/*");
+        if(export)request.putExtra(Intent.EXTRA_TITLE,TvBackup.filename());
+        try{startActivityForResult(request,export?EXPORT_BACKUP:IMPORT_BACKUP);}catch(android.content.ActivityNotFoundException unavailable){toast(android.os.Build.VERSION.SDK_INT<=22?"电视没有系统文件选择器，请使用下载目录备份入口。":"未找到系统文件选择器，请启用可用的文件服务。");}
+    }
+    @Override protected void onActivityResult(int request,int result,Intent data){
+        super.onActivityResult(request,result,data);if(request!=EXPORT_BACKUP&&request!=IMPORT_BACKUP||disposed||isFinishing())return;if(result!=RESULT_OK||data==null||data.getData()==null)return;
+        final Uri uri=data.getData();if(request==EXPORT_BACKUP)job("导出备份…",()->{new TvBackup(this).exportDocument(uri);return true;},done->toast("备份文件已导出。"));
+        else job("读取备份…",()->new TvBackup(this).readDocument(uri),this::confirmRestore);
+    }
+    private void confirmRestore(JSONObject data){boolean media=TvBackup.includesMedia(data);confirm(media?"恢复完整备份？":"恢复旧版收藏备份？",media?"备份将替换当前收藏、媒体关联和播放进度。当前内容会先保存为恢复前备份，已有登录配置保留。":"旧格式仅恢复收藏，现有媒体关联和进度保留，部分关联可能需要重新选择。当前内容会先保存为恢复前备份。",()->job("恢复备份…",()->{new TvBackup(this).restore(data);return true;},done->{show("settings","");toast(media?"收藏、媒体关联和进度已恢复。":"旧版收藏已恢复，现有媒体关联和进度保留。");}));}
+    private void restoreLocal(String name){confirm("恢复收藏备份？","将恢复备份包含的收藏、关联和进度；旧格式仅恢复收藏。当前内容会先另存为恢复前备份，登录配置保留。",()->job("恢复备份…",()->{TvBackup backup=new TvBackup(this);backup.restore(backup.readLocal(name));return true;},done->{show("settings","");toast("备份已恢复。");}));}
+    private void downloadBackups(){job("读取下载目录备份…",()->new TvBackup(this).downloadBackups(),files->{if(files.isEmpty()){toast("下载/MyCinema目录中没有可用备份，可用文件管理器将备份复制到这里。");return;}String[] labels=new String[files.size()];for(int i=0;i<files.size();i++)labels[i]=files.get(i).getName();choose("选择下载目录备份",labels,index->job("读取备份…",()->new TvBackup(this).readFile(files.get(index)),this::confirmRestore));});}
     private EditText field(LinearLayout form,String label,String initial,boolean multiple){form.addView(text(label,13,SECONDARY));EditText input=new EditText(this);input.setText(initial);input.setTextColor(PRIMARY);input.setTextSize(16);input.setSingleLine(!multiple);if(multiple)input.setMaxLines(3);form.addView(input,new LinearLayout.LayoutParams(-1,-2));return input;}
     private AlertDialog formDialog(String title,LinearLayout form,Runnable save){ScrollView scroll=new ScrollView(this);scroll.setPadding(dp(20),0,dp(20),0);scroll.addView(form);AlertDialog dialog=new AlertDialog.Builder(this).setTitle(title).setView(scroll).setPositiveButton("保存",null).setNegativeButton("取消",null).create();dialog.setOnShowListener(ignored->{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{try{save.run();dialog.dismiss();}catch(Exception error){toast(message(error));}});dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);});dialog.show();return dialog;}
     private void confirm(String title,String description,Runnable action){new AlertDialog.Builder(this).setTitle(title).setMessage(description).setNegativeButton("取消",null).setPositiveButton("确认",(dialog,n)->{try{action.run();}catch(Exception error){toast(message(error));}}).show();}

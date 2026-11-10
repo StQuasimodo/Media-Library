@@ -1,0 +1,8 @@
+{
+  "publicApiAddress": "18.155.173.53",
+  "apiLevel": 22,
+  "realTmdbUnauthorizedResponseVerified": true,
+  "actualAccountMetadataVerified": false,
+  "probe": "public HTTPS configuration with deliberately invalid non-secret key",
+  "diagnosticClass": "IllegalArgumentException"
+}

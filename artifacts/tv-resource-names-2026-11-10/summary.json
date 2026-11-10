@@ -1,0 +1,24 @@
+{
+  "source": "cb7c3aac75a1219aac0a57f10bf236e9ac1a9af3",
+  "run": "42808340397",
+  "url": "https://github.com/StQuasimodo/Media-Library/actions/runs/42808340397",
+  "conclusion": "success",
+  "apiLevel": 22,
+  "runtimeAbi": "x86",
+  "sharedCases": 20,
+  "filenameCases": 29,
+  "matchingChecks": 9,
+  "catalogPreservationChecks": 5,
+  "linuxVitest": {
+    "files": 3,
+    "passed": 53,
+    "failed": 0
+  },
+  "fixtureSha256": "c32995927143cf0842e16e26e72ed5038601ba54feacb6e94948a4870e6b66ca",
+  "lintErrors": 0,
+  "lintWarnings": 18,
+  "fullPlaybackRegressionRerun": false,
+  "installablePackagePublished": false,
+  "realQuarkAccountVerified": false,
+  "physicalTelevisionVerified": false
+}

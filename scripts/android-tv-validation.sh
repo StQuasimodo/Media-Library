@@ -9,6 +9,7 @@ bash scripts/android-tv-smoke.sh
 case "$suite" in
   resource_names) bash scripts/android-tv-resource-names.sh ;;
   full)
+    bash scripts/android-tv-resource-names.sh
     bash scripts/android-tv-playback.sh
     bash scripts/android-tv-regression.sh
     ;;

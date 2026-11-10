@@ -1,5 +1,11 @@
 # 验证与交付
 
+## TV文件名与特别篇匹配（2026-11-10）
+
+[API22聚焦流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42808340397)通过，实际构建/测试源码`cb7c3aac75a1219aac0a57f10bf236e9ac1a9af3`。29组命名样本、9项匹配约束、5项真实SQLite数据保留检查通过；同轮基础收藏/Keystore/界面/遥控器冒烟、公开无效Key401、Gradle/Lint（0错误/18警告）、API21/v1签名/ARMv7与x86打包检查通过。Windows解析代码在Linux上的相关Vitest共3文件/53项通过，TypeScript与Java8编译检查通过。[行为、失败记录与证据](TV-RESOURCE-NAMES-2026-11-10.md)。
+
+本轮未重跑90秒取流或系统重启回归，也未重新运行Windows窗口；不将此前完整流程算成本轮新结果。版本、数据库及凭据格式不变，未分发安装包。真实账号、ARMv7运行和目标电视未验收。
+
 ## TV目录浏览取消与生命周期（2026-11-10）
 
 [完整API22流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42801559632)通过，实际构建/测试源码`1247c06d46f167f6fbd22fa3732783d1f95c5fcc`。Gradle/Lint（0错误/18警告）、API21/v1签名/ARMv7与x86打包检查、真实API22 x86的原始夸克/外部DAV/本机DAV阻塞取消、目录会话范围及撤销、扫描中销毁/旧按钮/关联与进度保留、独立播放会话取流通过；原LibVLC90秒、断流/重连及收藏/进程/模拟器重启回归通过。[修复、原始JSON与边界](TV-BROWSER-LIFECYCLE-2026-11-10.md)。

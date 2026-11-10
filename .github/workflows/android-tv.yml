@@ -80,10 +80,7 @@ jobs:
           pre-emulator-launch-script: python3 scripts/configure-tv-avd.py
           disable-animations: true
           emulator-options: -writable-system -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
-          script: |
-            bash scripts/android-tv-smoke.sh
-            bash scripts/android-tv-playback.sh
-            bash scripts/android-tv-regression.sh
+          script: bash scripts/android-tv-validation.sh
       - name: Prepare installable development preview
         run: |
           mkdir -p android-tv/release
@@ -115,3 +112,4 @@ jobs:
             .harness/tv-playback/*.txt
             .harness/tv-playback/*.png
             .harness/tv-playback/*.log
+            .harness/tv-resource-names/*

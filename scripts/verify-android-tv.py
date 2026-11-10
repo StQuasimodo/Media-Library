@@ -18,6 +18,7 @@ assert 'Verified using v1 scheme (JAR signing): true' in signature
 assert 'io.mycinema.tv' in badging
 with zipfile.ZipFile(apk) as archive:
     names = archive.namelist()
+    assert 'assets/resource-name-cases.json' not in names, 'Parser fixtures belong only in the instrumentation APK'
     assert any(re.fullmatch(r'META-INF/[^/]+\.RSA', name) for name in names)
     native = [name for name in names if name.startswith('lib/') and name.endswith('.so')]
     assert {name.split('/')[1] for name in native} == {'armeabi-v7a', 'x86'}

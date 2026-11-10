@@ -1,8 +1,14 @@
-name: TV browser lifecycle API22 validation
+name: TV API22 validation
 on:
   push:
-    branches: [fix/tv-browser-lifecycle]
+    branches: [fix/tv-browser-lifecycle, fix/tv-resource-names]
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Full playback regression or focused resource-name and catalog validation
+        type: choice
+        options: [full, resource_names]
+        default: full
 permissions:
   contents: read
 concurrency:
@@ -14,6 +20,7 @@ jobs:
     timeout-minutes: 35
     env:
       # Validation only: ephemeral signer; no APK is uploaded or published.
+      TV_TEST_SUITE: ${{ github.ref_name == 'fix/tv-resource-names' && 'resource_names' || inputs.suite || 'full' }}
       TV_APK_TARGET: working
       TV_PROFILE: api22-hd-1gb
       TV_DENSITY: '160'
@@ -42,6 +49,7 @@ jobs:
       - name: Enable emulator acceleration
         run: sudo chmod a+rw /dev/kvm
       - name: Prepare full UI protocol fixture without application hooks
+        if: env.TV_TEST_SUITE == 'full'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
@@ -64,12 +72,16 @@ jobs:
           emulator-options: -writable-system -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720 -dpi-device 160
           script: |
             bash scripts/android-tv-smoke.sh
-            bash scripts/android-tv-playback.sh
-            bash scripts/android-tv-regression.sh
+            if [ "$TV_TEST_SUITE" = resource_names ]; then
+              bash scripts/android-tv-resource-names.sh
+            else
+              bash scripts/android-tv-playback.sh
+              bash scripts/android-tv-regression.sh
+            fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tv-browser-lifecycle-evidence
+          name: tv-${{ env.TV_TEST_SUITE }}-evidence
           if-no-files-found: warn
           path: |
             .harness/tv-playback/report.json
@@ -78,4 +90,8 @@ jobs:
             .harness/tv-playback/logcat.txt
             .harness/android-tv-package/report.json
             .harness/tv-regression/*.json
+            .harness/tv-resource-names/*
+            .harness/android-tv-emulator/report.json
+            .harness/android-tv-emulator/network-report.json
+            .harness/android-tv-emulator/instrumentation.txt
             android-tv/app/build/reports/lint-results-debug.*

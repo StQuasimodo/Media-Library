@@ -32,7 +32,7 @@ final class MpvBridgeScenario {
             session=CinemaApplication.dav(activity).openPlayback(file,scope);
             check("127.0.0.1".equals(session.endpoint.url.host()),"mpv source is loopback");
             mpv=new MPVLib();final MPVLib engine=mpv;mpv.create(activity.getApplicationContext());created=true;
-            option(mpv,"msg-level","all=no");option(mpv,"vo","gpu");option(mpv,"gpu-context","android");option(mpv,"opengl-es","yes");option(mpv,"ao","null");
+            option(mpv,"msg-level","all=no");option(mpv,"vo","gpu");option(mpv,"gpu-context","android");option(mpv,"opengl-es","yes");option(mpv,"ao","audiotrack");
             option(mpv,"hwdec","auto");option(mpv,"hwdec-software-fallback","1");
             option(mpv,"http-header-fields","Authorization: "+session.endpoint.headers.get("Authorization"));
             option(mpv,"idle","yes");mpv.init();
@@ -52,6 +52,14 @@ final class MpvBridgeScenario {
             await(()->time(engine)>1.5,"mpv advances on scoped Quark stream");
             await(()->{Integer w=engine.getPropertyInt("width"),h=engine.getPropertyInt("height");return w!=null&&h!=null&&w==1920&&h==1080;},"mpv video dimensions");
             await(()->{Integer count=engine.getPropertyInt("track-list/count");return count!=null&&count>=4;},"mpv tracks available");
+            await(()->"audiotrack".equals(engine.getPropertyString("current-ao"))&&engine.getPropertyInt("audio-out-params/samplerate")!=null,"Android AudioTrack output initialized");
+            Integer trackCount=mpv.getPropertyInt("track-list/count");int[] audioIds=new int[2];int audioFound=0;
+            for(int i=0;i<trackCount&&audioFound<2;i++)if("audio".equals(mpv.getPropertyString("track-list/"+i+"/type"))){Integer id=mpv.getPropertyInt("track-list/"+i+"/id");if(id!=null)audioIds[audioFound++]=id;}
+            check(audioFound==2&&audioIds[0]!=audioIds[1],"two audio tracks present");
+            mpv.setPropertyInt("aid",audioIds[1]);
+            await(()->{Integer selected=engine.getPropertyInt("aid"),rate=engine.getPropertyInt("audio-out-params/samplerate");return selected!=null&&selected==audioIds[1]&&rate!=null&&rate>0&&"audiotrack".equals(engine.getPropertyString("current-ao"));},"second audio track selected with output active");
+            mpv.setPropertyInt("aid",audioIds[0]);
+            await(()->{Integer selected=engine.getPropertyInt("aid"),rate=engine.getPropertyInt("audio-out-params/samplerate");return selected!=null&&selected==audioIds[0]&&rate!=null&&rate>0&&"audiotrack".equals(engine.getPropertyString("current-ao"));},"first audio track restored with output active");
             Integer count=mpv.getPropertyInt("track-list/count");int[] subIds=new int[2];int found=0;
             for(int i=0;i<count&&found<2;i++)if("sub".equals(mpv.getPropertyString("track-list/"+i+"/type"))){Integer id=mpv.getPropertyInt("track-list/"+i+"/id");if(id!=null)subIds[found++]=id;}
             check(found==2,"two subtitle tracks present");

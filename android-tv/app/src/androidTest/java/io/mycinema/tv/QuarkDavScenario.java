@@ -94,7 +94,7 @@ final class QuarkDavScenario {
             try(Response response=request(endpoint,"HEAD",file.url.toString(),null,null,true)){check(response.code()==200&&response.body().bytes().length==0&&Long.parseLong(response.header("Content-Length"))>1024,"HEAD gives real length without body");}
             checks.add("app directory and playback paths use the generated TV WebDAV; nested fid routes, HEAD length and byte-exact206 work");
             MpvBridgeScenario.run(test,owner,video.json());
-            checks.add("test-only mpv renders scoped loopback Quark source with dual subtitle text, remote seeks, pauses, resumes and revokes session");
+            checks.add("test-only mpv renders scoped loopback Quark source with dual subtitle text, switches audio tracks with AudioTrack output, remote seeks, pauses, resumes and revokes session");
             recovery(endpoint,file,manager,report);
             Json.put(report,"architectureChecks","running");new PlaybackArchitectureScenario(context).run(file,video,report);Json.put(report,"architectureChecks","passed");
             checks.add("four-MiB sequential transport, exact segment boundary and suffix, HEAD through GET probe, wrong initial Range rejection, concurrent expiry deduplication, underlying API cancellation");

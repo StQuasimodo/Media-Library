@@ -44,8 +44,8 @@ final class BackupScenario {
     private void rejects(Work work,String label) throws Exception {String before=state();boolean failed=false;try{work.run();}catch(Exception expected){failed=true;}check(failed&&before.equals(state()),label);checks.add(label);}
     private Uri uri(String name){return Uri.parse("content://io.mycinema.tv.test.backups/"+name);}
     void run(String buildRun){
-        JSONObject report=new JSONObject();Bundle result=new Bundle();JSONObject original=null;String[] old=new String[3];SecretStore[] stores={new SecretStore(context),new SecretStore(context,"quark","夸克"),new SecretStore(context,"webdav","WebDAV")};File exported=null;
-        Json.put(report,"buildRun",buildRun);Json.put(report,"apiLevel",android.os.Build.VERSION.SDK_INT);
+        JSONObject report=new JSONObject();Bundle result=new Bundle();JSONObject original=null;String[] old=new String[3];SecretStore[] stores={new SecretStore(context),new SecretStore(context,"quark","夸克"),new SecretStore(context,"webdav","WebDAV")};File exported=null,legacyFile=null;
+        Json.put(report,"buildRun",buildRun);Json.put(report,"apiLevel",android.os.Build.VERSION.SDK_INT);Json.put(report,"sharedStorageState",android.os.Environment.getExternalStorageState());
         try{
             original=backup.snapshot();for(int i=0;i<stores.length;i++)old[i]=stores[i].read();
             stores[0].save("backup-fixture-metadata-secret");stores[1].save("__puus=backup-fixture-cookie");stores[2].save("{\"url\":\"https://example.test/dav/\",\"user\":\"fixture-user\",\"password\":\"backup-fixture-password\"}");
@@ -82,7 +82,9 @@ final class BackupScenario {
 
             JSONObject legacy;try(Library library=new Library(context)){legacy=library.snapshot();JSONObject extra=new JSONObject();Json.put(extra,"title","旧版恢复前新增");Json.put(extra,"mediaType","movie");library.saveCandidate(extra);}
             String mediaBefore=backup.snapshot().getJSONObject("media").toString();backup.restore(legacy);check(mediaBefore.equals(backup.snapshot().getJSONObject("media").toString()),"v1 restore leaves media/progress unchanged");checks.add("legacy v1 collection backup remains readable and restores only collection while retaining current media/progress");
+            legacyFile=new File(exported.getParentFile(),"legacy-collection.json");try(FileOutputStream output=new FileOutputStream(legacyFile)){output.write(TvBackup.encode(legacy));}check(backup.downloadBackups().contains(legacyFile),"legacy filename is discoverable without new export prefix");checks.add("downloads import discovers legacy JSON filenames as well as current exports");
             JSONObject bad=Json.copy(portable);Json.put(bad,"formatVersion",99);rejects(()->backup.restore(bad),"unknown version rejected without data change");
+            JSONObject fractional=Json.copy(portable);Json.put(fractional,"formatVersion",2.5);rejects(()->backup.restore(fractional),"fractional version is rejected instead of rounded down");
             JSONObject duplicate=Json.copy(portable);duplicate.getJSONObject("media").getJSONArray("files").put(duplicate.getJSONObject("media").getJSONArray("files").getJSONObject(0));rejects(()->backup.restore(duplicate),"duplicate media identity rejected before restore");
             rejects(()->TvBackup.read(new ByteArrayInputStream("{\"format\":".getBytes(StandardCharsets.UTF_8))),"truncated JSON rejected without data change");
             rejects(()->backup.exportDocument(uri("denied.json")),"provider write failure does not change live data");
@@ -100,7 +102,7 @@ final class BackupScenario {
             Json.put(report,"result","passed");Json.put(report,"nativeDocumentPickerUiVerified",false);Json.put(report,"separateDocumentProviderVerified",true);Json.put(report,"physicalTelevisionVerified",false);Json.put(report,"realAccountVerified",false);result.putString("result","passed");
         }catch(Throwable failure){Json.put(report,"result","failed");Json.put(report,"error",failure.toString());result.putString("result","failed");result.putString("error",failure.toString());}
         finally{
-            try{if(original!=null)backup.restore(original);for(int i=0;i<stores.length;i++)if(old[i]!=null){if(old[i].isEmpty())stores[i].clear();else stores[i].save(old[i]);}if(exported!=null)exported.delete();}catch(Exception cleanup){result.putString("result","failed");Json.put(report,"result","failed");Json.put(report,"cleanupError",cleanup.getClass().getSimpleName());}
+            try{if(original!=null)backup.restore(original);for(int i=0;i<stores.length;i++)if(old[i]!=null){if(old[i].isEmpty())stores[i].clear();else stores[i].save(old[i]);}if(exported!=null)exported.delete();if(legacyFile!=null)legacyFile.delete();}catch(Exception cleanup){result.putString("result","failed");Json.put(report,"result","failed");Json.put(report,"cleanupError",cleanup.getClass().getSimpleName());}
             if(mainMonitor!=null){Activity owner=mainMonitor.getLastActivity();if(owner!=null)test.runOnMainSync(owner::finish);test.removeMonitor(mainMonitor);}
             Json.put(report,"checks",new JSONArray(checks));try(FileOutputStream output=new FileOutputStream(new File(context.getFilesDir(),"tv-backup-report.json"))){output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));}catch(Exception failure){result.putString("result","failed");}
             test.finish("passed".equals(result.getString("result"))?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);

@@ -65,6 +65,7 @@ jobs:
           target: default
           arch: x86
           profile: Nexus 5
+          sdcard-path-or-size: 512M
           ram-size: 1024M
           heap-size: 96M
           pre-emulator-launch-script: python3 scripts/configure-tv-avd.py

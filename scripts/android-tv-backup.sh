@@ -4,6 +4,7 @@ case "$(adb get-serialno)" in emulator-*) ;; *) echo 'Disposable emulator requir
 test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = 22
 out=.harness/tv-backup
 mkdir -p "$out"
+timeout 10s adb shell dumpsys mount > "$out/storage.txt"
 adb shell run-as io.mycinema.tv rm -f files/tv-backup-report.json files/tv-backup-settings.png
 collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-backup-report.json > "$out/report.json" || true

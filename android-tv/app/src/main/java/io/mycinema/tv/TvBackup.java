@@ -67,9 +67,9 @@ final class TvBackup {
     }
     static boolean includesMedia(JSONObject value){return value.optInt("formatVersion")==2;}
     static void validate(JSONObject value){
-        if(!Json.text(value,"format").equals(FORMAT))throw invalid();int version=value.optInt("formatVersion");
+        if(!Json.text(value,"format").equals(FORMAT))throw invalid();long version=number(value,"formatVersion");
         if(version!=1&&version!=2)throw new IllegalArgumentException("备份版本不兼容，请使用兼容版本的 My Cinema TV。");
-        JSONObject collection=version==1?value:value.optJSONObject("collection");if(collection==null||!Json.text(collection,"format").equals(FORMAT)||collection.optInt("formatVersion")!=1)throw invalid();
+        JSONObject collection=version==1?value:value.optJSONObject("collection");if(collection==null||!Json.text(collection,"format").equals(FORMAT)||number(collection,"formatVersion")!=1)throw invalid();
         for(String table:new String[]{"films","entries","collections","resources","members"})if(collection.optJSONArray(table)==null||collection.optJSONArray(table).length()>10000)throw invalid();
         if(version==2)media(value.optJSONObject("media"));
     }
@@ -127,11 +127,11 @@ final class TvBackup {
         try{output=file.startWrite();output.write(bytes);file.finishWrite(output);}catch(Exception failure){if(output!=null)file.failWrite(output);throw failure;}
     }
     static String filename(){return "My-Cinema-TV-Backup-"+new SimpleDateFormat("yyyyMMdd-HHmmss",Locale.ROOT).format(new Date())+"-"+UUID.randomUUID().toString().substring(0,8)+".json";}
-    private static File downloads(){
+    private static File downloads(boolean writing){
         if(android.os.Build.VERSION.SDK_INT>22)throw new IllegalStateException("请使用系统文件选择器导出或恢复备份。");
-        if(!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))throw new IllegalStateException("共享存储未就绪，请检查存储设备。");
+        String state=Environment.getExternalStorageState();if(!Environment.MEDIA_MOUNTED.equals(state)&&(writing||!Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)))throw new IllegalStateException("共享存储未就绪，请检查存储设备。");
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MyCinema");
     }
-    File exportDownloads() throws Exception {File directory=downloads();if(!directory.isDirectory()&&!directory.mkdirs())throw new IOException("无法创建下载备份目录。");File file=new File(directory,filename());write(file,encode(snapshot()));return file;}
-    List<File> downloadBackups(){List<File> result=new ArrayList<>();File[] files=downloads().listFiles();if(files!=null)for(File file:files)if(file.isFile()&&file.getName().startsWith("My-Cinema-TV-Backup-")&&file.getName().endsWith(".json")&&file.length()<=MAX_BYTES)result.add(file);java.util.Collections.sort(result,(a,b)->b.getName().compareTo(a.getName()));return result;}
+    File exportDownloads() throws Exception {File directory=downloads(true);if(!directory.isDirectory()&&!directory.mkdirs())throw new IOException("无法创建下载备份目录。");File file=new File(directory,filename());write(file,encode(snapshot()));return file;}
+    List<File> downloadBackups(){List<File> result=new ArrayList<>();File[] files=downloads(false).listFiles();if(files!=null)for(File file:files)if(file.isFile()&&file.getName().toLowerCase(Locale.ROOT).endsWith(".json")&&file.length()<=MAX_BYTES)result.add(file);java.util.Collections.sort(result,(a,b)->b.getName().compareTo(a.getName()));return result;}
 }

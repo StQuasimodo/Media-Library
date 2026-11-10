@@ -1,5 +1,11 @@
 # 验证与交付
 
+## TV签名恢复入口与隔离迁移（2026-11-10）
+
+[API22流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42835560364)通过，构建/测试源码`10403043043609d288c107800317fd2b510b254c`。真实已发布alpha.3 APK从原生界面创建收藏、评分和理由；只读导出、异签名覆盖拒绝、并行身份导入及同一临时测试签名code7→8升级通过，原库哈希不变。测试身份的合成加密凭据、媒体人工关联及45000ms进度保留。7项签名恢复/8项旧库转换测试、Gradle/Lint（0错误/17警告）、签名关系及API21门槛通过。[详细报告、首轮失败原因与原始证据](TV-SIGNING-MIGRATION-2026-11-10.md)。
+
+原缓存不存在、约定Secret未配置，`originalSignerReady=false`；本轮没有恢复原密钥或完成原身份覆盖升级。没有发布任何测试签名APK，正式ID/版本/数据库schema不变；未重跑播放90秒/系统重启、Windows、ARMv7运行、真实账号或长虹实机。
+
 ## TV可导出备份与统一恢复（2026-11-10）
 
 [API22备份聚焦流程](https://github.com/StQuasimodo/Media-Library/actions/runs/42814428400)通过，实际构建/测试源码`296cc0d841b2f2acffbaf57b9a94ff2e9e2182b6`。16项检查覆盖完整JSON导出/恢复、确认取消、下载目录往返、格式1与旧文件名、账号凭据保持及过滤、损坏/过大/异常版本/重复身份、文件服务读写失败、两库后半段写入失败回滚和本机AtomicFile中断恢复。同轮命名29组/匹配9项/SQLite保留5项、基础收藏/Keystore/界面/遥控器冒烟、公开无效Key401通过；Gradle/Lint（0错误/18警告）、API21/v1签名与ARMv7/x86打包检查通过。[原始证据、截图与失败记录](TV-BACKUP-2026-11-10.md)。

@@ -1,0 +1,17 @@
+{
+  "workflowRun": "https://github.com/StQuasimodo/Media-Library/actions/runs/42835560364",
+  "buildSource": "10403043043609d288c107800317fd2b510b254c",
+  "apiLevel": 22,
+  "architectureRuntime": "x86",
+  "localSigningChecksPassed": 7,
+  "localLegacyExportChecksPassed": 8,
+  "lintErrors": 0,
+  "lintWarnings": 17,
+  "originalSignerRestored": false,
+  "originalSignerUpgradeVerified": false,
+  "testIdentityOnly": true,
+  "installablePackagePublished": false,
+  "physicalTelevisionVerified": false,
+  "windowsVerified": false,
+  "playbackRegressionRerun": false
+}

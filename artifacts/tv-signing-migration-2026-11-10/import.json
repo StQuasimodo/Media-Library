@@ -1,0 +1,12 @@
+{
+  "phase": "import",
+  "buildRun": "42835560364",
+  "apiLevel": 22,
+  "packageId": "io.mycinema.tv.preview",
+  "versionCode": 7,
+  "collectionIdentitiesPreserved": true,
+  "keystoreCredentialPreserved": true,
+  "mediaProgressPreserved": true,
+  "physicalTelevisionVerified": false,
+  "result": "passed"
+}

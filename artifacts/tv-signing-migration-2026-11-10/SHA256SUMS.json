@@ -1,0 +1,13 @@
+{
+  "BUILD.json": "0325e394ac652774e3e5a6352a87de6d2ace6f158739934aa673aaaf7f3b1aee",
+  "import-instrumentation.txt": "fa10ad6cbda90582c1d2777ff0f0cc28c7e7b353c3c7b71c30c04c2f43f438f3",
+  "import.json": "642be61d0c872be8522ebb71ccdc5998fd893fc6a0ecd8e3c0a475aa41afe946",
+  "import.png": "0d32db5467b6793ed2d2a517ebab7f94c8e09df61f66e8ea29d52d4b8b3a1870",
+  "lint-results-debug.txt": "4182462ed542dc7d400222ee1acc3225ce0d2a9ca1a563590914556bd7586244",
+  "original-signer.json": "c910d9b2cf637213017c6aaf8ab645b7e9d066731edd29bb0a10f838c9502cde",
+  "signatures.json": "58d2b6bd18a02f19d75fd1fefc4a320459d46c2bd633ffa7033737b1a205c6e0",
+  "summary.json": "e5dc6b1268bd2a9d463c7488a23484e76414b98e22f7403cbbd89b60873d22ca",
+  "upgrade-instrumentation.txt": "fa10ad6cbda90582c1d2777ff0f0cc28c7e7b353c3c7b71c30c04c2f43f438f3",
+  "upgrade.json": "369cddca147baa51ea1531ff4ae97ae19d775f5200912d6a2ec5fb853b3fb9bc",
+  "upgrade.png": "0d32db5467b6793ed2d2a517ebab7f94c8e09df61f66e8ea29d52d4b8b3a1870"
+}

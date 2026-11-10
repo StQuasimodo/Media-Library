@@ -1,0 +1,32 @@
+name: Publish signed update feeds
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      TV_DEVELOPMENT_KEYSTORE_BASE64:
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: signed-update-feeds
+  cancel-in-progress: false
+jobs:
+  feeds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TV_DEVELOPMENT_KEYSTORE_BASE64: ${{ secrets.TV_DEVELOPMENT_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Restore only the pinned private signer
+        run: bash scripts/tv-dev-signing.sh
+      - name: Sign published asset identities and refresh public feeds
+        run: python3 scripts/publish-update-feeds.py --publish
+      - name: Remove runner-only private material
+        if: always()
+        run: rm -f ~/.android/mycinema-tv-debug.keystore

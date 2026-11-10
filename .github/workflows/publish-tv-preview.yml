@@ -35,3 +35,10 @@ jobs:
           node-version: '24'
       - name: Validate verified run and download original files
         run: node scripts/publish-tv-preview.mjs
+
+  update-feeds:
+    needs: publish
+    permissions:
+      contents: write
+    uses: ./.github/workflows/update-feeds.yml
+    secrets: inherit

@@ -52,3 +52,10 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
           path: .harness/nsis-shortcut-*/report.json
+
+  update-feeds:
+    needs: publish
+    permissions:
+      contents: write
+    uses: ./.github/workflows/update-feeds.yml
+    secrets: inherit

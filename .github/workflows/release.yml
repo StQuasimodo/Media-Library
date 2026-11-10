@@ -92,3 +92,10 @@ jobs:
             .harness/desktop-smoke-*/*.png
             .harness/credential-upgrade-*/report-*.json
             .harness/nsis-shortcut-*/report.json
+
+  update-feeds:
+    needs: release
+    permissions:
+      contents: write
+    uses: ./.github/workflows/update-feeds.yml
+    secrets: inherit

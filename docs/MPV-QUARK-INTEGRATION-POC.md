@@ -17,3 +17,9 @@ The previous run 42636645962 failed before the mpv experiment because the folder
 ## Dual subtitle playback through the scoped relay
 
 [Run 42641317749](https://github.com/StQuasimodo/Media-Library/actions/runs/42641317749), source `dea3b44`, added two distinct embedded text subtitles to the synthetic 1080p test source. Instrumentation selected both mpv subtitle tracks while playing through My Cinema's scoped Quark relay, verified the two current subtitle texts, and captured the [actual app-window screenshot](../artifacts/mpv-quark-integration/api22-dual-subtitles.png) showing both tracks. Remote pause, seek and resume, lease revocation and the pre-existing LibVLC/Quark and collection regressions passed on API22 x86. The mpv path still disables audio output and exists only in the test APK; this is not a production mpv player or a real-account/ARMv7 television result.
+
+## Audio output and track switching
+
+[Run 42736911487](https://github.com/StQuasimodo/Media-Library/actions/runs/42736911487), source `9b7ae28`, exercised mpv over the same scoped Quark relay with `ao=audiotrack`. It required `current-ao` to report `audiotrack` and a valid audio output sample rate, enumerated two audio tracks, selected the second then restored the first, and verified each selection while the output stayed initialized. The dual embedded subtitles, screenshot, remote controls, scope revocation and existing LibVLC/Quark regression also passed on API22 x86.
+
+The emulator used `-noaudio`, so this confirms Android's software output path and selected track properties only; it does not establish audible output, switching quality, surround, passthrough, or sync on the physical Changhong television. Native audio-thread and buffer warnings occurred in the emulator logs and need device-level investigation before claiming glitch-free playback. mpv remains confined to the test APK, not yet a selectable production player.

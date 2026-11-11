@@ -111,3 +111,11 @@ export function mediaLabel(mediaType: MediaType): string {
 export function statusLabel(status: WatchStatus): string {
   return WATCH_STATUS_LABEL[status];
 }
+
+/** Old whole-show rotations are never presented as verified season artwork. */
+export function backdropUrl(film:import('@shared/types').Film):string|null {
+  const id=film.mediaType==='tv'&&film.externalId?/^(\d+):season:(\d+)$/.exec(film.externalId):null;
+  const path=film.backdropPath;
+  if(id&&path&&!path.startsWith('backdrop/manual/')&&!path.startsWith(`backdrop/season/${id[1]}-${id[2]}/`))return null;
+  return imageUrl(path);
+}

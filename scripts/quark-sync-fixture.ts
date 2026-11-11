@@ -56,7 +56,7 @@ export function installQuarkSyncFixture(profile: string) {
       const poster=path==='/tv/603/season/1'?'/season-fixture.png':path==='/tv/603/season/2'?'/season2-fixture.png':
         path==='/tv/603'?'/sync-fixture.png':path.includes('/tv/1396/season/')?'/breaking-season.jpg':'/breaking.jpg';
       return Response.json({posters:[{file_path:poster,iso_639_1:'en',width:1000,height:1500}],
-        backdrops:path==='/tv/603'?['/season1-still.png','/season2-still.png'].map(file_path=>({file_path,iso_639_1:null,width:1920,height:1080})):[]});
+        backdrops:(path==='/tv/603/season/1'?['/season1-still.png']:path==='/tv/603/season/2'?['/season2-still.png']:path==='/tv/603'?['/season1-still.png','/season2-still.png']:[]).map(file_path=>({file_path,iso_639_1:'en',width:1920,height:1080}))});
     }
     if(url.pathname.endsWith('/tv/1396'))return Response.json(breaking);
     if(url.pathname.endsWith('/movie/550'))return refreshFailure ? Response.json({}, {status:404}) : Response.json({id:550,title:'搏击俱乐部',original_title:'Fight Club',overview:'全部刷新受控资料',runtime:139,genres:[]});

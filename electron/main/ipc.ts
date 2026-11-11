@@ -28,12 +28,12 @@ function trustedQuarkPage(event: IpcMainInvokeEvent) {
 export function registerIpc(runtime: AppRuntime): void {
   const refreshChannels = new Set(['library:refreshAll', 'library:refreshStatus', 'library:cancelRefresh']);
   const refreshConflicts = new Set([
-    'data:restore', 'metadata:refresh', 'metadata:resolveSeries', 'metadata:saveKey', 'metadata:clearKey',
+    'metadata:selectArtwork', 'data:restore', 'metadata:refresh', 'metadata:resolveSeries', 'metadata:saveKey', 'metadata:clearKey',
     'library:updateFilm', 'quark:chooseTool', 'quark:browse', 'quark:selectFolder', 'quark:scan',
   ]);
   const handle = <T>(channel: string, handler: (...args: any[]) => T | Promise<T>): void => {
     ipcMain.handle(channel, async (_event, ...args: unknown[]) => {
-      if (!runtime.ready) {
+      if (!runtime.ready && !channel.startsWith('updates:')) {
         return {
           ok: false,
           error: {
@@ -43,6 +43,7 @@ export function registerIpc(runtime: AppRuntime): void {
         };
       }
       try {
+        if(channel.startsWith('updates:')&&!trustedQuarkPage(_event))throw new AppError('VALIDATION','页面无权操作更新。');
         if (refreshChannels.has(channel) && !trustedQuarkPage(_event)) throw new AppError('VALIDATION', '页面无权刷新收藏及夸克信息。');
         if (refreshConflicts.has(channel)) runtime.refresh.assertIdle();
         const data = await handler(...(args as never[]));
@@ -100,6 +101,16 @@ export function registerIpc(runtime: AppRuntime): void {
     if (result) throw new AppError('INTERNAL', `无法打开目录：${result}`);
   });
 
+  handle('updates:status',()=>runtime.updates.status());
+  handle('updates:check',()=>runtime.updates.check());
+  handle('updates:download',()=>runtime.updates.download());
+  handle('updates:configure',(patch:unknown)=>{try{return runtime.updates.configure((patch??{}) as Partial<import('../../src/shared/updates').UpdatePreferences>);}catch(error){throw new AppError('VALIDATION',error instanceof Error?error.message:'更新设置无效。');}});
+  handle('updates:install',async()=>{
+    if(process.platform!=='win32'||!app.isPackaged)throw new AppError('VALIDATION','请在安装后的Windows应用中运行更新安装包。');
+    runtime.refresh.assertIdle();runtime.quarkSync.assertIdle();
+    const file=await runtime.updates.verifiedInstaller();if(runtime.ready)runtime.backup.createBackup('before-update');
+    const error=await shell.openPath(file);if(error)throw new AppError('VALIDATION','无法启动安装器，请稍后重试。');app.quit();
+  });
   handle('app:relaunch', () => {
     app.relaunch();
     app.exit(0);
@@ -138,6 +149,7 @@ export function registerIpc(runtime: AppRuntime): void {
     });
   });
 
+  handle('library:assignFranchise',(ids:unknown,title:unknown)=>{runtime.refresh.assertIdle();return runtime.library.assignFranchise(ids as string[],title===null?null:assertString(title,'文件夹名称'));});
   handle('library:updateFilm', (filmId: unknown, patch: unknown) =>
     runtime.library.updateFilm(assertString(filmId, '作品 ID'), (patch ?? {}) as FilmPatch),
   );
@@ -227,9 +239,10 @@ export function registerIpc(runtime: AppRuntime): void {
       try {
         if(action!=='status') runtime.refresh.assertIdle();
         if(action!=='status') runtime.quarkSync.assertIdle();
-        if(action==='connect' && !webQuark.status().loginOpen) runtime.quarkSync.resetConnection();
+        const prior=webQuark.status().state;
         const data = action === 'list' ? await webQuark.list(assertString(id, '文件夹')) : await webQuark[action]();
         if(action==='disconnect') runtime.quarkSync.resetConnection();
+        else if((action==='finishLogin'||action==='check')&&prior!=='verified'&&webQuark.status().state==='verified')void runtime.quarkSync.readOnStartup();
         return { ok: true, data };
       } catch (error) { return { ok: false, error: toSerializedError(error) }; }
     });
@@ -308,6 +321,8 @@ export function registerIpc(runtime: AppRuntime): void {
     runtime.metadata.search((options ?? {}) as MetadataSearchOptions),
   );
 
+  handle('metadata:artwork', (id:unknown)=>runtime.metadata.artwork(assertString(id,'作品ID')));
+  handle('metadata:selectArtwork', (id:unknown,kind:unknown,path:unknown)=>runtime.metadata.selectArtwork(assertString(id,'作品ID'),kind as 'poster'|'backdrop',path===null?null:assertString(path,'图片标识')));
   handle('metadata:resolveSeries', () => runtime.metadata.resolveSeries());
 
   handle('metadata:seasons', (id: unknown) => runtime.metadata.seasons(assertString(id,'剧集 ID')));

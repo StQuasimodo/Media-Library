@@ -139,13 +139,24 @@ final class TmdbClient {
                 }
             }
         }
-        JSONObject posters=images(path),backgrounds=season<0?posters:images("/tv/"+id);
+        JSONObject posters=images(path),backgrounds=posters;
         Json.put(film,"posterUrl",image(ArtworkPolicy.poster(Json.array(posters,"posters")),true));
         Json.put(film,"backdropUrl",image(ArtworkPolicy.backdrop(Json.array(backgrounds,"backdrops"),season),false));
         Json.put(film,"posterSelection",posters!=null&&posters.optJSONArray("posters")!=null?"resolved":"unavailable");
-        Json.put(film,"backdropSelection",backgrounds!=null&&backgrounds.optJSONArray("backdrops")!=null?"resolved":"unavailable");
+        Json.put(film,"backdropSelection",backgrounds!=null?"resolved":"unavailable");
         return film;
     }
     private Object overview(JSONObject raw,String path){String text=Json.text(raw,"overview").trim();if(text.isEmpty()&&!language.equals("en-US")){try{Map<String,String> params=new HashMap<>();params.put("language","en-US");text=Json.text(transport.get(path,params),"overview").trim();}catch(Exception ignored){}}return text.isEmpty()?null:text;}
+    JSONArray artwork(String externalId,String type) throws Exception {
+        String[] parts=externalId.split(":",-1);String id=parts[0];validateId(id);if(!type.equals("movie")&&!type.equals("tv"))throw new IllegalArgumentException("作品类型无效。");
+        String base="/"+type+"/"+id,path=base;int season=-1;if(parts.length!=1){if(parts.length!=3||!type.equals("tv")||!parts[1].equals("season")||!parts[2].matches("0|[1-9][0-9]{0,3}"))throw new IllegalArgumentException("季标识无效。");season=Integer.parseInt(parts[2]);path+="/season/"+season;}
+        JSONObject own=images(path);if(own==null)throw new IllegalStateException("图片库暂不可用。");JSONArray result=new JSONArray();
+        addArtwork(result,Json.array(own,"posters"),"poster",season<0?"作品海报":"本季海报 · S"+season);
+        addArtwork(result,Json.array(own,"backdrops"),"backdrop",season<0?"作品横版图库":"本季横版图库 · S"+season);
+        if(season>=0){JSONObject show=images(base);addArtwork(result,Json.array(show,"backdrops"),"backdrop","全剧图库 · 季份未标注，需人工确认");JSONArray episodes=Json.array(get(path),"episodes");for(int i=0;i<Math.min(episodes.length(),200);i++){JSONObject episode=episodes.optJSONObject(i);if(episode==null)continue;String file=Json.text(episode,"still_path");if(!file.matches("/[A-Za-z0-9_-]{1,180}\\.(jpg|png|webp)"))continue;JSONObject row=new JSONObject();Json.put(row,"path",file);Json.put(row,"kind","still");Json.put(row,"label","S"+season+" · E"+episode.optInt("episode_number"));Json.put(row,"url",image(file,false));result.put(row);}}
+        else addArtwork(result,Json.array(own,"backdrops"),"still","作品剧照与宣传图库");
+        return result;
+    }
+    private static void addArtwork(JSONArray result,JSONArray images,String kind,String label){for(int i=0;i<Math.min(images.length(),100);i++){JSONObject row=images.optJSONObject(i);if(row==null)continue;JSONArray one=new JSONArray();one.put(row);String path=kind.equals("poster")?ArtworkPolicy.poster(one):ArtworkPolicy.backdrop(one,-1);if(path==null)continue;JSONObject choice=new JSONObject();Json.put(choice,"kind",kind);Json.put(choice,"path",path);Json.put(choice,"label",label);Json.put(choice,"url",image(path,kind.equals("poster")));result.put(choice);}}
     static JSONObject series(String key,String title,Integer order){JSONObject item=new JSONObject();Json.put(item,"key",key);Json.put(item,"title",title);Json.put(item,"order",order);return item;}
 }

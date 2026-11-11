@@ -1,3 +1,4 @@
+import {seriesFolders} from '../../../src/shared/franchises';
 import { identifySeries } from '../../../src/shared/series';
 import { parseTmdbIdentity } from '../../../src/shared/tmdbIdentity';
 import { randomUUID } from 'node:crypto';
@@ -247,7 +248,7 @@ export class LibraryService {
     }
     if (candidate.backdropUrl) {
       try {
-        backdropPath = await this.images.store(candidate.backdropUrl, 'backdrop');
+        backdropPath = candidate.mediaType==='tv'&&candidate.externalId.includes(':season:')?await this.images.storeSeason(candidate.backdropUrl,candidate.externalId):await this.images.store(candidate.backdropUrl, 'backdrop');
       } catch (error) {
         const message = `背景图未能缓存：${error instanceof Error ? error.message : String(error)}`;
         imageWarning = imageWarning ? `${imageWarning}；${message}` : message;
@@ -360,11 +361,30 @@ export class LibraryService {
           const matches=new Set([...groups.values()].filter(group=>normalize(group.title)===normalize(value.title)).map(group=>group.key));
           if(matches.size===1)key=[...matches][0];
         }
-        allowed.series={key,title:value.title.trim(),order:value.order,customOrder:true};
+        allowed.series={key,title:value.title.trim(),order:value.order,customOrder:true,...(current.series?.franchise!==undefined?{franchise:current.series.franchise}:{})};
       }
     }
     // Poster/backdrop are managed by the image cache; user edits never touch them.
     return this.repo.updateFilm(filmId, allowed);
+  }
+
+  assignFranchise(filmIds:string[],title:string|null){
+    if(!Array.isArray(filmIds)||!filmIds.length||filmIds.length>10000||filmIds.some(id=>typeof id!=='string'))throw new AppError('VALIDATION','请选择要整理的作品。');
+    if(title!==null&&(typeof title!=='string'||!title.trim()||title.length>100))throw new AppError('VALIDATION','文件夹名称须为1至100字。');
+    const name=title?.trim()??'',normalize=(text:string)=>text.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+    const existing=seriesFolders(this.repo.listEntries()).find(folder=>normalize(folder.title)===normalize(name));
+    const key=existing?.key??'franchise:manual:'+normalize(name);
+    if(title!==null&&key==='franchise:manual:')throw new AppError('VALIDATION','名称须包含文字或数字。');
+    this.repo.inTransaction(()=>{for(const id of new Set(filmIds)){
+      const film=this.repo.getFilm(id);if(!film)throw new AppError('NOT_FOUND','作品不存在。');
+      const series=film.series??{key:'work:'+id,title:film.title,order:null};
+      this.repo.updateFilm(id,{series:{...series,franchise:title===null?null:{key,title:name}}});
+    }});
+  }
+
+  async selectArtwork(filmId:string,kind:'poster'|'backdrop',url:string|null,manual:boolean) {
+    const path=url?await this.images.store(url,kind,manual):null;
+    return this.repo.updateFilm(filmId,kind==='poster'?{posterPath:path}:{backdropPath:path});
   }
 
   /** Applies refreshed external metadata while leaving every personal field untouched. */
@@ -375,25 +395,27 @@ export class LibraryService {
     const film = this.repo.getFilm(filmId);
     if (!film) throw new AppError('NOT_FOUND', '作品不存在。');
 
-    let posterPath = candidate.posterSelection === 'resolved' && candidate.posterUrl === null ? null : film.posterPath;
+    let posterPath = !this.images.manualUrl(film.posterPath) && candidate.posterSelection === 'resolved' && candidate.posterUrl === null ? null : film.posterPath;
     const season = film.metadataSource === 'tmdb' && film.externalId
       ? parseTmdbIdentity(film.externalId, film.mediaType)?.season : null;
     // Clear disallowed old art only after a successful gallery check. A failed
     // gallery request/download must not destroy the offline cache.
     const clearBackdrop = candidate.backdropSelection === 'resolved' ||
       (candidate.backdropSelection === undefined && season != null);
-    let backdropPath = clearBackdrop && candidate.backdropUrl === null ? null : film.backdropPath;
-    if (candidate.posterUrl) {
+    let backdropPath = !this.images.manualUrl(film.backdropPath) && clearBackdrop && candidate.backdropUrl === null ? null : film.backdropPath;
+    if (candidate.posterUrl || this.images.manualUrl(film.posterPath)) {
       try {
-        posterPath = await this.images.store(candidate.posterUrl, 'poster');
+        const manual=this.images.manualUrl(film.posterPath);
+        posterPath = await this.images.store(manual ?? candidate.posterUrl!, 'poster', Boolean(manual));
       } catch {
         // Keep the existing cached poster when the refresh download fails.
         imageWarnings.push('海报下载失败，保留已有缓存。');
       }
     }
-    if (candidate.backdropUrl) {
+    if (candidate.backdropUrl || this.images.manualUrl(film.backdropPath)) {
       try {
-        backdropPath = await this.images.store(candidate.backdropUrl, 'backdrop');
+        const manual=this.images.manualUrl(film.backdropPath);
+        backdropPath = !manual&&film.mediaType==='tv'&&film.externalId?.includes(':season:')?await this.images.storeSeason(candidate.backdropUrl!,film.externalId):await this.images.store(manual ?? candidate.backdropUrl!, 'backdrop', Boolean(manual));
       } catch {
         // Same for the backdrop.
         imageWarnings.push('背景下载失败，保留已有缓存。');
@@ -403,6 +425,8 @@ export class LibraryService {
     assertActive();
     const current = this.repo.getFilm(filmId);
     if (!current) throw new AppError('NOT_FOUND', '作品不存在。');
+    if(current.posterPath!==film.posterPath)posterPath=current.posterPath;
+    if(current.backdropPath!==film.backdropPath)backdropPath=current.backdropPath;
     const refreshed = this.repo.updateFilm(filmId, {
       title: candidate.title,
       originalTitle: candidate.originalTitle,
@@ -414,7 +438,7 @@ export class LibraryService {
       originalLanguage: candidate.originalLanguage,
       posterPath,
       backdropPath,
-      series: current.series && (current.series.customOrder || current.series.key.startsWith('manual:')) ? current.series : candidate.series,
+      series: current.series && (current.series.customOrder || current.series.key.startsWith('manual:')) ? current.series : current.series?.franchise!==undefined ? {...(candidate.series??{key:'work:'+filmId,title:candidate.title,order:null}),franchise:current.series.franchise} : candidate.series,
       metadataUpdatedAt: now(),
     });
     if (imageWarnings.length) onImageWarning?.(imageWarnings.join(''));

@@ -1,3 +1,4 @@
+import {DesktopUpdates} from './services/updates';
 import { mkdirSync } from 'node:fs';
 import { SCHEMA_VERSION } from './data/migrations';
 import { DatabaseError, openLibraryDatabase } from './data/database';
@@ -48,11 +49,13 @@ export class AppRuntime {
   readonly quark: QuarkLibrary;
   readonly quarkSync: QuarkSync;
   readonly refresh: LibraryRefresh;
+  readonly updates: DesktopUpdates;
 
   constructor(
     readonly paths: AppPaths,
     private readonly options: RuntimeOptions,
   ) {
+    this.updates = new DesktopUpdates(options.appVersion,paths.userData);
     this.quark = new QuarkLibrary(paths.userData);
     this.quarkSync = new QuarkSync(() => ({db:this.db,repo:this.repo,library:this.library,metadata:this.metadata}));
     this.refresh = new LibraryRefresh(() => ({repo:this.repo,metadata:this.metadata}), this.quarkSync, this.quark);
@@ -169,6 +172,7 @@ export class AppRuntime {
   }
 
   shutdown(): void {
+    this.updates.close();
     this.quark.cancel();
     this.quarkSync.cancel();
     this.close();

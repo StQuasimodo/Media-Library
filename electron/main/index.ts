@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, Menu, protocol, screen, shell } from 'electron';
+import { transientImage } from './services/transientImages';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { registerIpc } from './ipc';
@@ -71,6 +72,7 @@ async function bootstrap(): Promise<void> {
     loggerConsole: isDev,
   });
   runtime.start();
+  if(app.isPackaged)runtime.updates.start();
 
   if (runtime.failure) {
     const failure = runtime.failure;
@@ -111,6 +113,7 @@ function registerImageProtocol(): void {
   protocol.handle(IMAGE_SCHEME, (request) => {
     try {
       const url = new URL(request.url);
+      if (url.hostname === 'transient') return transientImage(request);
       const relative = decodeURIComponent(url.pathname.replace(/^\//, ''));
       if (url.hostname !== 'image') {
         return new Response('Not found', { status: 404 });

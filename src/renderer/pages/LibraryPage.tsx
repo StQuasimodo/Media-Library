@@ -1,3 +1,6 @@
+import {seriesFolders} from '@shared/franchises';
+import {SeriesFolderDialog} from '../components/SeriesFolderDialog';
+import {PosterImage} from '../components/PosterImage';
 import { useEffect, useRef, useState } from 'react';
 import type { LibrarySort, WatchStatus } from '@shared/types';
 import { groupSeriesEntries,identifySeries } from '@shared/series';
@@ -23,6 +26,9 @@ const SORT_OPTIONS: Array<{ value: LibrarySort; label: string }> = [
 
 export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
   const { version, settings, info } = useAppState();
+  const [view,setView]=useState(()=>{try{return localStorage.getItem('mycinema.libraryView')??'wall';}catch{return 'wall';}});
+  const [folderKey,setFolderKey]=useState('');
+  const [folderDialog,setFolderDialog]=useState(false);
   const [seriesKey,setSeriesKey]=useState('');
   const [seriesAnchor,setSeriesAnchor]=useState('');
   const [grouped,setGrouped]=useState(()=>{try{return localStorage.getItem('mycinema.groupSeries')!=='false';}catch{return true;}});
@@ -73,6 +79,8 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
   const effectiveSeriesKey=seriesOptions.some(value=>value.key===seriesKey) ? seriesKey : identities.get(seriesAnchor)?.key ?? seriesKey;
   const filtered=effectiveSeriesKey ? source.filter(entry=>identities.get(entry.id)?.key===effectiveSeriesKey) : source;
   const list=grouped ? groupSeriesEntries(filtered,identities) : filtered;
+  const folders=seriesFolders(list),currentFolder=folders.find(folder=>folder.key===folderKey);
+  const visibleList=view==='folders'&&currentFolder?currentFolder.entries:list;
   const hasFilters = Boolean(search || year || status !== 'all' || collectionId || seriesKey);
   const compact = settings.posterDensity === 'compact';
 
@@ -166,6 +174,9 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
 
       </div>
       <LibraryRefreshNotice />
+      <div className="library-view-tools"><div className="segmented" aria-label="影视库视图">{[['wall','海报墙'],['folders','系列文件夹']].map(([key,label])=><button type="button" key={key} aria-pressed={view===key} className={view===key?'is-active':''} onClick={()=>{setView(key);setFolderKey('');try{localStorage.setItem('mycinema.libraryView',key);}catch{}}}>{label}</button>)}</div><button className="btn btn-secondary btn-sm" onClick={()=>setFolderDialog(true)}>整理系列文件夹</button></div>
+      {folderDialog?<SeriesFolderDialog entries={source} onClose={()=>setFolderDialog(false)}/>:null}
+      {view==='folders'&&currentFolder?<div className="folder-breadcrumb"><button className="link-button" onClick={()=>setFolderKey('')}>全部文件夹</button><span> / {currentFolder.title} · {currentFolder.entries.length} 部</span></div>:null}
 
       <p className="setting-help">{resolvingSeries ? '正在补充已有电影的系列信息…' : grouped ? '同系列相邻，系列内部按序号升序；系列之间沿用所选排序。' : '可按系列筛选收藏，或开启同系列聚合。'}</p>
 
@@ -230,9 +241,13 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
             </button>
           </EmptyState>
         )
+      ) : view==='folders'&&!currentFolder ? (
+        <div className="series-folder-grid">{folders.map(folder=>folder.standalone?<PosterCard key={folder.key} entry={folder.entries[0]} compact={compact}/>:<button className="series-folder-card" key={folder.key} onClick={()=>setFolderKey(folder.key)}>
+          <div className="series-folder-art">{folder.entries.slice(0,3).reverse().map((entry,index)=><div key={entry.id} className={`folder-poster folder-poster-${index}`}><PosterImage film={entry.film}/></div>)}</div><strong>{folder.title}</strong><span>{folder.entries.length} 部作品 · 打开文件夹</span>
+        </button>)}</div>
       ) : (
         <div className={`poster-grid${compact ? ' is-compact' : ''}`}>
-          {list.map((entry) => (
+          {visibleList.map((entry) => (
             <PosterCard key={entry.id} entry={entry} compact={compact} />
           ))}
         </div>

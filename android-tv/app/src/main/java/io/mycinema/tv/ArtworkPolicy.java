@@ -45,9 +45,8 @@ final class ArtworkPolicy {
                 allowed.add(image);if(noText)textless.add(image);
             }
         }
-        List<JSONObject> ranked=ordered(textless.isEmpty()?allowed:textless,16.0/9);if(ranked.isEmpty())return null;
-        double best=score(ranked.get(0),16.0/9);List<JSONObject> pool=new ArrayList<>();
-        for(JSONObject image:ranked)if(pool.size()<8&&score(image,16.0/9)>=best-12)pool.add(image);
-        return Json.text(pool.get(season<0?0:Math.max(0,season-1)%pool.size()),"file_path");
+        List<JSONObject> promotional=new ArrayList<>();for(JSONObject image:allowed)if(Json.text(image,"iso_639_1").equals("en"))promotional.add(image);
+        List<JSONObject> ranked=ordered(promotional.isEmpty()?allowed:promotional,16.0/9);
+        return ranked.isEmpty()?null:Json.text(ranked.get(0),"file_path");
     }
 }

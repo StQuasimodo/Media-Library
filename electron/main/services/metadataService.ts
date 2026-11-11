@@ -86,6 +86,27 @@ export class MetadataService {
       collectedFilmId:this.repo.getFilmByExternal('tmdb',`${seriesId}:season:${season.number}`,'tv')?.id ?? null}))};
   }
 
+  async artwork(filmId:string) {
+    const film=this.repo.getFilm(filmId);
+    if(!film || film.metadataSource!=='tmdb' || !film.externalId) throw new AppError('VALIDATION','此作品没有TMDB图片库。');
+    return this.provider.artwork(film.externalId,film.mediaType);
+  }
+  async selectArtwork(filmId:string,kind:'poster'|'backdrop',path:string|null) {
+    if(kind!=='poster'&&kind!=='backdrop')throw new AppError('VALIDATION','图片类型无效。');
+    const film=this.repo.getFilm(filmId);if(!film?.externalId)throw new AppError('NOT_FOUND','作品不存在。');
+    let url:string|null;
+    if(path===null) {
+      const candidate=await this.provider.getCandidate(film.externalId,film.mediaType);
+      if(candidate[`${kind}Selection`]==='unavailable')throw new AppError('NETWORK','图片库暂不可用，原选图保留。');
+      url=candidate[`${kind}Url`];
+    } else {
+      const choice=(await this.artwork(filmId)).find(item=>item.kind===kind&&item.path===path);
+      if(!choice)throw new AppError('VALIDATION','请选择当前作品图片库中的图片。');
+      url=`https://image.tmdb.org/t/p/${kind==='poster'?'w780':'w1280'}${choice.path}`;
+    }
+    return this.library.selectArtwork(filmId,kind,url,path!==null);
+  }
+
   /** Re-fetches external metadata for a stored film; personal fields stay untouched. */
   async refreshFilm(filmId: string, assertActive: () => void = () => {}, onImageWarning?: (message: string) => void): Promise<Film> {
     assertActive();

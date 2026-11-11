@@ -1,3 +1,4 @@
+import {backdropUrl} from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CollectionEntry } from '@shared/types';
@@ -29,7 +30,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
   useEffect(() => {
     for (const offset of [1, -1]) {
       const entry = railEntries[activeIndex + offset];
-      const url = imageUrl(entry?.film.backdropPath);
+      const url = entry ? backdropUrl(entry.film) : null;
       if (url) {
         const image = new Image();
         image.src = url;
@@ -65,7 +66,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
       >
         {focused ? (
           <HeroBackdrop
-            src={imageUrl(focused.film.backdropPath)}
+            src={backdropUrl(focused.film)}
             posterSrc={imageUrl(focused.film.posterPath)}
           />
         ) : (

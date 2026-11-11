@@ -51,6 +51,13 @@ export type ApiEnvelope<T> = { ok: true; data: T } | { ok: false; error: Seriali
 
 /** The complete IPC surface. Nothing else is reachable from the renderer. */
 export interface CinemaApi {
+  updates: {
+    status():Promise<import('./updates').UpdateStatus>;
+    configure(patch:Partial<import('./updates').UpdatePreferences>):Promise<import('./updates').UpdateStatus>;
+    check():Promise<import('./updates').UpdateStatus>;
+    download():Promise<import('./updates').UpdateStatus>;
+    install():Promise<void>;
+  };
   quarkSync: {
     status(): Promise<QuarkSyncStatus>;
     configure(folderId: string, autoRead: boolean, autoImport: boolean): Promise<QuarkSyncStatus>;
@@ -87,6 +94,7 @@ export interface CinemaApi {
     relaunch(): Promise<void>;
   };
   library: {
+    assignFranchise(filmIds:string[],title:string|null):Promise<void>;
     refreshAll(): Promise<LibraryRefreshStatus>;
     refreshStatus(): Promise<LibraryRefreshStatus>;
     cancelRefresh(): Promise<LibraryRefreshStatus>;
@@ -127,6 +135,8 @@ export interface CinemaApi {
     copy(text: string): Promise<void>;
   };
   metadata: {
+    artwork(filmId:string): Promise<import('./artwork').ArtworkChoice[]>;
+    selectArtwork(filmId:string,kind:'poster'|'backdrop',path:string|null): Promise<Film>;
     resolveSeries(): Promise<{updated:number;failed:number}>;
     seasons(seriesId: string): Promise<MetadataSeasonList>;
     search(options: MetadataSearchOptions): Promise<MetadataSearchResult[]>;

@@ -109,13 +109,21 @@ final class Library extends SQLiteOpenHelper {
     synchronized Item refresh(String id,JSONObject candidate){
         Item old=get(id);JSONObject film=Json.copy(candidate);for(String key:new String[]{"id","createdAt"})Json.put(film,key,old.film.opt(key));
         JSONObject series=old.film.optJSONObject("series");if(series!=null&&series.optBoolean("customOrder"))Json.put(film,"series",series);
+        else if(series!=null&&series.has("franchise")){JSONObject target=film.optJSONObject("series");if(target==null)target=TmdbClient.series("work:"+id,Json.text(film,"title"),null);Json.put(target,"franchise",series.opt("franchise"));Json.put(film,"series",target);}
         for(String key:new String[]{"posterPath","backdropPath"})if(Json.text(film,key).isEmpty()&&!film.isNull(key))Json.put(film,key,old.film.opt(key));
         Json.put(film,"updatedAt",Json.now());getWritableDatabase().update("films",values(id,film),"id=?",new String[]{id});return get(id);
     }
     synchronized void editFilm(String id,JSONObject patch){
         Item item=get(id);String title=Json.text(patch,"title").trim();if(title.isEmpty())throw new IllegalArgumentException("片名不能为空。");
-        for(String key:new String[]{"title","originalTitle","year","overview","series"})if(patch.has(key))Json.put(item.film,key,patch.opt(key));
+        JSONObject oldSeries=item.film.optJSONObject("series");for(String key:new String[]{"title","originalTitle","year","overview","series"})if(patch.has(key))Json.put(item.film,key,patch.opt(key));JSONObject editedSeries=item.film.optJSONObject("series");if(oldSeries!=null&&oldSeries.has("franchise")){if(editedSeries==null)editedSeries=TmdbClient.series("work:"+id,title,null);Json.put(editedSeries,"franchise",oldSeries.opt("franchise"));Json.put(item.film,"series",editedSeries);}
         Json.put(item.film,"updatedAt",Json.now());getWritableDatabase().update("films",values(id,item.film),"id=?",new String[]{id});
+    }
+    synchronized void assignFranchise(List<String> ids,String key,String title){
+        if(ids.isEmpty()||ids.size()>10000||title.trim().isEmpty()||title.length()>100||key.length()>400)throw new IllegalArgumentException("请选择作品并填写有效文件夹名称。");SQLiteDatabase db=getWritableDatabase();db.beginTransaction();try{for(String id:ids){Item item=get(id);JSONObject series=item.film.optJSONObject("series");if(series==null)series=TmdbClient.series("work:"+id,item.title(),null);JSONObject folder=new JSONObject();Json.put(folder,"key",key);Json.put(folder,"title",title.trim());Json.put(series,"franchise",folder);Json.put(item.film,"series",series);Json.put(item.film,"updatedAt",Json.now());db.update("films",values(id,item.film),"id=?",new String[]{id});}db.setTransactionSuccessful();}finally{db.endTransaction();}
+    }
+    synchronized void clearFranchise(List<String> ids){SQLiteDatabase db=getWritableDatabase();db.beginTransaction();try{for(String id:ids){Item item=get(id);JSONObject series=item.film.optJSONObject("series");if(series==null)series=TmdbClient.series("work:"+id,item.title(),null);Json.put(series,"franchise",null);Json.put(item.film,"series",series);db.update("films",values(id,item.film),"id=?",new String[]{id});}db.setTransactionSuccessful();}finally{db.endTransaction();}}
+    synchronized void setArtwork(String id,String kind,String path){
+        if(!kind.equals("poster")&&!kind.equals("backdrop"))throw new IllegalArgumentException("图片类型无效。");Item item=get(id);Json.put(item.film,kind+"Path",path);Json.put(item.film,"updatedAt",Json.now());getWritableDatabase().update("films",values(id,item.film),"id=?",new String[]{id});
     }
     synchronized void remove(String id){getWritableDatabase().delete("films","id=?",new String[]{id});}
     synchronized List<JSONObject> collections(){List<JSONObject> result=new ArrayList<>();try(Cursor c=getReadableDatabase().query("collections",new String[]{"json"},null,null,null,null,"rowid DESC")){while(c.moveToNext())result.add(Json.object(c.getString(0)));}return result;}

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 
 export type ImageKind = 'poster' | 'backdrop';
@@ -18,7 +18,8 @@ const EXT_TO_MIME: Record<string, string> = {
 };
 
 /** Relative cache paths only: `<kind>/<2 hex>/<40 hex>.<ext>`. */
-const RELATIVE_PATTERN = /^(poster|backdrop)\/[0-9a-f]{2}\/[0-9a-f]{40}\.(jpg|png|webp)$/;
+const MANUAL_PATTERN = /^(poster|backdrop)\/manual\/([A-Za-z0-9_-]{1,180}\.(?:jpg|png|webp))\.(jpg|png|webp)$/;
+const RELATIVE_PATTERN = /^(?:(poster|backdrop)\/(?:[0-9a-f]{2}\/[0-9a-f]{40}\.(?:jpg|png|webp)|manual\/[A-Za-z0-9_-]{1,180}\.(?:jpg|png|webp)\.(?:jpg|png|webp))|backdrop\/season\/[0-9]+-[0-9]+\/[a-f0-9]{40}\.(?:jpg|png|webp))$/;
 
 export class ImageCacheError extends Error {
   constructor(message: string, readonly reason: 'network' | 'status' | 'type' | 'size' | 'write') {
@@ -58,9 +59,17 @@ export class ImageCache {
   }
 
   /** Downloads `url` (if not cached) and returns the relative cache path. */
-  async store(url: string, kind: ImageKind): Promise<string> {
+  manualUrl(path: string | null | undefined): string | null {
+    const match = path ? MANUAL_PATTERN.exec(path) : null;
+    return match ? `https://image.tmdb.org/t/p/${match[1] === 'poster' ? 'w780' : 'w1280'}/${match[2]}` : null;
+  }
+
+  async store(url: string, kind: ImageKind, manual = false): Promise<string> {
+    const source = new URL(url);
+    const filename = source.pathname.split('/').at(-1)!;
+    if (manual && (source.origin !== 'https://image.tmdb.org' || !/^[A-Za-z0-9_-]{1,180}\.(jpg|png|webp)$/.test(filename) || source.search || source.hash)) throw new ImageCacheError('选图地址无效。', 'type');
     const hash = createHash('sha1').update(url).digest('hex');
-    const existing = this.findExisting(kind, hash);
+    const existing = manual ? Object.keys(EXT_TO_MIME).map(ext => `${kind}/manual/${filename}.${ext}`).find(path => this.resolveRelative(path)) : this.findExisting(kind, hash);
     if (existing) return existing;
 
     let response: Response;
@@ -100,7 +109,7 @@ export class ImageCache {
     if (buffer.byteLength === 0) throw new ImageCacheError('图片内容为空。', 'type');
     if (buffer.byteLength > this.maxBytes) throw new ImageCacheError('图片体积过大。', 'size');
 
-    const relative = `${kind}/${hash.slice(0, 2)}/${hash}.${ext}`;
+    const relative = manual ? `${kind}/manual/${filename}.${ext}` : `${kind}/${hash.slice(0, 2)}/${hash}.${ext}`;
     const absolute = join(this.root, relative);
     mkdirSync(dirname(absolute), { recursive: true });
     const temporary = `${absolute}.${process.pid}.${Date.now()}.tmp`;
@@ -115,6 +124,13 @@ export class ImageCache {
       );
     }
     return relative;
+  }
+
+  async storeSeason(url:string,externalId:string):Promise<string>{
+    const identity=/^(\d+):season:(\d+)$/.exec(externalId);if(!identity)throw new ImageCacheError('季标识无效。','type');
+    const cached=await this.store(url,'backdrop'),file=cached.split('/').at(-1)!;
+    const relative=`backdrop/season/${identity[1]}-${identity[2]}/${file}`,absolute=join(this.root,relative);
+    mkdirSync(dirname(absolute),{recursive:true});copyFileSync(this.resolveRelative(cached)!,absolute);return relative;
   }
 
   /** Absolute path for a stored image, or null when the path is invalid or missing. */

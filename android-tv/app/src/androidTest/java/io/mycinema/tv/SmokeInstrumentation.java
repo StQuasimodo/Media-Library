@@ -44,6 +44,8 @@ public final class SmokeInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();try{
             context=getTargetContext();check("true".equals(arguments.getString("disposableEmulator")),"fixture must be explicitly selected");check(BuildConfig.DEBUG,"only debug application may run fixtures");check(android.os.Build.VERSION.SDK_INT==22,"must run on actual API 22 runtime");
+            context.getSharedPreferences("app-updates",Context.MODE_PRIVATE).edit().putBoolean("automatic",false).commit();
+            if("true".equals(arguments.getString("features"))){new FeaturesScenario(this).run(arguments.getString("phase","full"),arguments.getString("buildRun",""));return;}
             if(arguments.getString("migration")!=null){new UpgradeScenario(this).run(arguments.getString("migration"),arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("backup"))){new BackupScenario(this).run(arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("resourceNames"))){new ResourceNameScenario(this).run(arguments.getString("buildRun",""));return;}
@@ -64,7 +66,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             byte[] encrypted=TmdbClient.read(new java.io.FileInputStream(new File(context.getFilesDir(),"metadata-credential.bin")),16384);check(!new String(encrypted,StandardCharsets.ISO_8859_1).contains(fake),"credential is not plaintext");checks.add("real API 22 Android Keystore hybrid encryption survives store recreation");
             TmdbClient tmdb=new TmdbClient((path,params)->{
                 if(path.endsWith("/images")){
-                    if(path.contains("/season/"))return Json.object("{\"posters\":[{\"file_path\":\"/s2-en.jpg\",\"iso_639_1\":\"en\",\"width\":1000,\"height\":1500}]}");
+                    if(path.contains("/season/"))return Json.object("{\"posters\":[{\"file_path\":\"/s2-en.jpg\",\"iso_639_1\":\"en\",\"width\":1000,\"height\":1500}],\"backdrops\":[{\"file_path\":\"/season-promo.jpg\",\"iso_639_1\":\"en\",\"width\":1920,\"height\":1080}]}");
                     return Json.object("{\"posters\":[],\"backdrops\":[{\"file_path\":\"/a-art.jpg\",\"iso_639_1\":null,\"width\":1920,\"height\":1080},{\"file_path\":\"/b-art.jpg\",\"iso_639_1\":null,\"width\":1920,\"height\":1080}]}");
                 }
                 if(path.equals("/tv/1396"))return Json.object("{\"id\":1396,\"name\":\"绝命毒师\",\"original_name\":\"Breaking Bad\",\"overview\":\"整剧简介\",\"first_air_date\":\"2008-01-20\",\"backdrop_path\":\"/whole.jpg\",\"seasons\":[{\"season_number\":1},{\"season_number\":2}]}");
@@ -74,7 +76,7 @@ public final class SmokeInstrumentation extends Instrumentation {
                 throw new IllegalArgumentException("unexpected test endpoint");
             },"zh-CN");
             JSONObject second=tmdb.candidate("1396:season:2","tv"),first=tmdb.candidate("1396:season:1","tv");
-            check(second.optInt("year")==2009&&Json.text(second,"backdropUrl").endsWith("/b-art.jpg"),"season year and high-resolution show gallery variant");check(Json.text(first,"backdropUrl").endsWith("/a-art.jpg")&&first.isNull("overview"),"season variants do not substitute the series overview");check(tmdb.search("绝命毒师","tv").size()==1,"search normalization");check(Json.array(tmdb.seasonList("1396"),"seasons").length()==2,"season list");
+            check(second.optInt("year")==2009&&Json.text(second,"backdropUrl").endsWith("/season-promo.jpg"),"season year and season-scoped promotional gallery");check(Json.text(first,"backdropUrl").endsWith("/season-promo.jpg")&&first.isNull("overview"),"season variants do not substitute the series overview");check(tmdb.search("绝命毒师","tv").size()==1,"search normalization");check(Json.array(tmdb.seasonList("1396"),"seasons").length()==2,"season list");
             boolean rejected=false;try{tmdb.candidate("1396:season:2","movie");}catch(IllegalArgumentException error){rejected=true;}check(rejected,"season identity rejected for movie");checks.add("controlled TMDB search, season identity, season-specific year, gallery artwork and missing-overview semantics");
             check(Json.text(second,"posterUrl").endsWith("/s2-en.jpg"),"season poster uses classified English gallery art");
             JSONArray mixed=Json.array(Json.object("{\"posters\":[{\"file_path\":\"/traditional.jpg\",\"iso_639_1\":\"zh\",\"iso_3166_1\":\"TW\",\"width\":1000,\"height\":1500},{\"file_path\":\"/unknown.jpg\",\"iso_639_1\":\"zh\",\"width\":1000,\"height\":1500},{\"file_path\":\"/english.jpg\",\"iso_639_1\":\"en\",\"width\":1000,\"height\":1500}]}"),"posters");
@@ -83,7 +85,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             check(ArtworkPolicy.poster(mixed).equals("/simplified.jpg"),"explicit mainland Chinese artwork preferred");
             checks.add("poster script/region filtering and high-resolution textless season gallery selection");
             Library library=new Library(context);String blue=artwork(Color.rgb(35,75,120),"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),orange=artwork(Color.rgb(150,85,35),"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
-            Json.put(first,"backdropPath",blue);Json.put(second,"backdropPath",orange);Library.Item tv2=library.saveCandidate(second),tv1=library.saveCandidate(first);
+            String scopedBlue="backdrop/season/1396-1/"+blue.substring(blue.lastIndexOf('/')+1),scopedOrange="backdrop/season/1396-2/"+orange.substring(orange.lastIndexOf('/')+1);for(String[] pair:new String[][]{{blue,scopedBlue},{orange,scopedOrange}}){File target=new File(context.getFilesDir(),"images/"+pair[1]);check(target.getParentFile().mkdirs()||target.getParentFile().isDirectory(),"season fixture parent");try(java.io.InputStream input=new java.io.FileInputStream(new File(context.getFilesDir(),"images/"+pair[0]));FileOutputStream output=new FileOutputStream(target)){byte[] buffer=new byte[1024];for(int n;(n=input.read(buffer))!=-1;)output.write(buffer,0,n);}}Json.put(first,"backdropPath",scopedBlue);Json.put(second,"backdropPath",scopedOrange);Library.Item tv2=library.saveCandidate(second),tv1=library.saveCandidate(first);
             List<String> movies=new ArrayList<>();for(int n:new int[]{10,2,1}){JSONObject film=record("测试电影"+n,String.valueOf(900+n),"movie",n);Json.put(film,"backdropPath",n==1?blue:orange);Library.Item saved=library.saveCandidate(film);movies.add(saved.id());}
             List<Library.Item> ordered=library.list("","","","tmdb:collection:9","recent");check(ordered.get(0).order()==1&&ordered.get(1).order()==2&&ordered.get(2).order()==10,"natural series ordering 1/2/10");
             JSONObject patch=new JSONObject();Json.put(patch,"personalRating",9);Json.put(patch,"personalReview","私人短评");Json.put(patch,"watchStatus","watched");library.updateEntry(tv1.id(),patch);check(library.saveCandidate(first).entry.optInt("personalRating")==9,"duplicate import retains rating");

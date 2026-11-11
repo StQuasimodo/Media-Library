@@ -4,6 +4,7 @@ import { prefersReducedMotion } from '../lib/motion';
 interface Layer {
   key: number;
   src: string | null;
+  posterFallback?: boolean;
 }
 
 /** Keep the previous artwork visible until the next local image has decoded. */
@@ -26,7 +27,7 @@ export function HeroBackdrop({
 
     const commit = (source: string | null) => {
       if (cancelled) return;
-      const layer = { key: nextKey.current++, src: source };
+      const layer = { key: nextKey.current++, src: source, posterFallback: source===posterSrc && source!==src };
       const reduceMotion = prefersReducedMotion();
       setLayers((current) => {
         if (current.at(-1)?.src === source) return current;
@@ -79,7 +80,7 @@ export function HeroBackdrop({
       {layers.map((layer, index) => (
         <div
           key={layer.key}
-          className={`${className}${index === layers.length - 1 && layers.length > 1 ? ' is-entering' : ''}`}
+          className={`${className}${layer.posterFallback?' hero-fallback-poster':''}${index === layers.length - 1 && layers.length > 1 ? ' is-entering' : ''}`}
           style={layer.src ? { backgroundImage: `url("${layer.src}")` } : undefined}
           data-empty={!layer.src}
         />

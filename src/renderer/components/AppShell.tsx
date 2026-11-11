@@ -1,3 +1,4 @@
+import {UpdateNotice} from './UpdatePanel';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Icon } from './icons';
@@ -42,7 +43,7 @@ export function AppShell({
               </NavLink>
             ))}
           </nav>
-          <div className="topbar-actions">
+          <div className="topbar-actions"><UpdateNotice/>
             <button type="button" className="cinema-icon-button" onClick={onOpenPalette} aria-label="打开全局搜索" title="全局搜索（Ctrl+K）"><Icon name="search" size={15} /></button>
             <button type="button" className="cinema-icon-button" onClick={onOpenImport} aria-label="添加影视作品" title="添加影视作品"><Icon name="plus" size={18} /></button>
             <NavLink to="/settings" className="cinema-icon-button" aria-label="设置" title="设置"><Icon name="settings" size={18} /></NavLink>

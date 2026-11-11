@@ -55,6 +55,7 @@ async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
 }
 
 const api: CinemaApi = {
+  updates:{status:()=>invoke('updates:status'),configure:patch=>invoke('updates:configure',patch),check:()=>invoke('updates:check'),download:()=>invoke('updates:download'),install:()=>invoke('updates:install')},
   quarkSync: {
     status: () => invoke<QuarkSyncStatus>('quark-sync:status'),
     configure: (id,autoRead,autoImport) => invoke<QuarkSyncStatus>('quark-sync:configure',id,autoRead,autoImport),
@@ -91,6 +92,7 @@ const api: CinemaApi = {
     relaunch: () => invoke<void>('app:relaunch'),
   },
   library: {
+    assignFranchise: (ids,title) => invoke('library:assignFranchise',ids,title),
     refreshAll: () => invoke<LibraryRefreshStatus>('library:refreshAll'),
     refreshStatus: () => invoke<LibraryRefreshStatus>('library:refreshStatus'),
     cancelRefresh: () => invoke<LibraryRefreshStatus>('library:cancelRefresh'),
@@ -132,6 +134,8 @@ const api: CinemaApi = {
     copy: (text) => invoke<void>('resources:copy', text),
   },
   metadata: {
+    artwork: id => invoke('metadata:artwork',id),
+    selectArtwork: (id,kind,path) => invoke('metadata:selectArtwork',id,kind,path),
     resolveSeries: () => invoke('metadata:resolveSeries'),
     seasons: id => invoke<MetadataSeasonList>('metadata:seasons',id),
     search: (options: MetadataSearchOptions) =>

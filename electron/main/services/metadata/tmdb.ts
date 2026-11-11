@@ -266,16 +266,14 @@ export class TmdbProvider {
         catch (error) { this.logger?.warn(`TMDB season overview fallback failed: ${String(error)}`); }
       }
       const label = identity.season === 0 ? '特别篇' : `第${identity.season}季`;
-      const [seasonImages, showImages] = await Promise.all([
-        this.images(path, config), this.images(`/tv/${identity.id}`, config),
-      ]);
+      const seasonImages = await this.images(path, config);
       return { ...series, externalId, title: `${series.title} · ${label}`,
         originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
         year: parseYear(season.air_date), overview: overview || null,
         posterUrl: posterUrl(selectPoster(seasonImages?.posters)),
         posterSelection: Array.isArray(seasonImages?.posters) ? 'resolved' : 'unavailable',
-        backdropUrl: backdropUrl(selectBackdrop(showImages?.backdrops, identity.season)),
-        backdropSelection: Array.isArray(showImages?.backdrops) ? 'resolved' : 'unavailable',
+        backdropUrl: backdropUrl(selectBackdrop(seasonImages?.backdrops)),
+        backdropSelection: seasonImages !== null ? 'resolved' : 'unavailable',
         runtime: season.episodes?.find(episode => typeof episode.runtime === 'number' && episode.runtime > 0)?.runtime ?? series.runtime };
     }
     return this.fetchCandidate(externalId, mediaType, config.apiKey, config.language);
@@ -344,6 +342,31 @@ export class TmdbProvider {
       originalLanguage: payload.original_language ?? null,
       popularity: typeof payload.popularity === 'number' ? payload.popularity : 0,
     };
+  }
+
+  async artwork(externalId: string, mediaType: MediaType): Promise<import('../../../../src/shared/artwork').ArtworkChoice[]> {
+    const identity = parseTmdbIdentity(externalId, mediaType);
+    if (!identity) throw new AppError('VALIDATION', '作品标识无效。');
+    const config=this.requireConfig(), base=`/${mediaType}/${identity.id}`;
+    const path=identity.season===null?base:`${base}/season/${identity.season}`;
+    const own=await this.images(path,config);
+    if (!own) throw new AppError('NETWORK','图片库暂不可用，请稍后重试。');
+    const result: import('../../../../src/shared/artwork').ArtworkChoice[]=[];
+    const add=(images: import('./artwork').TmdbImage[] | undefined,kind:'poster'|'backdrop'|'still',scope:string)=>{
+      for (const image of (images ?? []).slice(0,100)) {
+        const valid=kind==='poster'?selectPoster([image]):selectBackdrop([image]);
+        if (valid) result.push({path:valid,kind,scope,label:scope,url:`mycinema://transient${valid}`});
+      }
+    };
+    add(own.posters,'poster',identity.season===null?'作品海报':`本季海报 · S${identity.season}`);
+    add(own.backdrops,'backdrop',identity.season===null?'作品横版图库':`本季横版图库 · S${identity.season}`);
+    if (identity.season!==null) {
+      const show=await this.images(base,config);add(show?.backdrops,'backdrop','全剧图库 · 季份未标注，需人工确认');
+      const detail=await this.request<{episodes?:Array<{episode_number?:number;still_path?:string|null}>}>(path,config);
+      for (const episode of (detail.episodes ?? []).slice(0,200)) if (episode.still_path && /^\/[A-Za-z0-9_-]+\.(jpg|png|webp)$/.test(episode.still_path))
+        result.push({kind:'still',path:episode.still_path,scope:'episode',label:`S${identity.season} · E${episode.episode_number ?? ''}`,url:`mycinema://transient${episode.still_path}`});
+    } else add(own.backdrops,'still','作品剧照与宣传图库');
+    return result;
   }
 
   private requireConfig(): TmdbConfig {

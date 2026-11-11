@@ -376,7 +376,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
       await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(backdropPath)})`);
       await shot(name);
     }
-    checks.push('different high-resolution show gallery variants cached and displayed for seasons through real import/refresh/UI');
+    checks.push('season-specific promotional gallery images cached and displayed through real import/refresh/UI');
     checks.push('independent TV seasons, real season endpoint import/refresh and missing-title manual creation through UI/IPC');
     checks.push('controlled Quark/TMDB: select folder through UI, recurse, match, confirm, real import/cache/SQLite, typed IDs, increment, missing files, failed scan and session isolation (not live account)');
     async function openTvSeasons() {
@@ -444,6 +444,27 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(noStill.posterPath)})`);
     await shot('23-season-poster-fallback');
     checks.push('empty show backdrop gallery falls back to the selected English season poster');
+    const artworkChoices=await js(`window.cinema.metadata.artwork(${JSON.stringify(tv.id)})`);
+    assert.ok(artworkChoices.some((choice:any)=>choice.kind==='still'));
+    const selectedArt=artworkChoices.find((choice:any)=>choice.kind==='backdrop'&&choice.scope==='season')??artworkChoices.find((choice:any)=>choice.kind==='backdrop');assert.ok(selectedArt);
+    await js(`window.cinema.metadata.selectArtwork(${JSON.stringify(tv.id)},'backdrop',${JSON.stringify(selectedArt.path)})`);
+    const lockedArt=await js(`window.cinema.metadata.refresh(${JSON.stringify(tv.id)})`);assert.ok(lockedArt.backdropPath.includes('/manual/'));
+    await route(`/film/${tv.id}`,"!!document.querySelector('.film-title')");
+    await js("[...document.querySelectorAll('summary')].find(b=>b.textContent.includes('更多操作')).click()");
+    await js("[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='在线剧照').click()");
+    await waitFor("document.querySelectorAll('.artwork-gallery img').length>0");await delay(300);await shot('24-online-stills');
+    await js("document.querySelector('.modal [aria-label=关闭]').click()");await waitFor("!document.querySelector('.modal')");
+    await js(`window.cinema.library.assignFranchise(${JSON.stringify([tv.id,second.id,movieGroup.id])},'关联剧集与衍生电影')`);
+    await route('/library',"!!document.querySelector('.library-toolbar')");
+    await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='系列文件夹').click()");
+    await waitFor("!!document.querySelector('.series-folder-card')");await shot('25-universe-folders');
+    await js("[...document.querySelectorAll('.series-folder-card')].find(b=>b.textContent.includes('关联剧集与衍生电影')).click()");
+    await waitFor("document.querySelectorAll('.poster-title').length===3");await shot('26-universe-contents');
+    await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='海报墙').click()");
+    await route('/settings',"!!document.querySelector('#updates')");assert.equal((await js('window.cinema.updates.status()')).preferences.automatic,true);
+    await js("document.querySelector('#updates').scrollIntoView({block:'start',behavior:'instant'})");await shot('27-update-settings');
+    checks.push('cross-media universe folder and drill-down, retained canonical series, manual artwork lock survives refresh, memory-only still protocol rendered in Electron, update settings IPC/UI');
+
     for(const title of ['影墙排序10','影墙排序2','影墙排序']) {
       const entry=await js(`window.cinema.library.createManual({title:${JSON.stringify(title)},mediaType:'movie'})`);extraFilmIds.push(entry.film.id);
     }

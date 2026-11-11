@@ -241,7 +241,7 @@ def serve(root, log):
                 else:
                     season = 2 if 's2' in uri.path else 3 if 's3' in uri.path else 1
                     color = [(35, 75, 120), (150, 85, 35), (55, 110, 75)][season - 1]
-                    self.reply(png(color, 320, 180) if 'still' in uri.path else png(color))
+                    self.reply(png(color, 320, 180) if ('still' in uri.path or 'promo' in uri.path) else png(color))
                 return
             if mode == 'rate_limit':
                 self.reply({}, 429)
@@ -259,7 +259,7 @@ def serve(root, log):
                 self.reply({'posters': [
                     {'file_path': '/traditional-poster.png', 'iso_639_1': 'zh', 'width': 1000, 'height': 1500},
                     {'file_path': poster, 'iso_639_1': 'en', 'width': 1000, 'height': 1500}],
-                    'backdrops': [{'file_path': f'/s{i}-still.png', 'iso_639_1': None, 'width': 1920, 'height': 1080} for i in [1, 2, 3]] if n is None else []})
+                    'backdrops': [{'file_path': f'/s{i}-promo.png', 'iso_639_1': 'en', 'width': 1920, 'height': 1080} for i in ([1, 2, 3] if n is None else [n])]})
             elif path == '/configuration':
                 self.reply({'images': {'secure_base_url': 'https://image.tmdb.org/t/p/'}})
             elif path == '/search/tv':

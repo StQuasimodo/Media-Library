@@ -1,3 +1,4 @@
+import {UpdatePanel} from '../components/UpdatePanel';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { AppSettings, LibrarySort, MetadataLanguage, MotionPreference, PosterDensity } from '@shared/types';
@@ -16,7 +17,7 @@ export function SettingsPage() {
   const location = useLocation();
   useEffect(() => {
     const section = location.hash.slice(1);
-    if (['metadata', 'quark', 'appearance', 'data', 'about'].includes(section)) {
+    if (['metadata', 'quark', 'appearance', 'data', 'updates', 'about'].includes(section)) {
       document.getElementById(section)?.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
     }
   }, [location.hash]);
@@ -430,11 +431,12 @@ export function SettingsPage() {
           </div>
         </section>
 
+        <UpdatePanel/>
         <section className="section-card" id="about">
           <div className="section-card-head">
             <h2 className="section-card-title">关于</h2>
             <p className="section-card-desc">
-              My Cinema 是仅供个人使用的本地影视收藏库，不包含播放器、下载器或网盘登录功能。
+              My Cinema 是仅供个人使用的本地影视收藏馆，支持夸克资源关联与收藏整理。
             </p>
           </div>
 

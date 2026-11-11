@@ -53,7 +53,7 @@ export function selectPoster(images: TmdbImage[] = []): string | null {
   return ordered(simplified.length ? simplified : allowed, 2 / 3)[0]?.file_path ?? null;
 }
 
-export function selectBackdrop(images: TmdbImage[] = [], season: number | null = null): string | null {
+export function selectBackdrop(images: TmdbImage[] = [], _season: number | null = null): string | null {
   if (!Array.isArray(images)) return null;
   const allowed = images.filter(image => {
     const size = dimensions(image);
@@ -61,13 +61,8 @@ export function selectBackdrop(images: TmdbImage[] = [], season: number | null =
       size[0] >= 1280 && size[1] >= 720 && size[0] / size[1] >= 1.5 && size[0] / size[1] <= 2.05 &&
       !((image.vote_count ?? 0) > 0 && (image.vote_average ?? 0) < 4);
   });
-  // Prefer artwork tagged as textless. English backdrops are a last resort.
-  const textless = allowed.filter(image => image.iso_639_1 === null);
-  const ranked = ordered(textless.length ? textless : allowed, 16 / 9);
-  if (!ranked.length) return null;
-  const bestScore = score(ranked[0], 16 / 9);
-  const pool = ranked.filter(image => score(image, 16 / 9) >= bestScore - 12).slice(0, 8);
-  // These are show-gallery variants, not proven season-specific promotional art.
-  const index = season === null ? 0 : Math.max(0, season - 1) % pool.length;
-  return pool[index].file_path ?? null;
+  // Localized wide promotional graphics are preferred to unclassified textless
+  // frames. TMDB does not label every image as promotional versus scene art.
+  const promotional = allowed.filter(image => image.iso_639_1 === 'en');
+  return ordered(promotional.length ? promotional : allowed, 16 / 9)[0]?.file_path ?? null;
 }

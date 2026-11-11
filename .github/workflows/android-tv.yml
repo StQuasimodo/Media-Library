@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
+      GH_TOKEN: ${{ github.token }}
+      TV_VALIDATE_UPGRADE: '1'
       TV_PIN_DEVELOPMENT_SIGNING: '1'
       TV_DEVELOPMENT_KEYSTORE_BASE64: ${{ secrets.TV_DEVELOPMENT_KEYSTORE_BASE64 }}
       TV_EXPECTED_SIGNER: ${{ needs.signing.outputs.sha256 }}
@@ -47,6 +49,8 @@ jobs:
       - name: Build and lint native APK and separate instrumentation
         working-directory: android-tv
         run: ./gradlew --no-daemon lintDebug assembleDebug assembleDebugAndroidTest
+      - name: Prepare exact published baseline and same-signer upgrade driver
+        run: bash scripts/prepare-tv-upgrade.sh
       - name: Verify API 21 minimum, v1 signature and ARMv7/x86 decoder
         run: |
           mkdir -p .harness/android-tv-package
@@ -115,6 +119,11 @@ jobs:
             .harness/tv-playback/*.log
             .harness/tv-resource-names/*
             .harness/tv-backup/*
+            .harness/tv-features/*.json
+            .harness/tv-features/*.png
+            .harness/tv-features/*.txt
+            .harness/tv-upgrade/*.json
+            .harness/tv-upgrade/*.txt
       - name: Remove runner-only signing material
         if: always()
         run: rm -f ~/.android/mycinema-tv-debug.keystore

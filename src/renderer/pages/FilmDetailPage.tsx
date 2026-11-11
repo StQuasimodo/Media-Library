@@ -1,3 +1,4 @@
+import {backdropUrl} from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { MediaResource, WatchStatus } from '@shared/types';
@@ -8,6 +9,7 @@ import { useToast } from '../lib/toast';
 import { useAsyncData } from '../lib/useAsync';
 import { ErrorState, LoadingRow, Segmented } from '../components/primitives';
 import { HeroBackdrop } from '../components/HeroBackdrop';
+import { ArtworkGallery } from '../components/ArtworkGallery';
 import { PosterImage } from '../components/PosterImage';
 import { Icon } from '../components/icons';
 import {
@@ -43,6 +45,7 @@ export function FilmDetailPage() {
   const allCollections = useAsyncData(() => api.collections.list(), [version]);
 
   const [editFilmOpen, setEditFilmOpen] = useState(false);
+  const [artworkKind,setArtworkKind]=useState<'poster'|'backdrop'|'still'|null>(null);
   const [editEntryOpen, setEditEntryOpen] = useState(false);
   const [resourceOpen, setResourceOpen] = useState(false);
   const [cloudLimit,setCloudLimit]=useState(100);
@@ -71,7 +74,7 @@ export function FilmDetailPage() {
   if (!detail.data) return null;
 
   const { film, entry, resources, cloudResources } = detail.data;
-  const backdrop = imageUrl(film.backdropPath);
+  const backdrop = backdropUrl(film);
   const poster = imageUrl(film.posterPath);
 
   const setStatus = async (status: WatchStatus) => {
@@ -215,6 +218,11 @@ export function FilmDetailPage() {
               }}>
                 <summary>更多操作 <Icon name="chevronRight" size={12} /></summary>
                 <div className="film-tools-menu">
+                  {film.metadataSource==='tmdb'?<>
+                    <button className="btn btn-icon" onClick={()=>setArtworkKind('poster')}>选择海报</button>
+                    <button className="btn btn-icon" onClick={()=>setArtworkKind('backdrop')}>选择背景宣传图</button>
+                    <button className="btn btn-icon" onClick={()=>setArtworkKind('still')}>在线剧照</button>
+                  </>:null}
                   {film.metadataSource === 'tmdb' ? (
                     <button
                       type="button"
@@ -501,6 +509,7 @@ export function FilmDetailPage() {
         </aside>
       </div>
 
+      {artworkKind?<ArtworkGallery filmId={film.id} kind={artworkKind} onClose={()=>setArtworkKind(null)}/>:null}
       <EditFilmDialog
         open={editFilmOpen}
         film={film}

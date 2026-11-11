@@ -30,7 +30,7 @@ export type MetadataLanguage = 'zh-CN' | 'en-US';
 
 export type MotionPreference = 'system' | 'reduce' | 'full';
 
-export interface FilmSeries { key: string; title: string; order: number | null; customOrder?: boolean }
+export interface FilmSeries { key: string; title: string; order: number | null; customOrder?: boolean; franchise?: {key:string;title:string}|null }
 
 export interface Film {
   id: string;

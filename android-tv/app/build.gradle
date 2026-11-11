@@ -15,11 +15,11 @@ android {
         minSdk 21
         ndk { abiFilters 'armeabi-v7a', 'x86' }
         targetSdk 35
-        versionCode 8
+        versionCode 9
         if (migrationPreview && project.hasProperty('tvUpgradeTestVersionCode')) {
             versionCode Integer.parseInt(project.property('tvUpgradeTestVersionCode'))
         }
-        versionName '0.2.0-alpha.5'
+        versionName '0.3.0-alpha.1'
         testInstrumentationRunner 'io.mycinema.tv.SmokeInstrumentation'
     }
     signingConfigs {
@@ -35,7 +35,7 @@ android {
         }
     }
     buildFeatures { buildConfig true }
-    sourceSets { androidTest.assets.srcDir '../../tests/fixtures' }
+    sourceSets { androidTest.assets.srcDir '../../tests/fixtures'; androidTest.assets.srcDir '../../updates'; main.assets.srcDir '../../src/shared/data' }
     buildTypes { release { minifyEnabled false } }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     lint { abortOnError true; checkReleaseBuilds true }

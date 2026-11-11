@@ -19,15 +19,15 @@ describe('影视图片筛选', () => {
   it('排除低清、横版及无效URL海报，不因评分高而放行', () => {
     expect(selectPoster([{ ...poster('/tiny.jpg', 'en'), width: 200, height: 300 }, background('/wide.jpg', 'en'), poster('//elsewhere.jpg', 'en')])).toBeNull();
   });
-  it('背景优先无字横版，排除低清、竖图、极宽裁切和低分候选', () => {
-    expect(selectBackdrop([background('/english.jpg', 'en'), background('/textless.jpg')])).toBe('/textless.jpg');
+  it('背景优先带语言标注的横版宣传图，排除低清、竖图、极宽裁切和低分候选', () => {
+    expect(selectBackdrop([background('/english.jpg', 'en'), background('/textless.jpg')])).toBe('/english.jpg');
     expect(selectBackdrop([{ ...background('/tiny.jpg'), width: 640, height: 360 }, poster('/portrait.jpg', 'en'),
       { ...background('/ultrawide.jpg'), width: 3000 }, { ...background('/poor.jpg'), vote_average: 2 }])).toBeNull();
   });
-  it('在相近品质的横版图中稳定分配各季；单图/无图不硬凑剧照', () => {
+  it('不按季号轮换全剧图库；单图和无图保持真实缺失', () => {
     const gallery = [background('/b.jpg'), background('/a.jpg'), background('/a.jpg')];
     expect(selectBackdrop(gallery, 1)).toBe('/a.jpg');
-    expect(selectBackdrop([...gallery].reverse(), 2)).toBe('/b.jpg');
+    expect(selectBackdrop([...gallery].reverse(), 2)).toBe('/a.jpg');
     expect(selectBackdrop([background('/a.jpg')], 2)).toBe('/a.jpg');
     expect(selectBackdrop([], 3)).toBeNull();
   });

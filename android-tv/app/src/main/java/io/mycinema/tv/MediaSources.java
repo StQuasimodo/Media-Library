@@ -44,7 +44,7 @@ final class MediaSources {
         Lease(HttpUrl url,Map<String,String> headers,Headers live){this.url=url;this.headers=java.util.Collections.unmodifiableMap(new LinkedHashMap<>(headers));this.live=live;}
         Map<String,String> requestHeaders() throws Exception {return live==null?headers:live.read();}
     }
-    private final SecretStore quark,dav;private final Context context;private final NetworkScope scope;
+    private final SecretStore quark,dav;private final Context context;private final NetworkScope scope;private String loginCookie;
     MediaSources(Context context){this(context,new NetworkScope());}
     private MediaSources(Context context,NetworkScope scope){this.context=context.getApplicationContext();this.scope=scope;quark=new SecretStore(context,"quark","夸克");dav=new SecretStore(context,"webdav","WebDAV");}
     MediaSources withScope(NetworkScope scope){return new MediaSources(context,scope);}
@@ -63,7 +63,9 @@ final class MediaSources {
         listDav(config,base.toString());scope.check();dav.save(config.toString());
     }
     void saveQuark(String cookie) throws Exception {
-        validateCookie(cookie);listQuark(cookie,"0");quark.save(cookie);CinemaApplication.dav(context).disable();
+        validateCookie(cookie);QuarkDavManager mounted=CinemaApplication.dav(context);loginCookie=cookie;
+        try{listQuark(cookie,"0");if(mounted.enabled())listQuark(loginCookie,mounted.rootId());scope.check();quark.save(loginCookie);mounted.stop();}finally{loginCookie=null;}
+
     }
     private static void validateCookie(String cookie){if(cookie.isEmpty()||cookie.length()>20000||!cookie.matches("[\\x20-\\x7e]+"))throw new IllegalArgumentException("尚未取得可用的夸克登录状态。");}
     List<Entry> list(String source,String parent) throws Exception {
@@ -71,6 +73,7 @@ final class MediaSources {
         scope.check();return source.equals("quark")?(CinemaApplication.dav(context).enabled()?CinemaApplication.dav(context).list(parent,scope):rawQuarkList(parent)):listDav(Json.object(dav.read()),parent);
     }
     private JSONObject quarkRequest(String cookie,HttpUrl url,RequestBody body) throws Exception {
+        if(loginCookie!=null)cookie=loginCookie;
         Request.Builder request=new Request.Builder().url(url).header("Cookie",cookie).header("Referer","https://pan.quark.cn/").header("User-Agent",UA);
         if(body!=null)request.post(body);
         try(NetworkScope.Exchange exchange=scope.open(HTTP,request.build())){Response response=exchange.response;
@@ -81,7 +84,8 @@ final class MediaSources {
             for(Cookie renewal:Cookie.parseAll(url,response.headers()))if(renewal.name().equals("__puus")){
                 updated=updated.replaceAll("(?i)(^|;\\s*)__puus=[^;]*","").replaceAll("^;\\s*","");updated+=(updated.isEmpty()?"":"; ")+"__puus="+renewal.value();
             }
-            if(!updated.equals(cookie)&&quark.exists()){String previous="";try{previous=quark.read();}catch(IllegalStateException unreadable){/* A new login may replace an unreadable old file. */}if(previous.equals(cookie))quark.save(updated);}
+            if(loginCookie!=null)loginCookie=updated;
+            else if(!updated.equals(cookie)&&quark.exists()){String previous="";try{previous=quark.read();}catch(IllegalStateException unreadable){/* A new login may replace an unreadable old file. */}if(previous.equals(cookie))quark.save(updated);}
             return json;
         }
     }

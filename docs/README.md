@@ -42,6 +42,8 @@
 
 ## 当前交付（2026-11-11）
 
+[自动选图与系列归类调研](OPEN-SOURCE-ARTWORK-COLLECTIONS-2026-11-11.md)：Jellyfin、MoviePilot、Sonarr、Radarr、Kometa的代码依据、可用做法及本轮修复。
+
 [遥控器与内置镜像](TV-REMOTE-AND-MIRRORS-2026-11-11.md)：Windows1.3-beta.2 / TV0.3-alpha.2的操作、第三方来源调研与实测范围。
 
 [Windows1.3预览与TV0.3预览专项验收](LIBRARY-UPDATES-VALIDATION-2026-11-11.md)：更新签名/镜像、夸克目录保留、影视宇宙文件夹、分季背景与在线剧照；首次安装及镜像设置见[使用指南](USAGE.md)。Windows稳定版仍为1.2.0；以下为此前历史汇总。

@@ -1,0 +1,49 @@
+{
+  "version": "1.3.0-beta.3",
+  "source": "cdb4d70213d02870b1329325a4b5a3a94356f392",
+  "tagSourceVerified": true,
+  "run": "42979993112",
+  "workflowResult": "success",
+  "unitTests": 209,
+  "typecheckAndProductionBuild": "passed",
+  "actualWindowsElectron": true,
+  "headless": false,
+  "sandboxDisabled": false,
+  "actualInstallerUi": "passed",
+  "actualTmdbAccountVerified": false,
+  "releaseUrl": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.3",
+  "prerelease": true,
+  "assets": [
+    {
+      "name": "INSTALL.cmd",
+      "size": 1338,
+      "digest": "sha256:9be2f4b06f3d899634afd5a88a77b1ba69c9b8d361f709c87369561cfb80154b",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.3/INSTALL.cmd"
+    },
+    {
+      "name": "My-Cinema-1.3.0-beta.3-portable-win64.zip",
+      "size": 171293299,
+      "digest": "sha256:f416a0236cddabd9f2a5f6db9a9c928342fc60ea8d6a757e08c298c467ccd7a0",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.3/My-Cinema-1.3.0-beta.3-portable-win64.zip"
+    },
+    {
+      "name": "My-Cinema-1.3.0-beta.3-Setup.exe",
+      "size": 122950756,
+      "digest": "sha256:933518454e6bc00912b812cfc095ea16134a6a006d9feb17e0cdb214d6385910",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.3/My-Cinema-1.3.0-beta.3-Setup.exe"
+    },
+    {
+      "name": "RUN-PORTABLE.cmd",
+      "size": 976,
+      "digest": "sha256:d4f734e69eb304a4d2031d814f76ac835fccecfcea2218cdc3af91e505d0c849",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.3/RUN-PORTABLE.cmd"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 368,
+      "digest": "sha256:71f2a0a07301bd06d70dba7ff7925cd1b5475d8de6fcff56699523c893921f7f",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.3/SHA256SUMS.txt"
+    }
+  ],
+  "evidenceNote": "Screenshots use controlled synthetic landscape/poster images, not a real movie artwork aesthetic acceptance; the Electron test driver version is not the packaged app version."
+}

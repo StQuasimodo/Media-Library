@@ -68,4 +68,4 @@ Windows1.3预览与TV0.3预览开始使用`updates/{platform}-{channel}.json`。
 
 2026-11-11后续遥控/内置镜像迭代使用Windows`1.3.0-beta.2`与TV`0.3.0-alpha.2`/code10，保留上一版资产、固定签名和数据库。实际源码/哈希以[专项报告](TV-REMOTE-AND-MIRRORS-2026-11-11.md)为准；测试驱动和后续文档不冒充已构建的应用源码。
 
-同日Windows镜像保存/超时状态修复递增为`1.3.0-beta.3`；不覆盖beta.2资产，TV保持alpha.2/code10。安装包验证与源码身份另见[beta.3记录](../artifacts/releases/v1.3.0-beta.3/validation.json)。
+同日Windows镜像保存/超时状态及横图修复递增为`1.3.0-beta.3`，TV横图修复递增为`0.3.0-alpha.3`/code11；不覆盖旧资产或换签。安装包验证与源码身份另见[beta.3记录](../artifacts/releases/v1.3.0-beta.3/validation.json)和[TV原构建](../artifacts/releases/tv-v0.3.0-alpha.3/BUILD.json)。

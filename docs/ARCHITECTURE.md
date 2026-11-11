@@ -226,3 +226,9 @@ AppState统一轮询进度，路由切换继续，完成后invalidate各页数�
 `update-mirrors.json`为两端共用公开预设；更新偏好`mirror`新增`auto`值，空字符串仍表示仅GitHub，已有自定义地址不改写。自动来源按GitHub/3个预设依次请求，签名清单/完整哈希均保持强制。预设不用于任何个人媒体请求。
 
 `UpdateTls`只为API21–23更新客户端补充固定指纹的ISRG Root X1/X2及GTS Root R4，并保留系统链/证书有效期和默认主机名验证；不注册全局SSLContext或修改系统CA，也不改变媒体请求的信任配置。额外根加载失败时保留系统验证并正常报错，无忽略证书回退。
+
+## 横图回退与更新检查取消（Windows beta.3 / TV alpha.3）
+
+分季候选新增可选`backdropScope: season|series`。本季无合规横图时自动回退全剧图库；缓存分别为`backdrop/season/<id>-<n>/...`和`backdrop/series/<id>/...`，界面从缓存范围派生来源提示，同剧多季共用全剧缓存。手选`manual`优先，缓存白名单扩展支持series，不新增数据库字段/迁移。Windows恢复自动选图同样传递范围；两端背景均停止回退海报。[研究依据与边界](OPEN-SOURCE-ARTWORK-COLLECTIONS-2026-11-11.md)。
+
+Windows镜像保存仍是本地原子写入，不触发网络。来源/渠道变更取消当前检查并使旧结果失效；独立AbortController与单来源超时信号组合，过期结果不能覆盖新偏好/检查。清除旧错误和lastChecked避免误报保存失败或最新版本；TimeoutError按name识别，兼容Electron与Node的DOMException类型差异。

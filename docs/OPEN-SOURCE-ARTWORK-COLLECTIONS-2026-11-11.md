@@ -53,4 +53,15 @@ Fanart可作为后续可选图片提供器，但TV需要处理TVDB身份与独�
 
 ## 验证边界
 
-本地类型检查、生产构建和209项测试已通过，覆盖横图回退、缓存范围、跨剧拒绝、手选恢复、重启保留、断网保护，以及镜像保存/超时竞态。实际Windows/API22构建、发布身份与结果另见各版产物记录；本地通过不代表这些流程已经完成。真实TMDB账号和长虹55D2S实机仍需单独验收。
+本地类型检查、生产构建和209项测试已通过，覆盖横图回退、缓存范围、跨剧拒绝、手选恢复、重启保留、断网保护，以及镜像保存/超时竞态。实际Windows/API22构建、发布身份与结果见下面的交付记录。真实TMDB账号和长虹55D2S实机仍需单独验收。
+
+## 本轮实际交付
+
+- **Windows1.3.0-beta.3**：[完整发布42979993112](https://github.com/StQuasimodo/Media-Library/actions/runs/42979993112)通过，源码/Tag为`cdb4d70213d02870b1329325a4b5a3a94356f392`，209项测试、类型/构建、非无头且sandbox启用的Windows Electron、旧凭据兼容和实际安装器快捷方式检查通过。真实窗口中验证季图库无横图时使用全剧范围缓存并显示提示；预设/自定义镜像保存均不联网，清除旧超时并显示成功。安装器122950756字节，SHA256`933518454e6bc00912b812cfc095ea16134a6a006d9feb17e0cdb214d6385910`。[下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.3) · [身份/资产记录](../artifacts/releases/v1.3.0-beta.3/validation.json) · [窗口结果](../artifacts/releases/v1.3.0-beta.3/controlled-ui-report.json)。
+- **TV0.3.0-alpha.3/code11**：[完整API22构建42979526603](https://github.com/StQuasimodo/Media-Library/actions/runs/42979526603)通过，源码/Tag为`f02b2c523c8c7c4c9188a3627c16e04bb9b6acda`，后续Windows驱动修正和文档不冒充TV构建源码。实际API22 x86验证19项图库/收藏检查、季图库只有海报时的自动全剧横图回退、缓存下载、跨剧拒绝、26项遥控检查/52次按键、三个镜像公网HTTPS验签、完整LibVLC/夸克Range/恢复、备份/500海报/进程及模拟器重启；实际alpha.5原APK→code11同签名升级保留凭据/目录/人工关联/播放进度。[原始报告](../artifacts/releases/tv-v0.3.0-alpha.3/regression-summary.json) · [图片功能](../artifacts/releases/tv-v0.3.0-alpha.3/features-report.json) · [仅季海报的端到端用例](../artifacts/releases/tv-v0.3.0-alpha.3/full-ui.json)。APK48790335字节，SHA256`9f38f8d8e76ac4ea686790b9110871689b54e83b7ad1f1228efc908b94ebc5ac`；固定证书仍为be6ca662…，下载本次构建原APK后独立核对哈希一致。[发布42980593254](https://github.com/StQuasimodo/Media-Library/actions/runs/42980593254)与签名清单任务成功，[下载](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.3)。
+
+两端公开预览清单已重新下载并用生产验签器验证，版本、TV code11、大小与安装包哈希均匹配；[验证结果](../artifacts/releases/published-feeds-artwork-2026-11-11.json)。稳定渠道/Latest仍为1.2.0。旧资产和Tag没有覆盖；原数据库/签名/凭据格式保留。
+
+此前失败也保留在Actions：42977599179首次被夸克匿名登录页网络就绪探针阻止；后续受控脚本只模拟预览清单，而Electron测试驱动使用稳定渠道，导致新的超时提示断言失败。修正测试覆盖两种渠道、补充非Node Error形状的超时测试后，完整Windows流程重新通过，未绕过门禁或发布失败包。
+
+截图为受控色块图片，用于验证布局、来源提示和自动路径，不作为真实影视宣传图审美验收。ARMv7原生库已打包并检查包结构，运行回归为API22 x86；ARMv7运行、长虹电视、实体遥控器、真实TMDB/夸克账号及4K硬解仍未验收。

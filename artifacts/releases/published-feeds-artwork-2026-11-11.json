@@ -1,0 +1,42 @@
+[
+  {
+    "platform": "tv",
+    "signatureVerified": true,
+    "manifest": {
+      "asset": {
+        "bytes": 48790335,
+        "name": "My-Cinema-TV-0.3.0-alpha.3-debug.apk",
+        "sha256": "9f38f8d8e76ac4ea686790b9110871689b54e83b7ad1f1228efc908b94ebc5ac",
+        "url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.3/My-Cinema-TV-0.3.0-alpha.3-debug.apk"
+      },
+      "channel": "preview",
+      "format": 1,
+      "minSdk": 21,
+      "platform": "tv",
+      "publishedAt": "2026-11-11T07:35:50Z",
+      "releaseUrl": "https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.3",
+      "version": "0.3.0-alpha.3",
+      "versionCode": 11
+    }
+  },
+  {
+    "platform": "windows",
+    "signatureVerified": true,
+    "manifest": {
+      "asset": {
+        "bytes": 122950756,
+        "name": "My-Cinema-1.3.0-beta.3-Setup.exe",
+        "sha256": "933518454e6bc00912b812cfc095ea16134a6a006d9feb17e0cdb214d6385910",
+        "url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.3/My-Cinema-1.3.0-beta.3-Setup.exe"
+      },
+      "channel": "preview",
+      "format": 1,
+      "minSdk": 0,
+      "platform": "windows",
+      "publishedAt": "2026-11-11T07:36:14Z",
+      "releaseUrl": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.3",
+      "version": "1.3.0-beta.3",
+      "versionCode": 0
+    }
+  }
+]

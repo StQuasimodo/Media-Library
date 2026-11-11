@@ -2,6 +2,16 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## 遥控器与内置镜像（TV0.3-alpha.2 / Windows1.3-beta.2）
+
+真实API22原生窗口和Windows Electron；测试收藏是合成数据，图片用于展示控件/焦点。[操作与完整验收](TV-REMOTE-AND-MIRRORS-2026-11-11.md)。
+
+| 电视评分/状态快捷操作 | 电视选取内置镜像 |
+|---|---|
+| ![遥控评分](../artifacts/releases/tv-v0.3.0-alpha.2/remote-rating.png) | ![镜像来源](../artifacts/releases/tv-v0.3.0-alpha.2/remote-mirrors.png) |
+
+[Windows更新来源选择](../artifacts/releases/v1.3.0-beta.2/update-settings.png)。Windows截图由Electron45测试驱动运行，安装包版本另外核对为1.3.0-beta.2。
+
 ## Windows1.3预览：系列文件夹与在线图库
 
 真实Windows Electron窗口，以下是隔离收藏和合成色块素材的功能截图，展示文件夹/在线剧照入口，不代表实际电影素材品质。[两端验收](LIBRARY-UPDATES-VALIDATION-2026-11-11.md)。

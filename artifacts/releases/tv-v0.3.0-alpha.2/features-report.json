@@ -1,0 +1,26 @@
+{
+  "result": "passed",
+  "checks": [
+    "real released feed signature verifies with bundled certificate on API22",
+    "tampered signed feed rejected",
+    "cross-channel feed rejected",
+    "invalid update mirror rejected: http:\/\/mirror.example\/",
+    "invalid update mirror rejected: https:\/\/mirror.example\/",
+    "invalid update mirror rejected: https:\/\/mirror.example\/#fragment",
+    "invalid update mirror rejected: https:\/\/mirror.example\/{url}\/{url}",
+    "configurable HTTPS mirror accepts prefix and encoded template",
+    "related TV and spin-off film share explicit universe folder",
+    "manual universe assignment preserves canonical series and season order",
+    "manual folder survives TMDB metadata refresh",
+    "remove universe retains canonical TV series",
+    "manual artwork lock retained when network unavailable",
+    "unscoped whole-show background never shown as season artwork",
+    "online still rendered using actual API22 bitmap decoder",
+    "online still preview creates no cached image file",
+    "native library folder view visible and remote-focusable"
+  ],
+  "apiLevel": 22,
+  "buildRun": "42965415679",
+  "phase": "full",
+  "physicalTelevisionVerified": false
+}

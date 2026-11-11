@@ -65,3 +65,5 @@ TV固定签名须从私有Secret `TV_DEVELOPMENT_KEYSTORE_BASE64`恢复**当前�
 Windows1.3预览与TV0.3预览开始使用`updates/{platform}-{channel}.json`。它是可更新的发行索引，不改变历史Tag或包字节；仅在通过原有验证并发布资产后，由`update-feeds.yml`使用固定签名生成。稳定渠道排除prerelease，预览渠道选择最高版本，客户端不允许降级；TV还要求versionCode高于已安装。
 
 清单签名公钥随应用发布。私钥不得放入仓库、发行资产、日志或CI缓存；替换签名需要明确迁移方案。更新清单签名不代表Windows已有Authenticode。TV沿用固定be6ca6证书，可覆盖alpha.5；不能据此覆盖更旧的其他签名安装。
+
+2026-11-11后续遥控/内置镜像迭代使用Windows`1.3.0-beta.2`与TV`0.3.0-alpha.2`/code10，保留上一版资产、固定签名和数据库。实际源码/哈希以[专项报告](TV-REMOTE-AND-MIRRORS-2026-11-11.md)为准；测试驱动和后续文档不冒充已构建的应用源码。

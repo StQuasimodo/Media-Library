@@ -1,0 +1,62 @@
+[
+  {
+    "mirror": "https://gh-proxy.com/",
+    "kind": "feed",
+    "status": "200 https://gh-proxy.com/https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/tv-preview.json",
+    "exit": 0,
+    "bytes": 1227,
+    "rangeBytesMatch": false,
+    "jsonEnvelope": true,
+    "error": ""
+  },
+  {
+    "mirror": "https://gh-proxy.com/",
+    "kind": "range",
+    "status": "206 https://gh-proxy.com/https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.1/My-Cinema-TV-0.3.0-alpha.1-debug.apk",
+    "exit": 0,
+    "bytes": 1024,
+    "rangeBytesMatch": true,
+    "jsonEnvelope": false,
+    "error": ""
+  },
+  {
+    "mirror": "https://ghfast.top/",
+    "kind": "feed",
+    "status": "200 https://ghfast.top/https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/tv-preview.json",
+    "exit": 0,
+    "bytes": 1227,
+    "rangeBytesMatch": false,
+    "jsonEnvelope": true,
+    "error": ""
+  },
+  {
+    "mirror": "https://ghfast.top/",
+    "kind": "range",
+    "status": "206 https://ghfast.top/https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.1/My-Cinema-TV-0.3.0-alpha.1-debug.apk",
+    "exit": 0,
+    "bytes": 1024,
+    "rangeBytesMatch": true,
+    "jsonEnvelope": false,
+    "error": ""
+  },
+  {
+    "mirror": "https://ghproxy.net/",
+    "kind": "feed",
+    "status": "200 https://ghproxy.net/https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/tv-preview.json",
+    "exit": 0,
+    "bytes": 1227,
+    "rangeBytesMatch": false,
+    "jsonEnvelope": true,
+    "error": ""
+  },
+  {
+    "mirror": "https://ghproxy.net/",
+    "kind": "range",
+    "status": "206 https://ghproxy.net/https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.1/My-Cinema-TV-0.3.0-alpha.1-debug.apk",
+    "exit": 0,
+    "bytes": 1024,
+    "rangeBytesMatch": true,
+    "jsonEnvelope": false,
+    "error": ""
+  }
+]

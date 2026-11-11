@@ -45,6 +45,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         Bundle result=new Bundle();try{
             context=getTargetContext();check("true".equals(arguments.getString("disposableEmulator")),"fixture must be explicitly selected");check(BuildConfig.DEBUG,"only debug application may run fixtures");check(android.os.Build.VERSION.SDK_INT==22,"must run on actual API 22 runtime");
             context.getSharedPreferences("app-updates",Context.MODE_PRIVATE).edit().putBoolean("automatic",false).commit();
+            if("true".equals(arguments.getString("remote"))){new RemoteScenario(this).run(arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("features"))){new FeaturesScenario(this).run(arguments.getString("phase","full"),arguments.getString("buildRun",""));return;}
             if(arguments.getString("migration")!=null){new UpgradeScenario(this).run(arguments.getString("migration"),arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("backup"))){new BackupScenario(this).run(arguments.getString("buildRun",""));return;}

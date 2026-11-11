@@ -462,6 +462,11 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await waitFor("document.querySelectorAll('.poster-title').length===3");await shot('26-universe-contents');
     await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='海报墙').click()");
     await route('/settings',"!!document.querySelector('#updates')");assert.equal((await js('window.cinema.updates.status()')).preferences.automatic,true);
+    assert.equal((await js('window.cinema.updates.status()')).preferences.mirror,'auto');
+    await js("(()=>{const select=document.querySelector('[aria-label=更新下载来源]');select.value='https://ghfast.top/';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await waitFor("window.cinema.updates.status().then(s=>s.preferences.mirror==='https://ghfast.top/')");
+    await js("(()=>{const select=document.querySelector('[aria-label=更新下载来源]');select.value='auto';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await waitFor("window.cinema.updates.status().then(s=>s.preferences.mirror==='auto')");
     await js("document.querySelector('#updates').scrollIntoView({block:'start',behavior:'instant'})");await shot('27-update-settings');
     checks.push('cross-media universe folder and drill-down, retained canonical series, manual artwork lock survives refresh, memory-only still protocol rendered in Electron, update settings IPC/UI');
 

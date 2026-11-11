@@ -44,11 +44,13 @@ final class TvUpdates implements AutoCloseable {
     void background(Ready ready){if(!closed)checks.execute(()->{try{ready.result(check());}catch(Exception ignored){}});}
     boolean automatic(){return prefs.getBoolean("automatic",true);}
     boolean due(){return automatic()&&System.currentTimeMillis()-prefs.getLong("lastCheck",0)>12*60*60*1000L;}
-    String mirror(){return prefs.getString("mirror","");}
+    String mirror(){return prefs.getString("mirror","auto");}
     void automatic(boolean value){prefs.edit().putBoolean("automatic",value).apply();}
-    static String validateMirror(String value){String text=value.trim();if(text.isEmpty())return "";HttpUrl url=HttpUrl.parse(text.replace("{url}","placeholder"));if(text.length()>2048||url==null||!url.isHttps()||!url.username().isEmpty()||!url.password().isEmpty()||url.fragment()!=null||text.indexOf("{url}")!=text.lastIndexOf("{url}"))throw new IllegalArgumentException("镜像须为不含账号的HTTPS地址，可使用{url}占位符。");return text.contains("{url}")?text:text.replaceAll("/*$","")+"/";}
+    static String validateMirror(String value){String text=value.trim();if(text.isEmpty()||text.equals("auto"))return text;HttpUrl url=HttpUrl.parse(text.replace("{url}","placeholder"));if(text.length()>2048||url==null||!url.isHttps()||!url.username().isEmpty()||!url.password().isEmpty()||url.fragment()!=null||text.indexOf("{url}")!=text.lastIndexOf("{url}"))throw new IllegalArgumentException("镜像须为不含账号的HTTPS地址，可使用{url}占位符。");return text.contains("{url}")?text:text.replaceAll("/*$","")+"/";}
     void mirror(String value){prefs.edit().putString("mirror",validateMirror(value)).putLong("lastCheck",0).apply();}
-    private List<String> sources(String original) throws Exception {List<String> list=new ArrayList<>();list.add(original);String mirror=validateMirror(mirror());if(!mirror.isEmpty())list.add(mirror.contains("{url}")?mirror.replace("{url}",URLEncoder.encode(original,"UTF-8")):mirror+original);return list;}
+    static org.json.JSONArray mirrorPresets(Context context){try(InputStream input=context.getAssets().open("update-mirrors.json")){return new org.json.JSONArray(new String(TmdbClient.read(input,16384),StandardCharsets.UTF_8));}catch(Exception ignored){return new org.json.JSONArray();}}
+    private List<String> sources(String original) throws Exception {List<String> list=new ArrayList<>();list.add(original);String selected=validateMirror(mirror());if(selected.equals("auto")){org.json.JSONArray presets=mirrorPresets(context);for(int i=0;i<Math.min(3,presets.length());i++)appendMirror(list,original,validateMirror(presets.getJSONObject(i).getString("url")));}else if(!selected.isEmpty())appendMirror(list,original,selected);return list;}
+    private static void appendMirror(List<String> list,String original,String mirror) throws Exception {list.add(mirror.contains("{url}")?mirror.replace("{url}",URLEncoder.encode(original,"UTF-8")):mirror+original);}
     private Response response(String address) throws Exception {return response(address,false);}
     private Response response(String address,boolean download) throws Exception {
         if(closed||Thread.currentThread().isInterrupted())throw new java.io.IOException();HttpUrl url=HttpUrl.parse(address);if(url==null||!url.isHttps()||!url.username().isEmpty()||!url.password().isEmpty())throw new java.io.IOException();

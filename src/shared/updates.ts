@@ -1,3 +1,5 @@
+import mirrorPresets from './data/update-mirrors.json';
+export const UPDATE_MIRRORS=mirrorPresets;
 export interface UpdatePreferences {automatic:boolean;mirror:string;preview:boolean}
 export interface UpdateManifest {format:1;platform:'windows'|'tv';channel:'stable'|'preview';version:string;versionCode:number;minSdk:number;releaseUrl:string;publishedAt:string;asset:{name:string;url:string;sha256:string;bytes:number}}
 export interface UpdateStatus {phase:'idle'|'checking'|'available'|'downloading'|'ready'|'error';currentVersion:string;manifest:UpdateManifest|null;downloadedBytes:number;error:string|null;lastChecked:string|null;preferences:UpdatePreferences}
@@ -6,8 +8,10 @@ export function compareVersions(a:string,b:string):number {
   const aa=parse(a),bb=parse(b);for(let i=0;i<aa.length;i++)if(aa[i]!==bb[i])return aa[i]<bb[i]?-1:1;return 0;
 }
 export function validateMirror(value:string):string {
-  const text=value.trim();if(!text)return '';const url=new URL(text.replace('{url}','placeholder'));
+  const text=value.trim();if(!text)return '';if(text==='auto')return text;const url=new URL(text.replace('{url}','placeholder'));
   if(text.length>2048||url.protocol!=='https:'||url.username||url.password||url.hash||(text.match(/\{url\}/g)?.length??0)>1)throw new Error('镜像须为不含账号的HTTPS地址，可使用{url}占位符。');
   return text.includes('{url}')?text:text.replace(/\/*$/,'/');
 }
 export function mirrorUrl(original:string,mirror:string):string {const base=validateMirror(mirror);return base.includes('{url}')?base.replace('{url}',encodeURIComponent(original)):base+original;}
+
+export function updateSources(original:string,selection:string):string[]{const selected=validateMirror(selection);return [original,...(selected==='auto'?UPDATE_MIRRORS.map(m=>mirrorUrl(original,m.url)):selected?[mirrorUrl(original,selected)]:[])];}

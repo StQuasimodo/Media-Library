@@ -119,6 +119,9 @@ jobs:
             .harness/tv-playback/*.log
             .harness/tv-resource-names/*
             .harness/tv-backup/*
+            .harness/tv-remote/*.json
+            .harness/tv-remote/*.png
+            .harness/tv-remote/*.txt
             .harness/tv-features/*.json
             .harness/tv-features/*.png
             .harness/tv-features/*.txt

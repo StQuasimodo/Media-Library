@@ -7,4 +7,5 @@
     <item name="search_submit" type="id"/>
     <item name="cinema_backdrop" type="id"/>
     <item name="resources_section" type="id"/>
+    <item name="remote_focus_key" type="id"/>
 </resources>

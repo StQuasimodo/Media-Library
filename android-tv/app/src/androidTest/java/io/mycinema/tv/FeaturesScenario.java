@@ -25,7 +25,7 @@ final class FeaturesScenario {
     private View label(View view,String text){if(view instanceof TextView&&((TextView)view).getText().toString().equals(text))return view;if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){View found=label(((ViewGroup)view).getChildAt(i),text);if(found!=null)return found;}return null;}
     private static int files(File dir){File[] list=dir.listFiles();int count=0;if(list!=null)for(File file:list)count+=file.isDirectory()?files(file):1;return count;}
     private void upgrade()throws Exception{
-        check(context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionCode==9,"actual same-signer published code8 to code9 upgrade");
+        check(context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionCode==BuildConfig.VERSION_CODE&&BuildConfig.VERSION_CODE>8,"actual same-signer published code8 to current version upgrade");
         JSONObject before=Json.object(read(new File(context.getFilesDir(),"upgrade-baseline.json"))),after=new TvBackup(context).snapshot();before.remove("createdAt");after.remove("createdAt");
         check(canonical(before).equals(canonical(after)),"all collection, association and progress backup data preserved byte-for-value");
         check(new SecretStore(context).read().equals("upgrade-metadata-fixture"),"Android Keystore TMDB credential survives APK replacement");

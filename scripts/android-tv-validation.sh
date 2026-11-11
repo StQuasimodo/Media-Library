@@ -17,6 +17,7 @@ case "$suite" in
     bash scripts/android-tv-resource-names.sh
     bash scripts/android-tv-backup.sh
     bash scripts/android-tv-features.sh
+    bash scripts/android-tv-remote.sh
     bash scripts/android-tv-playback.sh
     bash scripts/android-tv-regression.sh
     ;;

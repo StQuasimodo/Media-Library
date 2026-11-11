@@ -3,7 +3,7 @@ import {createReadStream,createWriteStream,existsSync,mkdirSync,readFileSync,ren
 import {join} from 'node:path';
 import {once} from 'node:events';
 import signing from '../../../src/shared/data/update-signing.json';
-import {compareVersions,validateMirror,mirrorUrl,type UpdateManifest,type UpdatePreferences,type UpdateStatus} from '../../../src/shared/updates';
+import {compareVersions,validateMirror,updateSources,type UpdateManifest,type UpdatePreferences,type UpdateStatus} from '../../../src/shared/updates';
 
 const DOMAIN=Buffer.from('MY_CINEMA_UPDATE_V1\n');
 export function verifyUpdateEnvelope(body:string,platform:'windows'|'tv',channel:'stable'|'preview',certificate=signing.certificatePem):UpdateManifest {
@@ -23,7 +23,7 @@ export class DesktopUpdates {
   constructor(version:string,root:string,private readonly fetcher:typeof fetch=fetch,private readonly certificate=signing.certificatePem){
     this.prefsFile=join(root,'update-preferences.json');this.directory=join(root,'updates');let prefs:Partial<UpdatePreferences>={};
     try{prefs=JSON.parse(readFileSync(this.prefsFile,'utf8'));}catch{/* First launch. */}
-    let mirror='';try{mirror=validateMirror(typeof prefs.mirror==='string'?prefs.mirror:'');}catch{/* Invalid stored config cannot start requests. */}
+    let mirror='';try{mirror=validateMirror(typeof prefs.mirror==='string'?prefs.mirror:'auto');}catch{/* Invalid stored config cannot start requests. */}
     this.state={phase:'idle',currentVersion:version,manifest:null,downloadedBytes:0,error:null,lastChecked:null,preferences:{automatic:prefs.automatic!==false,mirror,preview:typeof prefs.preview==='boolean'?prefs.preview:version.includes('-')}};
   }
   status():UpdateStatus{return structuredClone(this.state);}
@@ -37,7 +37,7 @@ export class DesktopUpdates {
   }
   start(){if(this.closed)return;this.timer=setTimeout(()=>{if(this.state.preferences.automatic)void this.check();this.start();},12*60*60*1000);this.timer.unref();if(this.state.preferences.automatic)void this.check();}
   close(){this.closed=true;if(this.timer)clearTimeout(this.timer);}
-  private sources(url:string){return [url,...(this.state.preferences.mirror?[mirrorUrl(url,this.state.preferences.mirror)]:[])];}
+  private sources(url:string){return updateSources(url,this.state.preferences.mirror);}
   async check(){
     if(['checking','downloading'].includes(this.state.phase))return this.status();this.state.phase='checking';this.state.error=null;
     const channel=this.state.preferences.preview?'preview':'stable';const url=`https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/windows-${channel}.json`;

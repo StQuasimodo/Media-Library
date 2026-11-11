@@ -36,6 +36,12 @@ import type { LibraryRepository } from '../data/repository';
 import type { ImageCache } from './imageCache';
 
 const now = () => new Date().toISOString();
+function refreshedSeries(current:Film,candidate:MetadataCandidate):Film['series']{
+  let series=current.series&&(current.series.customOrder||current.series.key.startsWith('manual:'))?{...current.series}:candidate.series;
+  const hints=candidate.series?.relationshipHints??current.series?.relationshipHints,related=current.series?.relatedTv,folder=current.series?.franchise;
+  if(hints||related||folder!==undefined)series={...(series??{key:'work:'+current.id,title:candidate.title,order:null}),...(hints?{relationshipHints:hints}:{}),...(related?{relatedTv:related}:{}),...(folder!==undefined?{franchise:folder}:{})};
+  return series;
+}
 
 const MAX_FAVORITE_REASON = 2000;
 const MAX_REVIEW = 5000;
@@ -439,7 +445,7 @@ export class LibraryService {
       originalLanguage: candidate.originalLanguage,
       posterPath,
       backdropPath,
-      series: current.series && (current.series.customOrder || current.series.key.startsWith('manual:')) ? current.series : current.series?.franchise!==undefined ? {...(candidate.series??{key:'work:'+filmId,title:candidate.title,order:null}),franchise:current.series.franchise} : candidate.series,
+      series: refreshedSeries(current,candidate),
       metadataUpdatedAt: now(),
     });
     if (imageWarnings.length) onImageWarning?.(imageWarnings.join(''));

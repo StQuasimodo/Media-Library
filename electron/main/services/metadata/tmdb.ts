@@ -11,6 +11,7 @@ import { AppError } from '../../errors';
 import { parseTmdbIdentity } from '../../../../src/shared/tmdbIdentity';
 import type { Logger } from '../logger';
 import { selectBackdrop, selectSeriesBackdrop, selectPoster, type TmdbImages } from './artwork';
+import type {RelationshipHints} from '../../../../src/shared/relatedTv';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
@@ -56,7 +57,14 @@ interface RawSearchResponse {
   status_message?: string;
 }
 
-interface RawDetail {
+interface RawRelationships {created_by?:Array<{id:number}>;credits?:{cast?:Array<{id:number;order?:number}>;crew?:Array<{id:number;job?:string}>};keywords?:{keywords?:Array<{name:string}>;results?:Array<{name:string}>}}
+function decodeRelationshipHints(raw:RawRelationships):RelationshipHints|undefined{
+  if(!Array.isArray(raw.credits?.cast))return undefined;
+  const ids=(rows:Array<{id:number}>|undefined)=>[...new Set((rows??[]).map(row=>row?.id).filter(id=>Number.isSafeInteger(id)&&id>0))];
+  const creators=Array.isArray(raw.created_by)?raw.created_by:[],crew=Array.isArray(raw.credits?.crew)?raw.credits.crew:[],tags=raw.keywords?.keywords??raw.keywords?.results??[];
+  return {cast:ids(raw.credits.cast.slice(0,20)),creators:ids([...creators,...crew.filter(row=>row&&['Creator','Writer','Screenplay','Story','Director'].includes(row.job??''))]),keywords:(Array.isArray(tags)?tags:[]).map(row=>row?.name).filter(name=>typeof name==='string')};
+}
+interface RawDetail extends RawRelationships {
   belongs_to_collection?: { id?: number; name?: string } | null;
   seasons?: Array<{ season_number?: number; name?: string; air_date?: string; episode_count?: number; overview?: string; poster_path?: string | null }>;
   id?: number;
@@ -102,6 +110,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export class TmdbProvider {
   private galleries = new Map<string, { expires: number; value: Promise<TmdbImages | null> }>();
   private galleryRetryAt = 0;
+  private relationshipCache=new Map<string,Promise<RelationshipHints>>();
+  clearRelationshipHints(){this.relationshipCache.clear();}
+  async relationshipHints(id:string,type:MediaType):Promise<RelationshipHints>{
+    if(!/^\d+$/.test(id))throw new AppError('VALIDATION','关联资料标识无效。');const config=this.requireConfig(),key=`${config.apiKey}:${type}:${id}`;
+    let pending=this.relationshipCache.get(key);if(pending)return pending;
+    if(this.relationshipCache.size>=128)this.relationshipCache.delete(this.relationshipCache.keys().next().value!);
+    pending=this.request<RawRelationships>(`/${type}/${id}`,config,{append_to_response:'credits,keywords',language:'en-US'}).then(raw=>{
+      const hints=decodeRelationshipHints(raw);if(!hints)throw new AppError('BAD_RESPONSE','关联主创资料暂不可用，保留已有归类。');return hints;
+    }).catch(error=>{if(this.relationshipCache.get(key)===pending)this.relationshipCache.delete(key);throw error;});this.relationshipCache.set(key,pending);return pending;
+  }
 
   private async images(path: string, config: TmdbConfig): Promise<TmdbImages | null> {
     const key = `${config.apiKey}:${path}`;
@@ -271,6 +289,7 @@ export class TmdbProvider {
       const seriesImages=seasonBackdrop?null:await this.images(`/tv/${identity.id}`,config);
       const selectedBackdrop=seasonBackdrop??backdropUrl(selectSeriesBackdrop(seriesImages?.backdrops,identity.season));
       return { ...series, externalId, title: `${series.title} · ${label}`,
+        series:{key:`tmdb:tv:${identity.id}`,title:series.title,order:identity.season,...(series.series?.relationshipHints?{relationshipHints:series.series.relationshipHints}:{})},
         originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
         year: parseYear(season.air_date), overview: overview || null,
         posterUrl: posterUrl(selectPoster(seasonImages?.posters)),
@@ -292,6 +311,7 @@ export class TmdbProvider {
     const payload = await this.request<RawDetail>(
       `/${mediaType}/${encodeURIComponent(externalId)}`,
       { apiKey, language },
+      {append_to_response:'credits,keywords'},
     );
 
     let overview = payload.overview?.trim() ?? '';
@@ -322,9 +342,11 @@ export class TmdbProvider {
           : null;
 
     const images = await this.images(`/${mediaType}/${externalId}`, { apiKey, language });
+    const canonical=mediaType==='movie'?await this.seriesFromMovie(externalId,payload,{apiKey,language}):undefined,hints=decodeRelationshipHints(payload);
+    const series=hints?{...(canonical??{key:mediaType==='tv'?`tmdb:tv:${externalId}`:`work:tmdb:movie:${externalId}`,title,order:mediaType==='tv'?-1:null}),relationshipHints:hints}:canonical;
     return {
       source: 'tmdb',
-      series: mediaType === 'movie' ? await this.seriesFromMovie(externalId,payload,{apiKey,language}) : undefined,
+      series,
       externalId,
       mediaType,
       title,

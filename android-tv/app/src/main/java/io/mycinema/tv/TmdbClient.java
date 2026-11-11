@@ -25,6 +25,19 @@ final class TmdbClient {
     interface Transport { JSONObject get(String path,Map<String,String> params) throws Exception; }
     private final Transport transport;
     private final String language;
+    private final Map<String,JSONObject> relationshipCache=new HashMap<>();
+    JSONObject relationshipHints(String id,String type)throws Exception{
+        validateId(id);if(!type.equals("movie")&&!type.equals("tv"))throw new IllegalArgumentException("关联资料类型无效。");String key=type+":"+id;JSONObject cached=relationshipCache.get(key);if(cached!=null)return cached;
+        Map<String,String> params=new HashMap<>();params.put("language","en-US");params.put("append_to_response","credits,keywords");JSONObject hints=decodeRelationshipHints(transport.get("/"+type+"/"+id,params));if(hints==null)throw new IllegalStateException("关联主创资料暂不可用，保留已有归类。");
+        if(relationshipCache.size()>=128)relationshipCache.clear();relationshipCache.put(key,hints);return hints;
+    }
+    private static JSONObject decodeRelationshipHints(JSONObject raw){
+        JSONObject credits=raw.optJSONObject("credits");if(credits==null||credits.optJSONArray("cast")==null)return null;
+        JSONObject hints=new JSONObject();JSONArray cast=new JSONArray(),creators=new JSONArray(),keywords=new JSONArray();JSONArray actors=Json.array(credits,"cast");for(int i=0;i<Math.min(20,actors.length());i++){JSONObject row=actors.optJSONObject(i);if(row!=null)cast.put(row.opt("id"));}
+        JSONArray created=Json.array(raw,"created_by");for(int i=0;i<created.length();i++){JSONObject row=created.optJSONObject(i);if(row!=null)creators.put(row.opt("id"));}JSONArray crew=Json.array(credits,"crew");for(int i=0;i<crew.length();i++){JSONObject row=crew.optJSONObject(i);if(row!=null&&java.util.Arrays.asList("Creator","Writer","Screenplay","Story","Director").contains(Json.text(row,"job")))creators.put(row.opt("id"));}
+        JSONObject tags=raw.optJSONObject("keywords");JSONArray names=Json.array(tags,tags!=null&&tags.has("keywords")?"keywords":"results");for(int i=0;i<names.length();i++){JSONObject row=names.optJSONObject(i);if(row!=null)keywords.put(Json.text(row,"name"));}Json.put(hints,"cast",cast);Json.put(hints,"creators",creators);Json.put(hints,"keywords",keywords);
+        return hints;
+    }
     private final ConcurrentHashMap<String,FutureTask<JSONObject>> galleries=new ConcurrentHashMap<>();
     private volatile long galleryRetryAt;
     private JSONObject images(String path) {
@@ -114,7 +127,7 @@ final class TmdbClient {
         if(!type.equals("movie")&&!type.equals("tv"))throw new IllegalArgumentException("作品类型无效。");
         String[] parts=externalId.split(":",-1);String id=parts[0];validateId(id);int season=-1;
         if(parts.length!=1){if(parts.length!=3||!type.equals("tv")||!parts[1].equals("season")||!parts[2].matches("0|[1-9][0-9]{0,3}"))throw new IllegalArgumentException("季标识无效。");season=Integer.parseInt(parts[2]);}
-        String path="/"+type+"/"+id;JSONObject raw=get(path);JSONObject film=base(raw,type);
+        String path="/"+type+"/"+id;Map<String,String> detailsParams=new HashMap<>();detailsParams.put("language",language);detailsParams.put("append_to_response","credits,keywords");JSONObject raw=transport.get(path,detailsParams);JSONObject film=base(raw,type);
         if(Json.text(film,"title").isEmpty())throw new IllegalArgumentException("TMDB返回的片名无效。");
         Json.put(film,"externalId",externalId);Json.put(film,"metadataUpdatedAt",Json.now());
         if(season>=0){
@@ -139,6 +152,7 @@ final class TmdbClient {
                 }
             }
         }
+        JSONObject relationship=decodeRelationshipHints(raw);if(relationship!=null){JSONObject metaSeries=film.optJSONObject("series");if(metaSeries==null)metaSeries=series("work:tmdb:movie:"+id,Json.text(film,"title"),null);Json.put(metaSeries,"relationshipHints",relationship);Json.put(film,"series",metaSeries);}
         JSONObject posters=images(path),backgrounds=posters;
         String selectedBackground=ArtworkPolicy.backdrop(Json.array(posters,"backdrops"),season),backgroundScope="season";
         if(season>=0&&selectedBackground==null){backgrounds=images("/tv/"+id);selectedBackground=ArtworkPolicy.seriesBackdrop(Json.array(backgrounds,"backdrops"),season);backgroundScope="series";}

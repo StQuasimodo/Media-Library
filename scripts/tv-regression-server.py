@@ -249,9 +249,9 @@ def serve(root, log):
             if not query.get('api_key', [''])[0].startswith('tv-fixture-'):
                 self.reply({'status_code': 7}, 401)
                 return
-            series = {'id': 1396, 'name': '绝命毒师', 'original_name': 'Breaking Bad', 'first_air_date': '2008-01-20', 'overview': '受控整剧简介', 'poster_path': '/whole-poster.png', 'backdrop_path': '/whole-still.png', 'genres': [{'name': '剧情'}], 'seasons': [
+            series = {'id': 1396, 'credits': {'cast': [], 'crew': []}, 'created_by': [], 'keywords': {'keywords': []}, 'name': '绝命毒师', 'original_name': 'Breaking Bad', 'first_air_date': '2008-01-20', 'overview': '受控整剧简介', 'poster_path': '/whole-poster.png', 'backdrop_path': '/whole-still.png', 'genres': [{'name': '剧情'}], 'seasons': [
                 {'season_number': n, 'name': f'第{n}季', 'air_date': f'{2007+n}-01-20', 'episode_count': 7 if n == 1 else 13, 'overview': f'受控第{n}季简介'} for n in [1, 2, 3]]}
-            movie = {'id': 603, 'title': '黑客帝国', 'original_title': 'The Matrix', 'release_date': '1999-03-31', 'overview': '受控电影简介', 'runtime': 136, 'poster_path': '/movie-poster.png', 'backdrop_path': '/movie-still.png', 'genres': [{'name': '科幻'}]}
+            movie = {'id': 603, 'credits': {'cast': [], 'crew': []}, 'created_by': [], 'keywords': {'keywords': []}, 'title': '黑客帝国', 'original_title': 'The Matrix', 'release_date': '1999-03-31', 'overview': '受控电影简介', 'runtime': 136, 'poster_path': '/movie-poster.png', 'backdrop_path': '/movie-still.png', 'genres': [{'name': '科幻'}]}
             if path.endswith('/images'):
                 base = path.removesuffix('/images')
                 n = int(base.rsplit('/', 1)[1]) if '/season/' in base else None
@@ -262,6 +262,9 @@ def serve(root, log):
                     **({} if n is not None else {'backdrops': [{'file_path': f'/s{i}-promo.png', 'iso_639_1': 'en', 'width': 1920, 'height': 1080} for i in [1, 2, 3]]})})
             elif path == '/configuration':
                 self.reply({'images': {'secure_base_url': 'https://image.tmdb.org/t/p/'}})
+            elif path in ('/tv/60574', '/movie/900001'):
+                is_tv = path.startswith('/tv/')
+                self.reply({'id': 60574 if is_tv else 900001, **({'name': '浴血黑帮', 'original_name': 'Peaky Blinders'} if is_tv else {'title': '浴血黑帮：不朽之人', 'original_title': 'Peaky Blinders: The Immortal Man'}), 'overview': '受控跨媒体关联资料', 'created_by': [{'id': 31}] if is_tv else [], 'credits': {'cast': [{'id': i} for i in (11, 12, 13)], 'crew': [{'id': 31, 'job': 'Writer'}]}, 'keywords': {'keywords': [{'name': 'based on television series'}]}})
             elif path == '/search/tv':
                 self.reply({'results': [series] if query.get('query', [''])[0].lower() in ['breaking bad', '绝命毒师'] else []})
             elif path == '/search/movie':

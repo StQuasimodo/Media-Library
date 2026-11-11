@@ -1,4 +1,5 @@
 import {backdropUrl,backdropLabel} from '../lib/format';
+import {validRelatedTv} from '@shared/relatedTv';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { MediaResource, WatchStatus } from '@shared/types';
@@ -176,6 +177,7 @@ export function FilmDetailPage() {
               <div className="film-original">{film.originalTitle}</div>
             ) : null}
 
+            {validRelatedTv(film.series?.relatedTv)&&film.series?.franchise===undefined?<p className="artwork-source">自动关联至《{film.series.relatedTv.title}》（由片名与演职员信息推断，可手动整理）</p>:null}
             {backdropLabel(film)?<p className="artwork-source">{backdropLabel(film)}</p>:null}
             <div className="film-meta">
               {film.year ? <span>{film.year}</span> : null}

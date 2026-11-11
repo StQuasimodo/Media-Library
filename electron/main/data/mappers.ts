@@ -89,7 +89,7 @@ function parseSeries(raw: string | null): FilmSeries | null | undefined {
   try {
     const value=JSON.parse(raw);
     return value && typeof value.key==='string' && typeof value.title==='string' &&
-      (value.order===null || (Number.isInteger(value.order) && value.order>=0)) ? value : null;
+      (value.order===null || (Number.isInteger(value.order) && (value.order>=0 || value.order===-1&&/^tmdb:tv:\d+$/.test(value.key)))) ? value : null;
   } catch { return null; }
 }
 

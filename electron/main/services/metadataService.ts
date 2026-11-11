@@ -4,6 +4,8 @@ import { AppError } from '../errors';
 import type { LibraryRepository } from '../data/repository';
 import type { LibraryService } from './library';
 import type { TmdbProvider } from './metadata/tmdb';
+import {chooseRelatedTv,relatedTvCandidate,relationWritable,titleEvidence,tvTargets,hasContinuationHint,validRelationshipHints} from '../../../src/shared/relatedTv';
+import {franchise} from '../../../src/shared/franchises';
 
 /**
  * Coordinates metadata lookups. Search results are only ever returned to the
@@ -19,13 +21,15 @@ export class MetadataService {
   private disposed=false;
   private seriesPaused=false;
   private attempted=new Set<string>();
+  private relatedAttempts=new Set<string>();private relationsPaused=false;private relationTargetsSignature='';
+  private rerunSeries=false;
   private seriesJob: Promise<{updated:number;failed:number}> | null=null;
   dispose() { this.disposed=true; }
   resolveSeries(): Promise<{updated:number;failed:number}> {
-    if(this.seriesJob)return this.seriesJob;
+    if(this.seriesJob){this.rerunSeries=true;return this.seriesJob;}
     if(this.disposed || this.seriesPaused || !this.hasApiKey)return Promise.resolve({updated:0,failed:0});
-    const films=this.repo.listAllFilms().filter(film=>film.mediaType==='movie' && film.metadataSource==='tmdb' && film.externalId && film.series===undefined && !this.attempted.has(film.id));
     const work=async()=>{
+      const films=this.repo.listAllFilms().filter(film=>film.mediaType==='movie' && film.metadataSource==='tmdb' && film.externalId && film.series===undefined && !this.attempted.has(film.id));
       let updated=0,failed=0,index=0;
       const worker=async()=>{
         while(index<films.length && !this.disposed && !this.seriesPaused) {
@@ -38,9 +42,35 @@ export class MetadataService {
           } catch(error) {failed++;if(!(error instanceof AppError) || error.code!=='NOT_FOUND')this.seriesPaused=true;}
         }
       };
-      await Promise.all([worker(),worker()]);return {updated,failed};
+      await Promise.all([worker(),worker()]);
+      const relations=this.seriesPaused?{updated:0,failed:0}:await this.resolveRelatedTv();return {updated:updated+relations.updated,failed:failed+relations.failed};
     };
-    this.seriesJob=work().finally(()=>{this.seriesJob=null;});return this.seriesJob;
+    const run=async()=>{const total={updated:0,failed:0};do{this.rerunSeries=false;const pass=await work();total.updated+=pass.updated;total.failed+=pass.failed;}while(this.rerunSeries&&!this.disposed&&!this.seriesPaused);return total;};
+    this.seriesJob=run().finally(()=>{this.seriesJob=null;});return this.seriesJob;
+  }
+
+  private async resolveRelatedTv():Promise<{updated:number;failed:number}>{
+    if(this.disposed||this.relationsPaused)return {updated:0,failed:0};
+    const all=this.repo.listAllFilms(),targets=tvTargets(all);let updated=0,failed=0,index=0;
+    const version=(films:Film[])=>JSON.stringify(films.filter(f=>f.mediaType==='tv').map(f=>[f.id,f.externalId,f.title,f.originalTitle,f.metadataUpdatedAt]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));
+    const snapshot=version(all),signature=JSON.stringify([targets,snapshot]),movies=all.filter(relationWritable);if(signature!==this.relationTargetsSignature||this.relatedAttempts.size>4096){this.relatedAttempts.clear();this.relationTargetsSignature=signature;}
+    const worker=async()=>{while(index<movies.length&&!this.disposed&&!this.relationsPaused){const movie=movies[index++];
+      if(franchise({...movie,series:movie.series?{...movie.series,relatedTv:undefined}:movie.series}))continue;
+      const stored=validRelationshipHints(movie.series?.relationshipHints)?movie.series.relationshipHints:null;
+      const namedTargets=targets.filter(tv=>titleEvidence(movie,tv).matches>0),candidates=namedTargets.length?namedTargets:stored&&hasContinuationHint(stored)?targets:[],key=JSON.stringify([movie.id,movie.title,movie.originalTitle,movie.metadataUpdatedAt]);
+      if(this.relatedAttempts.has(key))continue;
+      try{
+        let related=null;
+        if(candidates.length){const hints=stored??await this.provider.relationshipHints(movie.externalId!,'movie');const matches=[];
+          if(hints.cast.length)for(const tv of candidates){if(this.disposed||this.relationsPaused)break;const match=relatedTvCandidate(movie,tv,hints,tv.hints??await this.provider.relationshipHints(tv.id,'tv'));if(match)matches.push(match);}related=chooseRelatedTv(matches);
+        }
+        if(this.disposed)return;const current=this.repo.getFilm(movie.id);if(!current||!relationWritable(current)||current.externalId!==movie.externalId||current.title!==movie.title||current.originalTitle!==movie.originalTitle||current.metadataUpdatedAt!==movie.metadataUpdatedAt)continue;
+        const fresh=this.repo.listAllFilms();if(version(fresh)!==snapshot)continue;if(related&&!tvTargets(fresh).some(tv=>tv.id===related!.tvId))continue;
+        this.relatedAttempts.add(key);if(JSON.stringify(current.series?.relatedTv??null)===JSON.stringify(related))continue;
+        const series={...(current.series??{key:'work:'+current.id,title:current.title,order:null})};if(related)series.relatedTv=related;else delete series.relatedTv;
+        this.repo.updateFilm(current.id,{series:!related&&series.key.startsWith('work:')&&series.franchise===undefined?null:series});updated++;
+      }catch{failed++;this.relationsPaused=true;}
+    }};await Promise.all([worker(),worker()]);return {updated,failed};
   }
 
   get hasApiKey(): boolean {
@@ -51,7 +81,7 @@ export class MetadataService {
     const trimmed = key.trim();
     if (!trimmed) throw new AppError('VALIDATION', 'API Key 不能为空。');
     await this.provider.verifyKey(trimmed);
-    this.seriesPaused=false;this.attempted.clear();
+    this.seriesPaused=false;this.attempted.clear();this.relationsPaused=false;this.relatedAttempts.clear();this.provider.clearRelationshipHints?.();
   }
 
   async search(options: MetadataSearchOptions): Promise<MetadataSearchResult[]> {
@@ -117,6 +147,7 @@ export class MetadataService {
       throw new AppError('VALIDATION', '这部作品是手动添加的，没有可刷新的外部资料。');
     }
     const candidate = await this.provider.getCandidate(film.externalId, film.mediaType);
+    this.relationsPaused=false;this.relatedAttempts.clear();this.provider.clearRelationshipHints?.();
     assertActive();
     return this.library.applyExternalMetadata(filmId, candidate, assertActive, onImageWarning);
   }

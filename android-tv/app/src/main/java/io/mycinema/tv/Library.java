@@ -24,8 +24,8 @@ final class Library extends SQLiteOpenHelper {
         String id(){return Json.text(film,"id");}
         String title(){return Json.text(film,"title");}
         String status(){return Json.text(entry,"watchStatus");}
-        String seriesKey(){JSONObject series=film.optJSONObject("series");return series==null?"":Json.text(series,"key");}
-        String seriesTitle(){JSONObject series=film.optJSONObject("series");return series==null?"":Json.text(series,"title");}
+        String seriesKey(){JSONObject series=film.optJSONObject("series");String key=series==null?"":Json.text(series,"key");return key.startsWith("work:")?"":key;}
+        String seriesTitle(){JSONObject series=film.optJSONObject("series");return series==null||seriesKey().isEmpty()?"":Json.text(series,"title");}
         int order(){JSONObject series=film.optJSONObject("series");return series==null||series.isNull("order")?Integer.MAX_VALUE:series.optInt("order",Integer.MAX_VALUE);}
     }
     Library(Context context){super(context,"my-cinema-tv.db",null,1);getWritableDatabase();}
@@ -109,7 +109,8 @@ final class Library extends SQLiteOpenHelper {
     synchronized Item refresh(String id,JSONObject candidate){
         Item old=get(id);JSONObject film=Json.copy(candidate);for(String key:new String[]{"id","createdAt"})Json.put(film,key,old.film.opt(key));
         JSONObject series=old.film.optJSONObject("series");if(series!=null&&series.optBoolean("customOrder"))Json.put(film,"series",series);
-        else if(series!=null&&series.has("franchise")){JSONObject target=film.optJSONObject("series");if(target==null)target=TmdbClient.series("work:"+id,Json.text(film,"title"),null);Json.put(target,"franchise",series.opt("franchise"));Json.put(film,"series",target);}
+        else if(series!=null&&(series.has("franchise")||series.has("relatedTv"))){JSONObject target=film.optJSONObject("series");if(target==null)target=TmdbClient.series("work:"+id,Json.text(film,"title"),null);if(series.has("franchise"))Json.put(target,"franchise",series.opt("franchise"));if(series.has("relatedTv"))Json.put(target,"relatedTv",series.opt("relatedTv"));Json.put(film,"series",target);}
+        JSONObject hintsSource=candidate.optJSONObject("series"),merged=film.optJSONObject("series");Object hints=hintsSource!=null&&hintsSource.has("relationshipHints")?hintsSource.opt("relationshipHints"):series==null?null:series.opt("relationshipHints");if(hints!=null){if(merged==null)merged=TmdbClient.series("work:"+id,Json.text(film,"title"),null);Json.put(merged,"relationshipHints",hints);Json.put(film,"series",merged);}
         for(String key:new String[]{"posterPath","backdropPath"})if(Json.text(film,key).isEmpty()&&!film.isNull(key))Json.put(film,key,old.film.opt(key));
         Json.put(film,"updatedAt",Json.now());getWritableDatabase().update("films",values(id,film),"id=?",new String[]{id});return get(id);
     }
@@ -120,6 +121,12 @@ final class Library extends SQLiteOpenHelper {
     }
     synchronized void assignFranchise(List<String> ids,String key,String title){
         if(ids.isEmpty()||ids.size()>10000||title.trim().isEmpty()||title.length()>100||key.length()>400)throw new IllegalArgumentException("请选择作品并填写有效文件夹名称。");SQLiteDatabase db=getWritableDatabase();db.beginTransaction();try{for(String id:ids){Item item=get(id);JSONObject series=item.film.optJSONObject("series");if(series==null)series=TmdbClient.series("work:"+id,item.title(),null);JSONObject folder=new JSONObject();Json.put(folder,"key",key);Json.put(folder,"title",title.trim());Json.put(series,"franchise",folder);Json.put(item.film,"series",series);Json.put(item.film,"updatedAt",Json.now());db.update("films",values(id,item.film),"id=?",new String[]{id});}db.setTransactionSuccessful();}finally{db.endTransaction();}
+    }
+    synchronized boolean setRelatedTv(String id,JSONObject expected,JSONObject related){
+        Item item=get(id);if(!RelatedSeries.writable(item.film)||!Json.text(item.film,"externalId").equals(Json.text(expected,"externalId"))||!item.title().equals(Json.text(expected,"title"))||!Json.text(item.film,"originalTitle").equals(Json.text(expected,"originalTitle"))||!Json.text(item.film,"metadataUpdatedAt").equals(Json.text(expected,"metadataUpdatedAt")))return false;
+        JSONObject series=item.film.optJSONObject("series"),old=series==null?null:series.optJSONObject("relatedTv");if(String.valueOf(old).equals(String.valueOf(related)))return false;
+        if(series==null)series=TmdbClient.series("work:"+id,item.title(),null);if(related==null)series.remove("relatedTv");else Json.put(series,"relatedTv",related);
+        Json.put(item.film,"series",related==null&&Json.text(series,"key").startsWith("work:")&&!series.has("franchise")?null:series);Json.put(item.film,"updatedAt",Json.now());getWritableDatabase().update("films",values(id,item.film),"id=?",new String[]{id});return true;
     }
     synchronized void clearFranchise(List<String> ids){SQLiteDatabase db=getWritableDatabase();db.beginTransaction();try{for(String id:ids){Item item=get(id);JSONObject series=item.film.optJSONObject("series");if(series==null)series=TmdbClient.series("work:"+id,item.title(),null);Json.put(series,"franchise",null);Json.put(item.film,"series",series);db.update("films",values(id,item.film),"id=?",new String[]{id});}db.setTransactionSuccessful();}finally{db.endTransaction();}}
     synchronized void setArtwork(String id,String kind,String path){

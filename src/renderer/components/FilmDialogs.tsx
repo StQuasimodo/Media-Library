@@ -34,6 +34,8 @@ export function EditFilmDialog({
   onSaved: () => void;
 }) {
   const toast = useToast();
+  const visibleSeries=film.series?.key.startsWith('work:')?null:film.series;
+  const visibleOrder=visibleSeries?.order!=null&&visibleSeries.order>=0?String(visibleSeries.order):'';
   const [form, setForm] = useState({
     title: film.title,
     originalTitle: film.originalTitle ?? '',
@@ -43,7 +45,7 @@ export function EditFilmDialog({
     overview: film.overview ?? '',
     tagline: film.tagline ?? '',
     genres: film.genres.join(' / '),
-    seriesTitle:film.series?.title ?? '',seriesOrder:film.series?.order == null ? '' : String(film.series.order),
+    seriesTitle:visibleSeries?.title ?? '',seriesOrder:visibleOrder,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function EditFilmDialog({
       overview: film.overview ?? '',
       tagline: film.tagline ?? '',
       genres: film.genres.join(' / '),
-      seriesTitle:film.series?.title ?? '',seriesOrder:film.series?.order == null ? '' : String(film.series.order),
+      seriesTitle:visibleSeries?.title ?? '',seriesOrder:visibleOrder,
     });
     setError(null);
   }, [open, film]);
@@ -68,7 +70,7 @@ export function EditFilmDialog({
     setSaving(true);
     setError(null);
     try {
-      const seriesChanged=form.seriesTitle!==(film.series?.title ?? '') || form.seriesOrder!==(film.series?.order == null ? '' : String(film.series.order));
+      const seriesChanged=form.seriesTitle!==(visibleSeries?.title ?? '') || form.seriesOrder!==visibleOrder;
       await api.library.updateFilm(film.id, {
         ...(seriesChanged ? {series:form.seriesTitle.trim() ? {key:`manual:${form.mediaType}:${form.seriesTitle.trim().normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')}`,title:form.seriesTitle.trim(),order:form.seriesOrder ? Number(form.seriesOrder) : null} : null}:{}),
         title: form.title,

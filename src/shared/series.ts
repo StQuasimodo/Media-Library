@@ -37,7 +37,7 @@ export function identifySeries(entries:CollectionEntry[]):Map<string,FilmSeries>
     const film=entry.film,sequence=titleSequence(film.title,film.mediaType);
     const root=sequence?.root ?? film.title;
     const identity=film.mediaType==='tv' && film.metadataSource==='tmdb' && film.externalId ? parseTmdbIdentity(film.externalId,'tv') : null;
-    const structured=film.series ?? (identity ? {key:`tmdb:tv:${identity.id}`,title:root.replace(/\s*·\s*特别篇$/,''),order:identity.season ?? -1}:null);
+    const structured=(film.series?.key.startsWith('work:')?null:film.series) ?? (identity ? {key:`tmdb:tv:${identity.id}`,title:root.replace(/\s*·\s*特别篇$/,''),order:identity.season ?? -1}:null);
     const inferTitle=film.series!==null&&film.metadataSource!=='tmdb';
     const rootKey=`${film.mediaType}:${normal(root)}`;
 

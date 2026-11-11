@@ -2,6 +2,7 @@ import ruleData from './data/franchises.json';
 import type {CollectionEntry,Film} from './types';
 import {identifySeries,groupSeriesEntries} from './series';
 import {parseTmdbIdentity} from './tmdbIdentity';
+import {validRelatedTv} from './relatedTv';
 interface FranchiseRule {key:string;title:string;tv:string[];movie:string[];collections:string[]}
 const rules:FranchiseRule[]=ruleData;
 export interface SeriesFolder {key:string;title:string;entries:CollectionEntry[];standalone:boolean}
@@ -12,7 +13,10 @@ export function franchise(film:Film):{key:string;title:string}|null {
   const collection=identity&&film.mediaType==='movie'?/^tmdb:collection:(\d+)$/.exec(film.series?.key??'')?.[1]:undefined;
   const matches=direct.length?direct:collection?rules.filter(rule=>rule.collections.includes(collection)):[];
   const rule=matches.length===1?matches[0]:undefined;
-  return rule?{key:rule.key,title:rule.title}:null;
+  if(rule)return {key:rule.key,title:rule.title};
+  const related=film.mediaType==='movie'?film.series?.relatedTv:undefined;
+  if(validRelatedTv(related)){const roots=rules.filter(rule=>rule.tv.includes(related.tvId));return roots.length===1?{key:roots[0].key,title:roots[0].title}:{key:'tmdb:tv:'+related.tvId,title:related.title};}
+  return null;
 }
 export function seriesFolders(entries:CollectionEntry[]):SeriesFolder[]{
   const identities=identifySeries(entries),folders=new Map<string,SeriesFolder>();

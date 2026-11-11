@@ -48,6 +48,7 @@ public final class MainActivity extends Activity {
     private Artwork artwork;
     private SecretStore secrets;
     private final ExecutorService jobs=Executors.newSingleThreadExecutor();
+    private final ExecutorService relationJobs=Executors.newSingleThreadExecutor();private boolean relationWorking;private String relationSignature="";
     private final ArrayDeque<Page> history=new ArrayDeque<>();
     private FrameLayout body;
     private ImageView backdrop;
@@ -62,7 +63,7 @@ public final class MainActivity extends Activity {
     private int yearFilter;
     private int focusedSeason=-1;private boolean searchJustCompleted;
     private final java.util.Map<String,String> focusMemory=new LinkedHashMap<>();private String focusedFolder="";private static final int VOICE_SEARCH=703;
-    private boolean disposed,working,resumed;
+    private volatile boolean disposed;private boolean working,resumed;
     private static final int EXPORT_BACKUP=701,IMPORT_BACKUP=702;
     private static final class Page {final String screen,value;Page(String screen,String value){this.screen=screen;this.value=value;}}
     interface Work<T>{T run() throws Exception;}
@@ -91,7 +92,7 @@ public final class MainActivity extends Activity {
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putString("screen",screen);out.putString("value",value);out.putString("focused",focusedFilm);}
     @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused)immersive();}
     private void immersive(){getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);}
-    @Override protected void onDestroy(){disposed=true;if(updates!=null)updates.close();jobs.shutdownNow();if(artwork!=null)artwork.close();if(library!=null)library.close();super.onDestroy();}
+    @Override protected void onDestroy(){disposed=true;if(updates!=null)updates.close();jobs.shutdownNow();relationJobs.shutdownNow();if(artwork!=null)artwork.close();if(library!=null)library.close();super.onDestroy();}
     @Override public void onBackPressed(){if(!history.isEmpty()){Page page=history.pop();show(page.screen,page.value);}else if(!screen.equals("home"))top("home");else confirm("退出 My Cinema？","收藏已保存在电视本机。",this::finish);}
     private void top(String route){history.clear();query="";status="";series="";yearFilter=0;show(route,"");}
     private void push(String route,String id){history.push(new Page(screen,value));if(route.equals("collection")){query="";status="";series="";yearFilter=0;}show(route,id);}
@@ -104,6 +105,12 @@ public final class MainActivity extends Activity {
             switch(route){case "home":home();break;case "library":case "watchlist":case "collection":case "folder":wall();break;case "film":detail(id);break;case "collections":collections();break;case "settings":settings();break;case "search":search();break;case "seasons":seasons();break;case "candidate":candidate();break;default:top("home");}
         }catch(Exception error){LinearLayout content=page("暂时无法显示","");content.addView(text(message(error),18,SECONDARY));content.addView(button("返回首页",()->top("home")));}
         final int owner=generation;final String restore=searchJustCompleted&&route.equals("search")?"first-result":focusMemory.get(route+":"+id);searchJustCompleted=false;body.post(()->{if(generation==owner&&restore!=null){View target=RemoteUi.keyed(body,restore);if(target!=null)target.requestFocus();}});
+        if(route.equals("home")||route.equals("library"))scheduleRelatedSeries();
+    }
+    private void scheduleRelatedSeries(){
+        if(disposed||relationWorking||!secrets.exists())return;StringBuilder signature=new StringBuilder(language);for(Library.Item item:library.list("","","","","recent")){if(!Json.text(item.film,"metadataSource").equals("tmdb"))continue;signature.append('|').append(item.id()).append(':').append(Json.text(item.film,"externalId")).append(':').append(item.title()).append(':').append(Json.text(item.film,"originalTitle")).append(':').append(Json.text(item.film,"metadataUpdatedAt"));}
+        if(signature.toString().equals(relationSignature))return;relationSignature=signature.toString();relationWorking=true;
+        relationJobs.execute(()->{int updated=0;try{updated=RelatedSeries.resolve(library,tmdb(),new FranchiseFolders(this),()->!disposed&&!Thread.currentThread().isInterrupted());}catch(Exception ignored){/* An incomplete lookup preserves existing associations. Explicit metadata refresh permits another attempt. */}final int changed=updated;runOnUiThread(()->{if(disposed)return;relationWorking=false;if(changed>0&&(screen.equals("library")||screen.equals("home")))show(screen,value);else if(screen.equals("library")||screen.equals("home"))scheduleRelatedSeries();});});
     }
     @Override public boolean onKeyDown(int code,android.view.KeyEvent event){if(code==android.view.KeyEvent.KEYCODE_MENU){if(event.getRepeatCount()==0)choose("遥控器快捷操作",new String[]{"搜索收藏","添加作品","切换海报墙 / 文件夹","整理系列文件夹","媒体源","设置"},n->{if(n==0){if(!screen.equals("library"))top("library");searchCollection();}else if(n==1)push("search","");else if(n==2){getPreferences(0).edit().putBoolean("folderView",!getPreferences(0).getBoolean("folderView",false)).apply();top("library");}else if(n==3)organizeFolders();else if(n==4)mediaSources();else top("settings");});return true;}return super.onKeyDown(code,event);}
     private void runSearch(String value){String term=value.trim();if(term.isEmpty()||term.length()>120){toast("请输入1至120字的片名。");return;}searchQuery=term;new SearchHistory(this).add(term);job("搜索TMDB…",()->tmdb().search(term,searchType),result->{searchResults=result;searchJustCompleted=true;show("search","");if(result.isEmpty())toast("没有找到匹配资料，可调整片名或手动添加。");});}
@@ -192,6 +199,7 @@ public final class MainActivity extends Activity {
         Library.Item item=library.get(id);artwork.background(backdrop,item.film);LinearLayout content=page(item.title(),item.film.optString("mediaType").equals("tv")?"SERIES":"FILM");
         View eyebrow=content.getChildAt(0),heading=content.getChildAt(1);heading.setId(R.id.detail_title);content.removeAllViews();LinearLayout header=row(),copy=column();header.setGravity(Gravity.CENTER_VERTICAL);FrameLayout poster=poster(item,116);LinearLayout.LayoutParams artParams=new LinearLayout.LayoutParams(dp(116),dp(174));artParams.setMargins(0,0,dp(24),dp(12));header.addView(poster,artParams);copy.addView(eyebrow);copy.addView(heading);copy.addView(text(Json.text(item.film,"originalTitle"),14,SECONDARY));copy.addView(text(meta(item)+"  ·  "+statusLabel(item.status()),15,SECONDARY));header.addView(copy,new LinearLayout.LayoutParams(0,-2,1));content.addView(header);
         if(Artwork.backgroundPath(item.film).startsWith("backdrop/series/"))content.addView(text("全剧图库按季分配 · 季份未标注",12,SECONDARY));
+        JSONObject itemSeries=item.film.optJSONObject("series"),related=itemSeries==null?null:itemSeries.optJSONObject("relatedTv");if(related!=null&&!itemSeries.has("franchise")&&Json.text(related,"source").equals("tmdb-evidence-v1"))content.addView(text("自动关联至《"+Json.text(related,"title")+"》（由片名与演职员信息推断，可手动整理）",12,SECONDARY));
         LinearLayout actions=row();Button primary=button("查看资源",()->{View section=findViewById(R.id.resources_section);if(section!=null)section.requestFocus();});primary.setFocusableInTouchMode(true);StateListDrawable primaryStyle=new StateListDrawable();primaryStyle.addState(new int[]{android.R.attr.state_focused},surface(PRIMARY,ACCENT));primaryStyle.addState(new int[]{},surface(PRIMARY,0));primary.setBackground(primaryStyle);primary.setTextColor(SPACE);actions.addView(primary);actions.addView(button("编辑观影记录",()->editEntry(id)));actions.addView(button("加入专题",()->memberships(id)));actions.addView(button("更多操作",()->choose("作品操作",new String[]{"编辑影视资料","刷新TMDB资料","移除收藏"},n->{if(n==0)editFilm(id);if(n==1)refresh(id);if(n==2)confirm("移除《"+item.title()+"》？","本机的个人记录与资源记录会同时移除。",()->{library.remove(id);onBackPressed();});})));content.addView(actions);primary.post(primary::requestFocus);
         LinearLayout quick=row();quick.addView(button("观看状态："+statusLabel(item.status()),()->choose("快速设置观看状态",new String[]{"想看","观看中","已看完","暂不观看"},n->{JSONObject patch=new JSONObject();Json.put(patch,"watchStatus",new String[]{"want","watching","watched","dropped"}[n]);library.updateEntry(id,patch);show("film",id);})));
         quick.addView(button("个人评分："+(item.entry.isNull("personalRating")?"未评分":item.entry.optDouble("personalRating")),()->RemoteUi.rating(this,item.entry.isNull("personalRating")?null:item.entry.optDouble("personalRating"),rating->{JSONObject patch=new JSONObject();Json.put(patch,"personalRating",rating);library.updateEntry(id,patch);show("film",id);})));content.addView(quick);

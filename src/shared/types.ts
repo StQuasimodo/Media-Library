@@ -30,7 +30,9 @@ export type MetadataLanguage = 'zh-CN' | 'en-US';
 
 export type MotionPreference = 'system' | 'reduce' | 'full';
 
-export interface FilmSeries { key: string; title: string; order: number | null; customOrder?: boolean; franchise?: {key:string;title:string}|null }
+export interface RelatedTv {tvId:string;title:string;source:'tmdb-evidence-v1';score:number;evidence:string[]}
+export interface RelationshipHints {cast:number[];creators:number[];keywords:string[]}
+export interface FilmSeries { key: string; title: string; order: number | null; customOrder?: boolean; franchise?: {key:string;title:string}|null; relatedTv?:RelatedTv; relationshipHints?:RelationshipHints }
 
 export interface Film {
   id: string;

@@ -132,7 +132,7 @@ public final class MainActivity extends Activity {
     private static final class PosterHolder {final ImageView image;final TextView label;PosterHolder(ImageView image,TextView label){this.image=image;this.label=label;}}
     private View gridPoster(Library.Item item,View recycled){
         LinearLayout frame=recycled instanceof LinearLayout?(LinearLayout)recycled:null;
-        int available=getResources().getDisplayMetrics().widthPixels-dp(210),cover=Math.max(dp(90),(available-dp(72))/6),height=cover*3/2;
+        int columns=Math.max(3,getResources().getDisplayMetrics().widthPixels/dp(155)),available=body.getWidth()>0?body.getWidth():getResources().getDisplayMetrics().widthPixels-dp(64),cover=Math.max(dp(60),(available-dp(16)-dp(14)*(columns-1))/columns-dp(6)),height=cover*3/2;
         if(frame==null){frame=column();frame.setPadding(dp(3),dp(3),dp(3),dp(7));frame.setBackground(focusBackground());ImageView image=new ImageView(this);image.setScaleType(ImageView.ScaleType.CENTER_CROP);frame.addView(image,new LinearLayout.LayoutParams(-1,height));TextView label=text("",12,PRIMARY);label.setMaxLines(2);label.setEllipsize(android.text.TextUtils.TruncateAt.END);label.setTypeface(Typeface.DEFAULT,Typeface.BOLD);frame.addView(label,new LinearLayout.LayoutParams(-1,dp(42)));frame.setTag(new PosterHolder(image,label));frame.setLayoutParams(new android.widget.AbsListView.LayoutParams(-1,height+dp(52)));}
         PosterHolder holder=(PosterHolder)frame.getTag();holder.label.setText(item.title());artwork.load(holder.image,Json.text(item.film,"posterPath"),cover,height);frame.setContentDescription(item.title());return frame;
     }

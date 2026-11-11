@@ -64,6 +64,7 @@ final class QuarkDavScenario {
     void run() throws Exception {
         JSONObject report=new JSONObject();Json.put(report,"buildRun",run);Json.put(report,"apiLevel",android.os.Build.VERSION.SDK_INT);QuarkDavManager manager=CinemaApplication.dav(context);
         try{
+            manager.disable(); // Explicit fixture setup; reauthentication now deliberately preserves a mount.
             mode("bridge_tree");MediaSources sources=new MediaSources(context);sources.saveQuark("__puus=tv-playback-fixture");
             owner=(MediaBrowserActivity)test.startActivitySync(new Intent(context,MediaBrowserActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));test.waitForIdleSync();
             test.runOnMainSync(()->{View button=label(owner.getWindow().getDecorView(),"选择夸克文件夹并生成WebDAV");check(button!=null&&button.performClick(),"conversion entry exists and can be selected");});

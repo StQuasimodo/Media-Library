@@ -6,6 +6,8 @@
 
 Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独立Android电视端以`android-tv/app/build.gradle`的versionName/versionCode为来源，初始`0.1.0-alpha.1` / 1，Tag使用`tv-v<versionName>`，避免与Windows Tag混淆；每个向用户分发的新APK递增versionCode，保持应用ID与正式签名身份。电视开发预览与签名限制见[电视说明](ANDROID-TV.md)。
 
+2026-11-11：新增Windows`1.3.0-beta.1`与TV`0.3.0-alpha.1`/code9预览，原数据库schema不变；TV保留alpha.5固定签名并验证实际8→9覆盖升级。构建身份与验收见[专项报告](LIBRARY-UPDATES-VALIDATION-2026-11-11.md)。
+
 电视端已发布为`0.2.0-alpha.5` / 8；用户于2026-11-10明确授权[采用新固定签名](TV-FIXED-SIGNING-2026-11-10.md)，不能覆盖旧签名安装，已完成完整API22回归并发布开发预览。前一架构优化开发为`0.2.0-alpha.4` / 7，前一播放稳定性开发为`0.2.0-alpha.3` / 6，前一夸克转换开发为`0.2.0-alpha.2` / 5，上一播放开发为`0.2.0-alpha.1` / 4，此前沿用alpha.2起的开发签名；Windows当前正式版为`1.2.0`（schema v4），不再复用beta.2修订例外。alpha.1默认开发Keystore未成功缓存，无法用新签名覆盖；不移动原Tag、不替换旧资产、不要求用户盲目卸载。alpha.2起的旧证书存档为[旧固定公开指纹](../android-tv/legacy-development-signing.sha256)，原缓存缺失会使旧构建失败。当前[固定指纹](../android-tv/development-signing.sha256)已按本次授权更换，后续不得静默换签。正式beta前仍需私有固定发布签名及备份，不把CI缓存视为永久托管。APK构建源码、后续回归驱动源码与发布脚本源码分别记录；即使源码不同，也必须以实际字节哈希证明所测应用与交付应用相同，不能只核对版本号。
 
 `package.json` 的 `version` 是应用版本的唯一来源。安装包、免安装 ZIP、应用「关于」与 GitHub Tag 必须一致，Tag 使用 `v<version>`。`1.1.0` 正式版使用 schema v2；`1.2.0-beta.1` 新增云端资源关联，使用 schema v3，升级前自动保存一致快照。

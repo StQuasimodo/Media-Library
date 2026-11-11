@@ -1,0 +1,11 @@
+{
+  "publishRun": "42941408826",
+  "buildRun": "42940425191",
+  "source": "410ab0e482f289a76ec85d34291b366a4359c0ce",
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.1",
+  "retainedApkBytesMatchPublishedDigest": true,
+  "manifestSignatureVerified": true,
+  "sha256": "c561853702449c6077e9e14c5c1546a1a14955889a91a0fac9e992af6fd8371e",
+  "realThirdPartyMirrorVerified": false,
+  "actualTelevisionVerified": false
+}

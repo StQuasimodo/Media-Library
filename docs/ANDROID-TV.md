@@ -1,5 +1,7 @@
 # My Cinema 电视端
 
+2026-11-11：[0.3.0-alpha.1/code9](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.1)新增应用内更新/可配置镜像、影视宇宙文件夹、重新登录保留目录及手选图库/在线剧照。沿用alpha.5固定签名，可保留数据覆盖安装；旧签名限制不变。[本轮验证](LIBRARY-UPDATES-VALIDATION-2026-11-11.md)。播放器仍为LibVLC3.7.7，长虹实机未验收。
+
 2026-11-10：已发布[0.2.0-alpha.5/code8开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.2.0-alpha.5)，包含本机夸克WebDAV、内置播放及可导出备份，采用新的固定签名。旧alpha.2/alpha.3不能直接覆盖升级；[原包、完整API22结果及实机限制](TV-ALPHA5-VALIDATION-2026-11-10.md)。
 
 
@@ -50,7 +52,7 @@ cd android-tv
 
 [Android TV API 22 preview工作流](../.github/workflows/android-tv.yml)构建后核对minSdk、v1签名、DEX035与ARMv7/x86解码库；随后在API22 x86模拟器安装应用和独立测试APK，运行SQLite、Keystore与遥控器界面验证。测试数据只在测试APK中，正式应用首次启动为空收藏。模拟器通过不等于长虹固件、遥控器、中文输入法、真实网络/TMDB和解码已经验收。
 
-当前交付为`0.2.0-alpha.5` **debug开发预览**，新固定签名只能全新安装或按备份方案迁移，不能覆盖旧alpha.2/alpha.3。历史alpha.3沿用alpha.2签名，二者间可覆盖升级。alpha.1默认Keystore未被成功缓存，其签名无法恢复；**alpha.2及后续不能直接覆盖alpha.1**。alpha.1已有收藏时请保留原安装，不要直接卸载；卸载会同时清除本机备份。开发签名不是生产签名。
+当前交付为`0.3.0-alpha.1` **debug开发预览**，可覆盖alpha.5；其他旧签名只能按备份方案迁移，不能覆盖旧alpha.2/alpha.3。历史alpha.3沿用alpha.2签名，二者间可覆盖升级。alpha.1默认Keystore未被成功缓存，其签名无法恢复；**alpha.2及后续不能直接覆盖alpha.1**。alpha.1已有收藏时请保留原安装，不要直接卸载；卸载会同时清除本机备份。开发签名不是生产签名。
 
 alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立准备任务共享；[旧公开证书指纹](../android-tv/legacy-development-signing.sha256)为`0e343d7d8d91f931b0350b7c01f87115f2fc7daf6402c0baee8276ced4a9bd44`，缓存缺失时拒绝生成替代签名。缓存不是永久签名托管；进入长期使用的beta前须配置固定的私有发布签名及备份，并补齐可导出备份。不要用开发签名作为长期正式发行方案。
 

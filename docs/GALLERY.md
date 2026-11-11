@@ -2,6 +2,24 @@
 
 [返回项目首页](../README.md) · [视觉规范](DESIGN.md)
 
+## Windows1.3预览：系列文件夹与在线图库
+
+真实Windows Electron窗口，以下是隔离收藏和合成色块素材的功能截图，展示文件夹/在线剧照入口，不代表实际电影素材品质。[两端验收](LIBRARY-UPDATES-VALIDATION-2026-11-11.md)。
+
+| 系列文件夹 | 关联剧集与衍生电影 |
+|---|---|
+| ![系列文件夹](../artifacts/releases/v1.3.0-beta.1/25-universe-folders.png) | ![文件夹内容](../artifacts/releases/v1.3.0-beta.1/26-universe-contents.png) |
+
+[在线剧照入口](../artifacts/releases/v1.3.0-beta.1/24-online-stills.png)通过内存协议加载，没有写入本地图片缓存。
+
+## Android TV0.3预览
+
+API22原生窗口、合成测试收藏；真实电影图片、长虹屏幕效果仍需独立验收。
+
+| 影视宇宙文件夹 | 504条收藏滚动测试 |
+|---|---|
+| ![电视文件夹](../artifacts/releases/tv-v0.3.0-alpha.1/folders.png) | ![海报墙](../artifacts/releases/tv-v0.3.0-alpha.1/poster-wall.png) |
+
 ## Windows 1.2.0：全部刷新
 
 [查看影视库工具栏与刷新结果](../artifacts/review-2026-10-28/release120/24-library-refresh-result.png)。截图来自真实Windows Electron窗口，示范一次受控404失败后的汇总；其他作品更新及后续重试成功，不是真实账号故障。夸克/TMDB响应与图片均为测试数据。[原始报告](../artifacts/releases/v1.2.0/library-refresh-desktop-report.json)。

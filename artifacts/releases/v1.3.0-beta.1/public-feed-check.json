@@ -1,0 +1,10 @@
+{
+  "endpoint": "https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/windows-preview.json",
+  "manifestSignatureVerified": true,
+  "publishedAssetIdentityVerified": true,
+  "version": "1.3.0-beta.1",
+  "sha256": "c836e717b2974fa9a46ed994a23b27964a68f95df695dc5a9dd4005271a718c6",
+  "transport": "curl HTTPS with normal cloud proxy/CA; envelope verified by bundled production DesktopUpdates verifier on Linux",
+  "actualWindowsUpdateDownloadVerified": false,
+  "actualThirdPartyMirrorVerified": false
+}

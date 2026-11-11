@@ -1,0 +1,10 @@
+{
+  "version": "1.3.0-beta.1",
+  "source": "8d30c31afd93ad466cc023c5af530476cd1fca70",
+  "run": "42939674697",
+  "windowsInstallerSha256": "c836e717b2974fa9a46ed994a23b27964a68f95df695dc5a9dd4005271a718c6",
+  "bytes": 122949787,
+  "actualPersonalAccountVerified": false,
+  "mirrorFixtureVerified": true,
+  "realThirdPartyMirrorVerified": false
+}

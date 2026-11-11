@@ -1,5 +1,9 @@
 # 验证与交付
 
+## 两端更新、影视宇宙与图库（2026-11-11）
+
+Windows1.3.0-beta.1与TV0.3.0-alpha.1的实际构建、升级、控件与播放回归结果、签名更新清单及未验收范围见[专项报告](LIBRARY-UPDATES-VALIDATION-2026-11-11.md)。历史报告保留原源码与产物身份。
+
 ## TV alpha.5实际固定签名交付（2026-11-10）
 
 [下载已发布开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.2.0-alpha.5)。用户保存Secret后，[完整流程42844482999](https://github.com/StQuasimodo/Media-Library/actions/runs/42844482999)通过；实际构建源码`3d0d68cdbd5febb1648a111c5c753a56ed4dbdd7`。新固定证书be6ca662…，API21/v1、ARMv7/x86打包、Gradle/Lint（0错误/17警告）、API22实际安装/LibVLC解码和画面/定位/暂停/续播通过。90,024ms连续观测、1,354新增显示帧，Range/过期刷新/断流恢复/目录取消、16项备份、29组命名及收藏/进程/内核重启通过；原始APK哈希与回归目标相同。[原始结果、截图与边界](TV-ALPHA5-VALIDATION-2026-11-10.md)。原签名旧安装不可覆盖；本次为新签名全新安装，未验证固定签名跨版本升级、ARMv7运行、真实账号、可听声音或长虹实机。

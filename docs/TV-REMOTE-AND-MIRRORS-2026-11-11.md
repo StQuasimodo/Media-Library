@@ -52,4 +52,6 @@
 
 APK48790053字节，SHA256`94b7c1ecbfa3f710b3eee42699eb45ee7b4ed0c5b1e632010e651c23aaa87c1f`；证书仍为be6ca662…，保留原应用ID、数据库和凭据结构。[身份记录](../artifacts/releases/tv-v0.3.0-alpha.2/BUILD.json) · [按键/公网镜像结果](../artifacts/releases/tv-v0.3.0-alpha.2/remote-report.json) · [播放结果](../artifacts/releases/tv-v0.3.0-alpha.2/playback-report.json) · [收藏/重启汇总](../artifacts/releases/tv-v0.3.0-alpha.2/regression-summary.json)。本轮没有Windows解码改造、mpv迁移或4K实机验收。
 
+[TV发布42966658378](https://github.com/StQuasimodo/Media-Library/actions/runs/42966658378)及签名更新清单任务均成功；[下载alpha.2](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.2)的源码标签、APK大小和GitHub资产SHA256与上述构建一致。发布后重新获取两端公开预览清单，用生产验签器确认Windows为beta.2、TV为alpha.2/code10，安装包哈希与原构建一致；Windows稳定渠道仍为1.2.0。[公开清单验证记录](../artifacts/releases/published-feeds-2026-11-11.json)。安装这些版本或在已支持更新的版本中开启“包含预览版本”，才能获取本轮预览更新。
+
 开发中保留了失败结果：首轮多选测试的辅助焦点没有改变原生列表选中行；后续旧收藏脚本仍按原入口直接找输入框，或把已聚焦时的ACTION_FOCUS=false当成失败。改为检查实际选中行并发送方向/确认事件，按新入口进入详情与资源区。另一次固定两秒的定位断言在模拟器负载下提前失败，改为有界等待实际播放时钟及显示帧。最终完整流程重新执行通过，没有将这些中间失败构建发布。

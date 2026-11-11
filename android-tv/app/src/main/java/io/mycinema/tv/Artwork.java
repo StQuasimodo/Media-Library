@@ -29,7 +29,7 @@ final class Artwork {
     Artwork(Context context,TransientTransport transport){root=new File(context.getFilesDir(),"images");transientTransport=transport;}
     private static byte[] readTransient(URL url) throws Exception {HttpsURLConnection connection=(HttpsURLConnection)url.openConnection();try{connection.setUseCaches(false);connection.setRequestProperty("Cache-Control","no-store");connection.setConnectTimeout(12000);connection.setReadTimeout(12000);connection.setInstanceFollowRedirects(false);if(connection.getResponseCode()!=200)throw new java.io.IOException();return TmdbClient.read(connection.getInputStream(),8*1024*1024);}finally{connection.disconnect();}}
 
-    private File resolve(String path){return path.matches("(?:poster|backdrop)/(?:[a-f0-9]{64}|manual/[A-Za-z0-9_-]{1,180}\\.(?:jpg|png|webp)|season/[0-9]+-[0-9]+/[a-f0-9]{64})\\.img")?new File(root,path):null;}
+    private File resolve(String path){return path.matches("(?:poster|backdrop)/(?:[a-f0-9]{64}|manual/[A-Za-z0-9_-]{1,180}\\.(?:jpg|png|webp)|(?:season/[0-9]+-[0-9]+|series/[0-9]+)/[a-f0-9]{64})\\.img")?new File(root,path):null;}
     private String store(String address,String kind) throws Exception {return store(address,kind,false);}
     String storeManual(String address,String kind) throws Exception {return store(address,kind,true);}
     private String manualUrl(String path,String kind){String prefix=kind+"/manual/";return path.startsWith(prefix)&&resolve(path)!=null?"https://image.tmdb.org/t/p/"+(kind.equals("poster")?"w780":"w1280")+"/"+path.substring(prefix.length(),path.length()-4):null;}
@@ -45,14 +45,14 @@ final class Artwork {
         File parent=file.getParentFile();if(!parent.isDirectory()&&!parent.mkdirs())throw new java.io.IOException();
         File temporary=File.createTempFile("art-",".tmp",parent);try{try(FileOutputStream output=new FileOutputStream(temporary)){output.write(bytes);}if(!temporary.renameTo(file))throw new java.io.IOException();}finally{temporary.delete();}return relative;
     }
-    private String scoped(String path,String external) throws Exception {
-        if(!external.matches("[0-9]+:season:[0-9]+"))return path;String[] id=external.split(":");String relative="backdrop/season/"+id[0]+"-"+id[2]+"/"+path.substring(path.lastIndexOf('/')+1);File target=resolve(relative);if(target.isFile())return relative;File parent=target.getParentFile();if(!parent.isDirectory()&&!parent.mkdirs())throw new java.io.IOException();File temporary=File.createTempFile("scope-",".tmp",parent);try{try(java.io.InputStream input=new java.io.FileInputStream(resolve(path));FileOutputStream output=new FileOutputStream(temporary)){byte[] buffer=new byte[32768];for(int n;(n=input.read(buffer))!=-1;)output.write(buffer,0,n);}if(!temporary.renameTo(target))throw new java.io.IOException();}finally{temporary.delete();}return relative;
+    private String scoped(String path,String external,String scope) throws Exception {
+        if(!external.matches("[0-9]+:season:[0-9]+"))return path;String[] id=external.split(":");String relative="backdrop/"+(scope.equals("series")?"series/"+id[0]:"season/"+id[0]+"-"+id[2])+"/"+path.substring(path.lastIndexOf('/')+1);File target=resolve(relative);if(target.isFile())return relative;File parent=target.getParentFile();if(!parent.isDirectory()&&!parent.mkdirs())throw new java.io.IOException();File temporary=File.createTempFile("scope-",".tmp",parent);try{try(java.io.InputStream input=new java.io.FileInputStream(resolve(path));FileOutputStream output=new FileOutputStream(temporary)){byte[] buffer=new byte[32768];for(int n;(n=input.read(buffer))!=-1;)output.write(buffer,0,n);}if(!temporary.renameTo(target))throw new java.io.IOException();}finally{temporary.delete();}return relative;
     }
     JSONObject cacheMetadata(JSONObject candidate,JSONObject previous){
         JSONObject result=Json.copy(candidate);
         for(String kind:new String[]{"poster","backdrop"}){
             String url=Json.text(candidate,kind+"Url"),old=previous==null?"":Json.text(previous,kind+"Path");
-            String locked=manualUrl(old,kind);String path=null;if(locked!=null){try{path=store(locked,kind,true);}catch(Exception ignored){path=old;}}else if(!url.isEmpty()){try{path=store(url,kind);if(kind.equals("backdrop"))path=scoped(path,Json.text(candidate,"externalId"));}catch(Exception ignored){path=old.isEmpty()?null:old;}}
+            String locked=manualUrl(old,kind);String path=null;if(locked!=null){try{path=store(locked,kind,true);}catch(Exception ignored){path=old;}}else if(!url.isEmpty()){try{path=store(url,kind);if(kind.equals("backdrop"))path=scoped(path,Json.text(candidate,"externalId"),Json.text(candidate,"backdropScope"));}catch(Exception ignored){path=old.isEmpty()?null:old;}}
             else if(previous!=null){
                 String selection=Json.text(candidate,kind+"Selection");
                 boolean clear=selection.equals("resolved")||(selection.isEmpty()&&kind.equals("backdrop")&&Json.text(candidate,"externalId").contains(":season:"));
@@ -73,7 +73,8 @@ final class Artwork {
             main.post(()->{if(!closed&&key.equals(target.getTag()))target.setImageBitmap(bitmap);});
         });
     }
-    void background(ImageView view,JSONObject film){String path=Json.text(film,"backdropPath"),external=Json.text(film,"externalId");if(external.matches("[0-9]+:season:[0-9]+")){String[] id=external.split(":");if(!path.startsWith("backdrop/manual/")&&!path.startsWith("backdrop/season/"+id[0]+"-"+id[2]+"/"))path="";}boolean fallback=path.isEmpty();if(fallback)path=Json.text(film,"posterPath");view.setAlpha(fallback?.24f:1f);load(view,path,960,540);}
+    static String backgroundPath(JSONObject film){String path=Json.text(film,"backdropPath"),external=Json.text(film,"externalId");if(!path.startsWith("backdrop/"))return "";if(external.matches("[0-9]+:season:[0-9]+")){String[] id=external.split(":");if(!path.startsWith("backdrop/manual/")&&!path.startsWith("backdrop/season/"+id[0]+"-"+id[2]+"/")&&!path.startsWith("backdrop/series/"+id[0]+"/"))return "";}return path;}
+    void background(ImageView view,JSONObject film){view.setAlpha(1f);load(view,backgroundPath(film),960,540);}
     void preview(ImageView view,String address,int width,int height){
         view.setImageDrawable(null);String key="preview:"+address;view.setTag(key);if(closed||address.isEmpty())return;
         workers.execute(()->{if(closed||!key.equals(view.getTag()))return;try{String path=store(address,"poster");main.post(()->{if(!closed&&key.equals(view.getTag()))load(view,path,width,height);});}catch(Exception ignored){}});

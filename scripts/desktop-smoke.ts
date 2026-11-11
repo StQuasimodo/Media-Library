@@ -439,11 +439,12 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     assert.ok(manualSeason);extraFilmIds.push(manualSeason.filmId);
     checks.push('normal TMDB search expands six season rows, single/batch season import, collected markers, personal rating preservation, whole-series choice and manual missing-season form through real UI/IPC');
     const noStill=imported.find((entry:any)=>entry.film.externalId==='1396:season:3').film;
-    assert.equal(noStill.backdropPath,null);assert.ok(noStill.posterPath);
+    assert.ok(noStill.backdropPath.startsWith('backdrop/series/1396/'));assert.ok(noStill.posterPath);
     await route(`/film/${noStill.id}`,"!!document.querySelector('.film-title')");
-    await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(noStill.posterPath)})`);
-    await shot('23-season-poster-fallback');
-    checks.push('empty show backdrop gallery falls back to the selected English season poster');
+    await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(noStill.backdropPath)})`);
+    await waitFor("document.querySelector('.artwork-source')?.textContent.includes('季份未标注')");
+    await shot('23-season-series-backdrop');
+    checks.push('poster-only season gallery automatically uses a scoped whole-series landscape image with an explicit source label');
     const artworkChoices=await js(`window.cinema.metadata.artwork(${JSON.stringify(tv.id)})`);
     assert.ok(artworkChoices.some((choice:any)=>choice.kind==='still'));
     const selectedArt=artworkChoices.find((choice:any)=>choice.kind==='backdrop'&&choice.scope==='season')??artworkChoices.find((choice:any)=>choice.kind==='backdrop');assert.ok(selectedArt);

@@ -6,6 +6,12 @@ import signing from '../../../src/shared/data/update-signing.json';
 import {compareVersions,validateMirror,updateSources,type UpdateManifest,type UpdatePreferences,type UpdateStatus} from '../../../src/shared/updates';
 
 const DOMAIN=Buffer.from('MY_CINEMA_UPDATE_V1\n');
+function updateFailure(error:unknown,fallback:string):string {
+  const name=error&&typeof error==='object'&&'name' in error?error.name:null;
+  if(name==='TimeoutError')return '检查更新连接超时，镜像设置不受影响。请稍后重试或切换更新来源。';
+  if(name==='TypeError')return '无法连接更新来源，请检查网络或切换镜像。';
+  return error instanceof Error?error.message:fallback;
+}
 export function verifyUpdateEnvelope(body:string,platform:'windows'|'tv',channel:'stable'|'preview',certificate=signing.certificatePem):UpdateManifest {
   if(body.length>65536)throw new Error('更新说明过大。');const envelope=JSON.parse(body);
   if(typeof envelope.payload!=='string'||typeof envelope.signature!=='string'||envelope.payload.length>49152||envelope.signature.length>8192)throw new Error('更新说明无效。');
@@ -50,7 +56,7 @@ export class DesktopUpdates {
       const manifest=verifyUpdateEnvelope(Buffer.concat(chunks).toString('utf8'),'windows',channel,this.certificate);
       if(this.activeCheck!==current)return this.status();
       this.state.lastChecked=new Date().toISOString();this.state.manifest=compareVersions(manifest.version,this.state.currentVersion)>0?manifest:null;this.state.phase=this.state.manifest?'available':'idle';return this.status();
-    }catch(error){if(this.activeCheck!==current)return this.status();failure=error instanceof Error?(error.name==='TimeoutError'?'检查更新连接超时，镜像设置不受影响。请稍后重试或切换更新来源。':error instanceof TypeError?'无法连接更新来源，请检查网络或切换镜像。':error.message):failure;}
+    }catch(error){if(this.activeCheck!==current)return this.status();failure=updateFailure(error,failure);}
     this.state.phase='error';this.state.error=failure;return this.status();
     }finally{if(this.activeCheck===current)this.activeCheck=null;}
   }

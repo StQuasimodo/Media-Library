@@ -1,4 +1,4 @@
-import {backdropUrl} from '../lib/format';
+import {backdropUrl,backdropLabel} from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { MediaResource, WatchStatus } from '@shared/types';
@@ -154,7 +154,7 @@ export function FilmDetailPage() {
   return (
     <div className="film-detail">
       <section className={`film-stage${backdrop || poster ? '' : ' no-art'}`}>
-        <HeroBackdrop src={backdrop} posterSrc={poster} />
+        <HeroBackdrop src={backdrop} />
         <div className="film-stage-scrim" />
         <Link to="/library" className="stage-back"><Icon name="chevronLeft" size={13} /> 返回影视库</Link>
 
@@ -176,6 +176,7 @@ export function FilmDetailPage() {
               <div className="film-original">{film.originalTitle}</div>
             ) : null}
 
+            {backdropLabel(film)?<p className="artwork-source">{backdropLabel(film)}</p>:null}
             <div className="film-meta">
               {film.year ? <span>{film.year}</span> : null}
               {film.runtime ? <span className="meta-sep">{formatRuntime(film.runtime)}</span> : null}

@@ -10,7 +10,7 @@ import { useAsyncData } from '../lib/useAsync';
 import { EmptyState, ErrorState, LoadingRow, Modal, PosterCard } from '../components/primitives';
 import { Icon } from '../components/icons';
 import { HeroBackdrop } from '../components/HeroBackdrop';
-import { imageUrl, statusLabel } from '../lib/format';
+import { backdropUrl, imageUrl, statusLabel } from '../lib/format';
 
 export function CollectionDetailPage() {
   const { collectionId } = useParams<{ collectionId: string }>();
@@ -41,8 +41,7 @@ export function CollectionDetailPage() {
 
   const { collection } = detail.data;
   const entries = groupSeriesEntries(detail.data.entries);
-  const artwork = entries.find((entry) => entry.film.backdropPath)?.film ??
-    entries.find((entry) => entry.film.posterPath)?.film;
+  const artwork = entries.find((entry) => backdropUrl(entry.film))?.film;
   const memberIds = new Set(entries.map((entry) => entry.id));
   const candidates = (library.data ?? []).filter((entry) => !memberIds.has(entry.id));
   const filtered = pickerSearch.trim()
@@ -82,7 +81,7 @@ export function CollectionDetailPage() {
   return (
     <>
       <section className="collection-stage" aria-label="专题介绍">
-        <HeroBackdrop src={imageUrl(artwork?.backdropPath)} posterSrc={imageUrl(artwork?.posterPath)} />
+        <HeroBackdrop src={artwork?backdropUrl(artwork):null} />
         <div className="film-stage-scrim" />
         <div className="collection-stage-inner">
           <button type="button" className="link-button collection-back" onClick={() => navigate('/collections')}>

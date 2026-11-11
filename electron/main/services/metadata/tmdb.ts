@@ -267,13 +267,16 @@ export class TmdbProvider {
       }
       const label = identity.season === 0 ? '特别篇' : `第${identity.season}季`;
       const seasonImages = await this.images(path, config);
+      const seasonBackdrop=backdropUrl(selectBackdrop(seasonImages?.backdrops));
+      const selectedBackdrop=seasonBackdrop??series.backdropUrl;
       return { ...series, externalId, title: `${series.title} · ${label}`,
         originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
         year: parseYear(season.air_date), overview: overview || null,
         posterUrl: posterUrl(selectPoster(seasonImages?.posters)),
         posterSelection: Array.isArray(seasonImages?.posters) ? 'resolved' : 'unavailable',
-        backdropUrl: backdropUrl(selectBackdrop(seasonImages?.backdrops)),
-        backdropSelection: seasonImages !== null ? 'resolved' : 'unavailable',
+        backdropUrl: selectedBackdrop,
+        backdropScope: seasonBackdrop?'season':'series',
+        backdropSelection: selectedBackdrop || (seasonImages!==null && series.backdropSelection==='resolved') ? 'resolved' : 'unavailable',
         runtime: season.episodes?.find(episode => typeof episode.runtime === 'number' && episode.runtime > 0)?.runtime ?? series.runtime };
     }
     return this.fetchCandidate(externalId, mediaType, config.apiKey, config.language);

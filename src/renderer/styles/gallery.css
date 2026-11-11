@@ -212,7 +212,7 @@
 .artwork-gallery button:focus-visible,.artwork-gallery button:hover { border-color:#8AB4FF; }
 .artwork-expanded { background:#101216;width:100%;border:0;cursor:zoom-out; }
 .artwork-expanded img { max-width:100%;max-height:70vh;object-fit:contain; }
-.hero-layers .hero-fallback-poster { filter:blur(28px) saturate(.65);opacity:.45;transform:scale(1.12); }
+.artwork-source { color:var(--text-secondary,#9299A6);font-size:11px;letter-spacing:.04em;margin:8px 0; }
 .library-view-tools { display:flex;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 14px; }
 .series-folder-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:34px 26px;margin-top:30px; }
 .series-folder-card { display:block;min-width:0;background:transparent;border:0;text-align:left;padding:0;color:#E9ECF2;cursor:pointer; }

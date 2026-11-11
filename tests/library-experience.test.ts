@@ -3,7 +3,9 @@ import {rmSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {TestApp,candidate,pngFetch} from './helpers';
 import {seriesFolders} from '../src/shared/franchises';
-import {backdropUrl} from '../src/renderer/lib/format';
+import {backdropUrl,backdropLabel} from '../src/renderer/lib/format';
+import {MetadataService} from '../electron/main/services/metadataService';
+import type {TmdbProvider} from '../electron/main/services/metadata/tmdb';
 import {transientImage} from '../electron/main/services/transientImages';
 let app:TestApp|undefined;afterEach(()=>app?.dispose());
 describe('universe folders and artwork preservation',()=>{
@@ -27,5 +29,16 @@ describe('universe folders and artwork preservation',()=>{
   let init:RequestInit|undefined;let address='';const fetcher=(async(input:string|URL|Request,options?:RequestInit)=>{init=options;address=String(input);return new Response(new Uint8Array([1,2,3]),{headers:{'content-type':'image/jpeg'}});}) as typeof fetch;
   const response=await transientImage(new Request('mycinema://transient/still.jpg',{headers:{cookie:'private',authorization:'secret'}}),fetcher);expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toContain('no-store');expect(init?.cache).toBe('no-store');expect(init?.redirect).toBe('error');expect(new Headers(init?.headers).get('cookie')).toBeNull();expect(new Headers(init?.headers).get('authorization')).toBeNull();expect(address).toBe('https://image.tmdb.org/t/p/w780/still.jpg');
   expect((await transientImage(new Request('mycinema://transient/../../credentials.bin'),fetcher)).status).toBe(400);expect((await transientImage(new Request('mycinema://transient/still.jpg?target=https://example.com'),fetcher)).status).toBe(400);
+ });
+ it('shares a correctly scoped series fallback across seasons and restores automatic art after a manual lock',async()=>{
+  app=new TestApp({fetchImpl:pngFetch()});const fallback=candidate({externalId:'1396:season:1',mediaType:'tv',backdropScope:'series',backdropSelection:'resolved'});
+  const first=await app.library.importCandidate(fallback),second=await app.library.importCandidate({...fallback,externalId:'1396:season:2'});
+  const path=first.film.backdropPath!;expect(path).toMatch(/^backdrop\/series\/1396\//);expect(second.film.backdropPath).toBe(path);expect(app.images.read(path)).not.toBeNull();
+  expect(backdropLabel(first.film)).toContain('季份未标注');expect(backdropUrl({...first.film,externalId:'60059:season:1'})).toBeNull();expect(backdropUrl({...first.film,backdropPath:first.film.posterPath})).toBeNull();
+  await app.library.selectArtwork(first.film.id,'backdrop','https://image.tmdb.org/t/p/w1280/chosen.jpg',true);
+  const metadata=new MetadataService({getCandidate:async()=>fallback} as unknown as TmdbProvider,app.repo,app.library);
+  const restored=await metadata.selectArtwork(first.film.id,'backdrop',null);expect(restored?.backdropPath).toBe(path);expect(backdropUrl(restored!)).not.toBeNull();
+  await app.library.applyExternalMetadata(first.film.id,{...fallback,backdropUrl:null,backdropSelection:'unavailable'});expect(app.repo.getFilm(first.film.id)?.backdropPath).toBe(path);
+  app.restart();expect(backdropLabel(app.repo.getFilm(first.film.id)!)).toContain('全剧通用横图');
  });
 });

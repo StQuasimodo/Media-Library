@@ -248,7 +248,7 @@ export class LibraryService {
     }
     if (candidate.backdropUrl) {
       try {
-        backdropPath = candidate.mediaType==='tv'&&candidate.externalId.includes(':season:')?await this.images.storeSeason(candidate.backdropUrl,candidate.externalId):await this.images.store(candidate.backdropUrl, 'backdrop');
+        backdropPath = candidate.mediaType==='tv'&&candidate.externalId.includes(':season:')?await this.images.storeSeason(candidate.backdropUrl,candidate.externalId,candidate.backdropScope):await this.images.store(candidate.backdropUrl, 'backdrop');
       } catch (error) {
         const message = `背景图未能缓存：${error instanceof Error ? error.message : String(error)}`;
         imageWarning = imageWarning ? `${imageWarning}；${message}` : message;
@@ -382,8 +382,9 @@ export class LibraryService {
     }});
   }
 
-  async selectArtwork(filmId:string,kind:'poster'|'backdrop',url:string|null,manual:boolean) {
-    const path=url?await this.images.store(url,kind,manual):null;
+  async selectArtwork(filmId:string,kind:'poster'|'backdrop',url:string|null,manual:boolean,scope?:'season'|'series') {
+    const film=this.repo.getFilm(filmId);if(!film)throw new AppError('NOT_FOUND','作品不存在。');
+    const path=url?kind==='backdrop'&&!manual&&film.mediaType==='tv'&&film.externalId?.includes(':season:')?await this.images.storeSeason(url,film.externalId,scope):await this.images.store(url,kind,manual):null;
     return this.repo.updateFilm(filmId,kind==='poster'?{posterPath:path}:{backdropPath:path});
   }
 
@@ -415,7 +416,7 @@ export class LibraryService {
     if (candidate.backdropUrl || this.images.manualUrl(film.backdropPath)) {
       try {
         const manual=this.images.manualUrl(film.backdropPath);
-        backdropPath = !manual&&film.mediaType==='tv'&&film.externalId?.includes(':season:')?await this.images.storeSeason(candidate.backdropUrl!,film.externalId):await this.images.store(manual ?? candidate.backdropUrl!, 'backdrop', Boolean(manual));
+        backdropPath = !manual&&film.mediaType==='tv'&&film.externalId?.includes(':season:')?await this.images.storeSeason(candidate.backdropUrl!,film.externalId,candidate.backdropScope):await this.images.store(manual ?? candidate.backdropUrl!, 'backdrop', Boolean(manual));
       } catch {
         // Same for the backdrop.
         imageWarnings.push('背景下载失败，保留已有缓存。');

@@ -140,10 +140,13 @@ final class TmdbClient {
             }
         }
         JSONObject posters=images(path),backgrounds=posters;
+        String selectedBackground=ArtworkPolicy.backdrop(Json.array(posters,"backdrops"),season),backgroundScope="season";
+        if(season>=0&&selectedBackground==null){backgrounds=images("/tv/"+id);selectedBackground=ArtworkPolicy.backdrop(Json.array(backgrounds,"backdrops"),-1);backgroundScope="series";}
         Json.put(film,"posterUrl",image(ArtworkPolicy.poster(Json.array(posters,"posters")),true));
-        Json.put(film,"backdropUrl",image(ArtworkPolicy.backdrop(Json.array(backgrounds,"backdrops"),season),false));
+        Json.put(film,"backdropUrl",image(selectedBackground,false));
+        if(season>=0)Json.put(film,"backdropScope",backgroundScope);
         Json.put(film,"posterSelection",posters!=null&&posters.optJSONArray("posters")!=null?"resolved":"unavailable");
-        Json.put(film,"backdropSelection",backgrounds!=null?"resolved":"unavailable");
+        Json.put(film,"backdropSelection",selectedBackground!=null||(posters!=null&&backgrounds!=null&&backgrounds.optJSONArray("backdrops")!=null)?"resolved":"unavailable");
         return film;
     }
     private Object overview(JSONObject raw,String path){String text=Json.text(raw,"overview").trim();if(text.isEmpty()&&!language.equals("en-US")){try{Map<String,String> params=new HashMap<>();params.put("language","en-US");text=Json.text(transport.get(path,params),"overview").trim();}catch(Exception ignored){}}return text.isEmpty()?null:text;}

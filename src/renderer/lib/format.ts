@@ -116,6 +116,10 @@ export function statusLabel(status: WatchStatus): string {
 export function backdropUrl(film:import('@shared/types').Film):string|null {
   const id=film.mediaType==='tv'&&film.externalId?/^(\d+):season:(\d+)$/.exec(film.externalId):null;
   const path=film.backdropPath;
-  if(id&&path&&!path.startsWith('backdrop/manual/')&&!path.startsWith(`backdrop/season/${id[1]}-${id[2]}/`))return null;
+  if(path&&!path.startsWith('backdrop/'))return null;
+  if(id&&path&&!path.startsWith('backdrop/manual/')&&!path.startsWith(`backdrop/season/${id[1]}-${id[2]}/`)&&!path.startsWith(`backdrop/series/${id[1]}/`))return null;
   return imageUrl(path);
+}
+export function backdropLabel(film:import('@shared/types').Film):string|null {
+  return backdropUrl(film)&&film.backdropPath?.startsWith('backdrop/series/')?'全剧通用横图 · 季份未标注':null;
 }

@@ -4,17 +4,14 @@ import { prefersReducedMotion } from '../lib/motion';
 interface Layer {
   key: number;
   src: string | null;
-  posterFallback?: boolean;
 }
 
 /** Keep the previous artwork visible until the next local image has decoded. */
 export function HeroBackdrop({
   src,
-  posterSrc,
   className = 'hero-layer',
 }: {
   src: string | null;
-  posterSrc?: string | null;
   className?: string;
 }) {
   const [layers, setLayers] = useState<Layer[]>([{ key: 0, src: null }]);
@@ -27,7 +24,7 @@ export function HeroBackdrop({
 
     const commit = (source: string | null) => {
       if (cancelled) return;
-      const layer = { key: nextKey.current++, src: source, posterFallback: source===posterSrc && source!==src };
+      const layer = { key: nextKey.current++, src: source };
       const reduceMotion = prefersReducedMotion();
       setLayers((current) => {
         if (current.at(-1)?.src === source) return current;
@@ -40,7 +37,7 @@ export function HeroBackdrop({
     };
 
     const load = async () => {
-      const candidates = [...new Set([src, posterSrc].filter((url): url is string => Boolean(url)))];
+      const candidates = src ? [src] : [];
       for (const source of candidates) {
         if (cancelled) return;
         try {
@@ -58,7 +55,7 @@ export function HeroBackdrop({
           commit(source);
           return;
         } catch {
-          // A stale cache path may fail: try the poster before the empty state.
+          // Keep background and poster roles separate even after a cache miss.
         }
       }
       commit(null);
@@ -73,14 +70,14 @@ export function HeroBackdrop({
         image.onerror = null;
       }
     };
-  }, [src, posterSrc]);
+  }, [src]);
 
   return (
     <div className="hero-layers" aria-hidden="true" data-empty={!layers.at(-1)?.src}>
       {layers.map((layer, index) => (
         <div
           key={layer.key}
-          className={`${className}${layer.posterFallback?' hero-fallback-poster':''}${index === layers.length - 1 && layers.length > 1 ? ' is-entering' : ''}`}
+          className={`${className}${index === layers.length - 1 && layers.length > 1 ? ' is-entering' : ''}`}
           style={layer.src ? { backgroundImage: `url("${layer.src}")` } : undefined}
           data-empty={!layer.src}
         />

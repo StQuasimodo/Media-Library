@@ -36,8 +36,8 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-async function hero(src: string | null, posterSrc: string | null = null) {
-  await act(async () => root.render(createElement(HeroBackdrop, { src, posterSrc })));
+async function hero(src: string | null) {
+  await act(async () => root.render(createElement(HeroBackdrop, { src })));
 }
 async function loaded(image = PendingImage.all.at(-1)!) {
   await act(async () => image.onload?.());
@@ -88,25 +88,20 @@ describe('主视觉切换', () => {
     expect(newest().style.backgroundImage).toContain('current.jpg');
   });
 
-  it('背景失败后尝试海报；全部失败后显示空背景', async () => {
-    await hero('missing.jpg', 'poster.jpg');
+  it('背景失败后显示空背景，不加载竖版海报', async () => {
+    await hero('missing.jpg');
     await act(async () => PendingImage.all.at(-1)!.onerror?.());
-    expect(PendingImage.all.at(-1)!.src).toBe('poster.jpg');
-    await loaded();
-    expect(newest().style.backgroundImage).toContain('poster.jpg');
-    await hero('missing2.jpg', 'missing-poster.jpg');
-    await act(async () => PendingImage.all.at(-1)!.onerror?.());
-    await act(async () => PendingImage.all.at(-1)!.onerror?.());
+    expect(PendingImage.all).toHaveLength(1);
     expect(newest().dataset.empty).toBe('true');
     expect(newest().style.backgroundImage).toBe('');
   });
 
-  it('没有背景时，切换不同海报仍会加载并过渡', async () => {
-    await hero(null, 'poster-a.jpg');
+  it('无横图时清除上一部作品背景，不以海报填充', async () => {
+    await hero('wide.jpg');
     await loaded();
-    await hero(null, 'poster-b.jpg');
-    await loaded();
-    expect(newest().style.backgroundImage).toContain('poster-b.jpg');
+    await hero(null);
+    expect(PendingImage.all).toHaveLength(1);
+    expect(newest().dataset.empty).toBe('true');
   });
 
   it('减少动效时直接替换画面，卸载后不遗留定时器', async () => {

@@ -37,9 +37,9 @@ describe('Built-in update mirrors',()=>{
 });
 
 describe('Saving mirrors during update checks',()=>{
- it('saves locally without requests and clears a previous timeout even for the same source',async()=>{
+ it.each(['node','electron'] as const)('saves locally and clears a previous %s timeout even for the same source',async(realm)=>{
   const folder=mkdtempSync(join(tmpdir(),'mycinema-timeout-'));
-  const fetcher=vi.fn(async()=>{throw new DOMException('The operation was aborted due to timeout','TimeoutError');});
+  const fetcher=vi.fn(async()=>{throw realm==='node'?new DOMException('The operation was aborted due to timeout','TimeoutError'):{name:'TimeoutError',message:'The operation was aborted due to timeout'};});
   const updates=new DesktopUpdates('1.2.0',folder,fetcher as typeof fetch,publicKey);
   try{
    updates.configure({mirror:'https://mirror.test/'});expect(fetcher).not.toHaveBeenCalled();

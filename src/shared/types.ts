@@ -167,6 +167,8 @@ export interface MetadataCandidate extends MetadataSearchResult {
   /** Resolved means the gallery was checked, including an authoritative no-match. */
   posterSelection?: 'resolved' | 'unavailable';
   backdropSelection?: 'resolved' | 'unavailable';
+  /** Whole-series artwork is a fallback, never a verified season image. */
+  backdropScope?: 'season' | 'series';
   series?: FilmSeries | null;
   backdropUrl: string | null;
   tagline: string | null;

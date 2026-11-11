@@ -94,17 +94,18 @@ export class MetadataService {
   async selectArtwork(filmId:string,kind:'poster'|'backdrop',path:string|null) {
     if(kind!=='poster'&&kind!=='backdrop')throw new AppError('VALIDATION','图片类型无效。');
     const film=this.repo.getFilm(filmId);if(!film?.externalId)throw new AppError('NOT_FOUND','作品不存在。');
-    let url:string|null;
+    let url:string|null,scope:'season'|'series'|undefined;
     if(path===null) {
       const candidate=await this.provider.getCandidate(film.externalId,film.mediaType);
       if(candidate[`${kind}Selection`]==='unavailable')throw new AppError('NETWORK','图片库暂不可用，原选图保留。');
       url=candidate[`${kind}Url`];
+      scope=candidate.backdropScope;
     } else {
       const choice=(await this.artwork(filmId)).find(item=>item.kind===kind&&item.path===path);
       if(!choice)throw new AppError('VALIDATION','请选择当前作品图片库中的图片。');
       url=`https://image.tmdb.org/t/p/${kind==='poster'?'w780':'w1280'}${choice.path}`;
     }
-    return this.library.selectArtwork(filmId,kind,url,path!==null);
+    return this.library.selectArtwork(filmId,kind,url,path!==null,scope);
   }
 
   /** Re-fetches external metadata for a stored film; personal fields stay untouched. */

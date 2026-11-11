@@ -214,10 +214,10 @@ describe('TMDB 详情', () => {
     }) as typeof fetch;
     const detail=await provider(fetchImpl).getCandidate('603:season:2','tv');
     expect(detail).toMatchObject({externalId:'603:season:2',title:'暗黑 · 第2季',year:2019,overview:'第二季简介',runtime:55,genres:['悬疑']});
-    expect(detail.posterUrl).toContain('/season2.jpg');expect(detail.backdropUrl).toBeNull();
+    expect(detail.posterUrl).toContain('/season2.jpg');expect(detail.backdropUrl).toContain('/show-art.jpg');expect(detail.backdropScope).toBe('series');
     await expect(provider(fetchImpl).getCandidate('603:season:2','movie')).rejects.toMatchObject({code:'VALIDATION'});
   });
-  it('仅采用本季横版图库，缺失时不借用全剧图或单集剧照',async()=>{
+  it('优先本季横图，缺失时自动回退全剧横图并标记范围，不采用单集剧照',async()=>{
     const fetchImpl=(async(input:string|URL|Request)=>{
       const path=new URL(String(input)).pathname;
       if(path.endsWith('/tv/1396/images'))return jsonResponse({posters:[],backdrops:['a','b'].map(name=>({file_path:`/${name}-art.jpg`,iso_639_1:null,width:1920,height:1080}))});
@@ -234,8 +234,9 @@ describe('TMDB 详情', () => {
     const first=await tmdb.getCandidate('1396:season:1','tv');
     const second=await tmdb.getCandidate('1396:season:2','tv');
     const third=await tmdb.getCandidate('1396:season:3','tv');
-    expect(first.backdropUrl).toBeNull();
+    expect(first.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/a-art.jpg');expect(first.backdropScope).toBe('series');
     expect(second.backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/season2-promo.jpg');
+    expect(second.backdropScope).toBe('season');
     expect(third.backdropUrl).toBe(first.backdropUrl);expect(third.posterUrl).toContain('/season-en.jpg');
     expect((await tmdb.getCandidate('1396','tv')).backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/a-art.jpg');
   });

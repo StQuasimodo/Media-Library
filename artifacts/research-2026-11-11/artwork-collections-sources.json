@@ -1,0 +1,199 @@
+{
+  "date": "2026-11-11",
+  "timezone": "Asia/Hong_Kong",
+  "method": "GitHub public API metadata and raw source inspection; third-party applications not executed",
+  "projects": [
+    {
+      "default_branch": "master",
+      "description": "Python script to update metadata information for items in plex as well as automatically build collections and playlists. The Wiki Documentation is linked below.",
+      "full_name": "Kometa-Team/Kometa",
+      "license": "MIT",
+      "stargazers_count": 3463,
+      "updated_at": "2026-11-11T05:46:03Z",
+      "commit": "cc35af0686967b74ead474277d9eb16119bc888c",
+      "files": [
+        {
+          "path": "defaults/both/universe.yml",
+          "bytes": 4203,
+          "sha256": "f5f4e41b3e9568c1babc618cfe0f0204d8b38882c2d4aa5ebabd9ddb53486e41",
+          "url": "https://github.com/Kometa-Team/Kometa/blob/cc35af0686967b74ead474277d9eb16119bc888c/defaults/both/universe.yml"
+        },
+        {
+          "path": "defaults/movie/franchise.yml",
+          "bytes": 7397,
+          "sha256": "6f6cd3a810ce827e7da4c9eaa275b06980768e1dda6615332f149434063908d9",
+          "url": "https://github.com/Kometa-Team/Kometa/blob/cc35af0686967b74ead474277d9eb16119bc888c/defaults/movie/franchise.yml"
+        },
+        {
+          "path": "modules/meta.py",
+          "bytes": 174718,
+          "sha256": "df0ec7dac32edb42db57ff102b89e50242e24d524f4d235a77dedce8ccb18344",
+          "url": "https://github.com/Kometa-Team/Kometa/blob/cc35af0686967b74ead474277d9eb16119bc888c/modules/meta.py"
+        },
+        {
+          "path": "modules/poster.py",
+          "bytes": 22363,
+          "sha256": "b4fbfe66f737e7569cc1e1a124c53ac50c5b13eb60f9841420fa224939b19482",
+          "url": "https://github.com/Kometa-Team/Kometa/blob/cc35af0686967b74ead474277d9eb16119bc888c/modules/poster.py"
+        },
+        {
+          "path": "modules/builder.py",
+          "bytes": 378159,
+          "sha256": "2f07e7bcaf97855d61503d84bbc643c4777eebc3cad79a3ab05c992344bc7e0c",
+          "url": "https://github.com/Kometa-Team/Kometa/blob/cc35af0686967b74ead474277d9eb16119bc888c/modules/builder.py"
+        },
+        {
+          "path": "modules/library.py",
+          "bytes": 42888,
+          "sha256": "d407803c0baae20ff41c25b77afc96ba61e810a9abac3b6d4af6257c899ac905",
+          "url": "https://github.com/Kometa-Team/Kometa/blob/cc35af0686967b74ead474277d9eb16119bc888c/modules/library.py"
+        }
+      ]
+    },
+    {
+      "default_branch": "develop",
+      "description": "Movie organizer/manager for usenet and torrent users.",
+      "full_name": "Radarr/Radarr",
+      "license": "GPL-3.0",
+      "stargazers_count": 14750,
+      "updated_at": "2026-11-11T04:28:21Z",
+      "commit": "7e3f80c98d01481430ab356f6d7322fc5dc381ee",
+      "files": [
+        {
+          "path": "src/NzbDrone.Core/Movies/RefreshMovieService.cs",
+          "bytes": 13205,
+          "sha256": "2296264d31e6d51b8082405d46c68ab578e58ab3c808c606c88e1d9b84f8e838",
+          "url": "https://github.com/Radarr/Radarr/blob/7e3f80c98d01481430ab356f6d7322fc5dc381ee/src/NzbDrone.Core/Movies/RefreshMovieService.cs"
+        },
+        {
+          "path": "src/NzbDrone.Core/Movies/RefreshCollectionService.cs",
+          "bytes": 8018,
+          "sha256": "83509cd100182ee8b4bf52bca4537399ab05aecc69cf28c06d62384a59cd38a7",
+          "url": "https://github.com/Radarr/Radarr/blob/7e3f80c98d01481430ab356f6d7322fc5dc381ee/src/NzbDrone.Core/Movies/RefreshCollectionService.cs"
+        },
+        {
+          "path": "src/NzbDrone.Core/Movies/Collections/MovieCollectionService.cs",
+          "bytes": 4537,
+          "sha256": "670d00ac0ca00a88e4c2008bd8cb3708ec34c00c31197f7f62ae1b92ac62f52a",
+          "url": "https://github.com/Radarr/Radarr/blob/7e3f80c98d01481430ab356f6d7322fc5dc381ee/src/NzbDrone.Core/Movies/Collections/MovieCollectionService.cs"
+        },
+        {
+          "path": "src/NzbDrone.Core/MediaCover/MediaCoverService.cs",
+          "bytes": 10088,
+          "sha256": "644302a0dfab88fbb66e8a323bda4a77aaf3bda99ad3e68b279681ba6e184ffd",
+          "url": "https://github.com/Radarr/Radarr/blob/7e3f80c98d01481430ab356f6d7322fc5dc381ee/src/NzbDrone.Core/MediaCover/MediaCoverService.cs"
+        }
+      ]
+    },
+    {
+      "default_branch": "develop",
+      "description": "Smart PVR for newsgroup and bittorrent users.",
+      "full_name": "Sonarr/Sonarr",
+      "license": "GPL-3.0",
+      "stargazers_count": 17646,
+      "updated_at": "2026-11-11T06:34:29Z",
+      "commit": "c018578e4b79ee048575c02d7a8aa2b929e4b837",
+      "files": [
+        {
+          "path": "src/NzbDrone.Core/MetadataSource/SkyHook/SkyHookProxy.cs",
+          "bytes": 15284,
+          "sha256": "f91a7fdf31eac82d42ce1dfd941aa7536c09ae20730bcd439f28b0fd58318dc2",
+          "url": "https://github.com/Sonarr/Sonarr/blob/c018578e4b79ee048575c02d7a8aa2b929e4b837/src/NzbDrone.Core/MetadataSource/SkyHook/SkyHookProxy.cs"
+        },
+        {
+          "path": "src/NzbDrone.Core/MediaCover/MediaCoverService.cs",
+          "bytes": 10087,
+          "sha256": "aa69524e931f6490d9395b96b94d8dbc143aba58d3ae73ed16bd1d02b396e965",
+          "url": "https://github.com/Sonarr/Sonarr/blob/c018578e4b79ee048575c02d7a8aa2b929e4b837/src/NzbDrone.Core/MediaCover/MediaCoverService.cs"
+        }
+      ]
+    },
+    {
+      "default_branch": "master",
+      "description": "Android TV Client for Jellyfin",
+      "full_name": "jellyfin/jellyfin-androidtv",
+      "license": "GPL-2.0",
+      "stargazers_count": 4729,
+      "updated_at": "2026-11-11T06:12:42Z",
+      "commit": "33235e447a54c28dc2c7155ef23d0dadb9c9de14",
+      "files": [
+        {
+          "path": "app/src/main/java/org/jellyfin/androidtv/util/ImageHelper.kt",
+          "bytes": 3333,
+          "sha256": "a008b7a2261a8a138f332c91d4777d53b29eb7aabb989a19d55d59d74cef9186",
+          "url": "https://github.com/jellyfin/jellyfin-androidtv/blob/33235e447a54c28dc2c7155ef23d0dadb9c9de14/app/src/main/java/org/jellyfin/androidtv/util/ImageHelper.kt"
+        }
+      ]
+    },
+    {
+      "default_branch": "master",
+      "description": "The Free Software Media System - Server Backend & API",
+      "full_name": "jellyfin/jellyfin",
+      "license": "GPL-2.0",
+      "stargazers_count": 59202,
+      "updated_at": "2026-11-11T07:14:03Z",
+      "commit": "8466670e95b5f4f0b55d6353cf9fb3d6123217e3",
+      "files": [
+        {
+          "path": "MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs",
+          "bytes": 3095,
+          "sha256": "2b450e4db916ff49b1845accbae64351cdc61adaeeb9097689f34d83b3472020",
+          "url": "https://github.com/jellyfin/jellyfin/blob/8466670e95b5f4f0b55d6353cf9fb3d6123217e3/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs"
+        },
+        {
+          "path": "MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs",
+          "bytes": 3671,
+          "sha256": "5e059f22a06156da3f14f032cd9abce63eab10c1e50857a7b1d81e797b8a98cb",
+          "url": "https://github.com/jellyfin/jellyfin/blob/8466670e95b5f4f0b55d6353cf9fb3d6123217e3/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs"
+        },
+        {
+          "path": "MediaBrowser.Providers/Manager/ItemImageProvider.cs",
+          "bytes": 30708,
+          "sha256": "44133be586fef4f714f234cc3325806d4738e34ed6f0dde8ed2969033590e8fe",
+          "url": "https://github.com/jellyfin/jellyfin/blob/8466670e95b5f4f0b55d6353cf9fb3d6123217e3/MediaBrowser.Providers/Manager/ItemImageProvider.cs"
+        },
+        {
+          "path": "MediaBrowser.Providers/Plugins/Tmdb/BoxSets/TmdbBoxSetProvider.cs",
+          "bytes": 6017,
+          "sha256": "95d3a27b5e1c6d2bc4c0af3173fea32e5f16135bf49cb630090fcb5208b60792",
+          "url": "https://github.com/jellyfin/jellyfin/blob/8466670e95b5f4f0b55d6353cf9fb3d6123217e3/MediaBrowser.Providers/Plugins/Tmdb/BoxSets/TmdbBoxSetProvider.cs"
+        }
+      ]
+    },
+    {
+      "default_branch": "v3",
+      "description": "NAS媒体库自动化管理工具",
+      "full_name": "jxxghp/MoviePilot",
+      "license": "GPL-3.0",
+      "stargazers_count": 12060,
+      "updated_at": "2026-11-11T06:33:03Z",
+      "commit": "33cc86e22508894616b6f0741b9b9d8c716c8c20",
+      "files": [
+        {
+          "path": "app/modules/fanart/__init__.py",
+          "bytes": 17605,
+          "sha256": "0dc9154abd5e14202fe47293b825e6831bc96ffeeb0433d7aa5427cab8fd7631",
+          "url": "https://github.com/jxxghp/MoviePilot/blob/33cc86e22508894616b6f0741b9b9d8c716c8c20/app/modules/fanart/__init__.py"
+        },
+        {
+          "path": "app/modules/themoviedb/scraper.py",
+          "bytes": 20388,
+          "sha256": "3eec176a39c4139ac0423b504447f6d9258fc527f1b1d1d43fde69f5ab4eda7e",
+          "url": "https://github.com/jxxghp/MoviePilot/blob/33cc86e22508894616b6f0741b9b9d8c716c8c20/app/modules/themoviedb/scraper.py"
+        },
+        {
+          "path": "app/application/image.py",
+          "bytes": 36062,
+          "sha256": "44e3557be3fefa04f0b6a4286f55d868fa446bacba7d67283468897e06c80ec0",
+          "url": "https://github.com/jxxghp/MoviePilot/blob/33cc86e22508894616b6f0741b9b9d8c716c8c20/app/application/image.py"
+        },
+        {
+          "path": "app/chain/scraping.py",
+          "bytes": 103367,
+          "sha256": "8284d8f3db66b0a8cab3f1e9778de4929220fa619236dc23b372ccd0c6fdd48a",
+          "url": "https://github.com/jxxghp/MoviePilot/blob/33cc86e22508894616b6f0741b9b9d8c716c8c20/app/chain/scraping.py"
+        }
+      ]
+    }
+  ]
+}

@@ -78,6 +78,6 @@ export function selectSeriesBackdrop(images: TmdbImage[] = [], season: number): 
   const qualityFloor=score(ranked[0],16/9)-8;
   const nearBest=ranked.filter(image=>score(image,16/9)>=qualityFloor);
   const pool=[...nearBest.filter(image=>image.iso_639_1==='en'),...nearBest.filter(image=>image.iso_639_1!=='en')];
-  const index=Number.isSafeInteger(season)&&season>0?season-1:0;
+  const index=season===0?pool.length-1:Number.isSafeInteger(season)&&season>0?season-1:0;
   return pool[index%pool.length].file_path!;
 }

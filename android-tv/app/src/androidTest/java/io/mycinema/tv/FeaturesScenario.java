@@ -38,6 +38,7 @@ final class FeaturesScenario {
     private void allocationAndRelations()throws Exception{
         JSONArray images=new JSONArray();for(String name:new String[]{"d","b","a","c"}){JSONObject image=new JSONObject();Json.put(image,"file_path","/"+name+".jpg");Json.put(image,"iso_639_1","en");Json.put(image,"width",1920);Json.put(image,"height",1080);Json.put(image,"vote_average",7);Json.put(image,"vote_count",30);images.put(image);}
         for(int n=1;n<=4;n++)check(ArtworkPolicy.seriesBackdrop(images,n).equals("/"+(char)('a'+n-1)+".jpg"),"stable distinct gallery allocation for season "+n);
+        check(ArtworkPolicy.seriesBackdrop(images,0).equals("/d.jpg"),"specials use the last eligible image rather than always duplicating season one");
         JSONObject strong=Json.copy(images.getJSONObject(0));Json.put(strong,"file_path","/strong.jpg");Json.put(strong,"vote_average",8);Json.put(strong,"vote_count",100);JSONObject weak=Json.copy(strong);Json.put(weak,"file_path","/weak.jpg");Json.put(weak,"vote_average",4);
         check(ArtworkPolicy.seriesBackdrop(new JSONArray().put(strong).put(weak),2).equals("/strong.jpg"),"quality floor prevents low quality art merely for uniqueness");
         FranchiseFolders folders=new FranchiseFolders(context);Library.Item original=new Library.Item(film("神偷奶爸","20352","movie","tmdb:collection:86066",1),new JSONObject()),spinoff=new Library.Item(film("小黄人大眼萌","211672","movie","tmdb:collection:544669",1),new JSONObject());

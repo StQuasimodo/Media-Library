@@ -45,6 +45,7 @@ describe('影视图片筛选', () => {
     expect([1,2,3,4].map(n=>selectSeriesBackdrop(gallery,n))).toEqual(['/a.jpg','/b.jpg','/c.jpg','/d.jpg']);
     expect(selectSeriesBackdrop([...gallery].reverse(),3)).toBe('/c.jpg');
     expect(selectSeriesBackdrop([...gallery,gallery[0]],4)).toBe('/d.jpg');
+    expect(selectSeriesBackdrop(gallery,0)).toBe('/d.jpg');
   });
   it('不为制造分季差异而选低质图；候选不够时如实复用，不转海报或单集剧照',()=>{
     const good={...background('/good.jpg','en'),vote_average:8,vote_count:100};

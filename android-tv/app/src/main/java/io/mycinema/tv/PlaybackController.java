@@ -104,6 +104,7 @@ final class PlaybackController implements Closeable {
         if(!loaded)return;
         if(wantPaused){pauseWhenRestored();save();}else{if(mutedForRestore){mutedForRestore=false;player.setVolume(100);}if(state==State.ENDED){position=0;restoreApplied=false;player.setTime(0);}player.play();if(player.isPlaying())state(State.PLAYING,"");}
     }
+    void setPaused(boolean paused){if(!paused&&(state==State.ERROR||state==State.STOPPED)){reconnect();return;}if(wantPaused!=paused)toggle();}
     float playbackRate(){return playbackRate;}
     boolean setPlaybackRate(float rate){
         if(player==null||!loaded||Float.isNaN(rate)||Float.isInfinite(rate)||rate<0.5f||rate>2f)return false;

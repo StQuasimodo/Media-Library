@@ -6,7 +6,7 @@ out=.harness/tv-remote
 mkdir -p "$out"
 collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/remote-report.json > "$out/report.json" || true
-  for image in remote-rating remote-mirrors; do timeout 10s adb exec-out run-as io.mycinema.tv cat "files/$image.png" > "$out/$image.png" || true; done
+  for image in remote-rating remote-mirrors remote-failure; do timeout 10s adb exec-out run-as io.mycinema.tv cat "files/$image.png" > "$out/$image.png" || true; done
   timeout 10s adb logcat -d > "$out/logcat.txt" || true
 }
 trap collect EXIT

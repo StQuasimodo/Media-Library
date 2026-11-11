@@ -1,12 +1,17 @@
-import rules from './data/franchises.json';
+import ruleData from './data/franchises.json';
 import type {CollectionEntry,Film} from './types';
 import {identifySeries,groupSeriesEntries} from './series';
 import {parseTmdbIdentity} from './tmdbIdentity';
+interface FranchiseRule {key:string;title:string;tv:string[];movie:string[];collections:string[]}
+const rules:FranchiseRule[]=ruleData;
 export interface SeriesFolder {key:string;title:string;entries:CollectionEntry[];standalone:boolean}
 export function franchise(film:Film):{key:string;title:string}|null {
   if(film.series?.franchise!==undefined)return film.series.franchise;
   const identity=film.metadataSource==='tmdb'&&film.externalId?parseTmdbIdentity(film.externalId,film.mediaType):null;
-  const rule=identity?rules.find(rule=>(film.mediaType==='tv'?rule.tv:rule.movie).includes(identity.id)):undefined;
+  const direct=identity?rules.filter(rule=>(film.mediaType==='tv'?rule.tv:rule.movie).includes(identity.id)):[];
+  const collection=identity&&film.mediaType==='movie'?/^tmdb:collection:(\d+)$/.exec(film.series?.key??'')?.[1]:undefined;
+  const matches=direct.length?direct:collection?rules.filter(rule=>rule.collections.includes(collection)):[];
+  const rule=matches.length===1?matches[0]:undefined;
   return rule?{key:rule.key,title:rule.title}:null;
 }
 export function seriesFolders(entries:CollectionEntry[]):SeriesFolder[]{

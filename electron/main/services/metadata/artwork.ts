@@ -53,16 +53,31 @@ export function selectPoster(images: TmdbImage[] = []): string | null {
   return ordered(simplified.length ? simplified : allowed, 2 / 3)[0]?.file_path ?? null;
 }
 
-export function selectBackdrop(images: TmdbImage[] = [], _season: number | null = null): string | null {
-  if (!Array.isArray(images)) return null;
-  const allowed = images.filter(image => {
+function backdropCandidates(images: TmdbImage[]): TmdbImage[] {
+  if (!Array.isArray(images)) return [];
+  return images.filter(image => {
     const size = dimensions(image);
     return size && (image.iso_639_1 === null || image.iso_639_1 === 'en') &&
       size[0] >= 1280 && size[1] >= 720 && size[0] / size[1] >= 1.5 && size[0] / size[1] <= 2.05 &&
       !((image.vote_count ?? 0) > 0 && (image.vote_average ?? 0) < 4);
   });
+}
+
+export function selectBackdrop(images: TmdbImage[] = [], _season: number | null = null): string | null {
+  const allowed=backdropCandidates(images);
   // Localized wide promotional graphics are preferred to unclassified textless
   // frames. TMDB does not label every image as promotional versus scene art.
   const promotional = allowed.filter(image => image.iso_639_1 === 'en');
   return ordered(promotional.length ? promotional : allowed, 16 / 9)[0]?.file_path ?? null;
+}
+
+/** Stable visual variety within a quality band; this does not identify season ownership. */
+export function selectSeriesBackdrop(images: TmdbImage[] = [], season: number): string | null {
+  const ranked=ordered(backdropCandidates(images),16/9);
+  if(!ranked.length)return null;
+  const qualityFloor=score(ranked[0],16/9)-8;
+  const nearBest=ranked.filter(image=>score(image,16/9)>=qualityFloor);
+  const pool=[...nearBest.filter(image=>image.iso_639_1==='en'),...nearBest.filter(image=>image.iso_639_1!=='en')];
+  const index=Number.isSafeInteger(season)&&season>0?season-1:0;
+  return pool[index%pool.length].file_path!;
 }

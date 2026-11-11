@@ -94,3 +94,11 @@ it('只改官方系列内序号保留系列身份，覆盖标题数字，刷新�
   await app.library.applyExternalMetadata(entry.filmId,candidate({posterUrl:null,backdropUrl:null,series:{key:'tmdb:collection:9',title:'官方系列',order:10}}));
   expect(app.repo.getFilm(entry.filmId)?.series?.order).toBe(1);
 });
+it('没有确认关系的TMDB电影不会因同名数字后缀、重拍片名或旁边的手动作品自动合并',async()=>{
+ const a=(await app.library.importCandidate(candidate({externalId:'1001',title:'同名作品',series:null,posterUrl:null,backdropUrl:null}))).entry;
+ const b=(await app.library.importCandidate(candidate({externalId:'1002',title:'同名作品2',series:null,posterUrl:null,backdropUrl:null}))).entry;
+ const c=manual('同名作品3');const identities=identifySeries([a,b,c]);expect(identities.has(a.id)).toBe(false);expect(identities.has(b.id)).toBe(false);expect(identities.has(c.id)).toBe(false);
+});
+it('手动清除系列后不会再被片名规则自动加回',()=>{
+ const a=manual('本地系列'),b=manual('本地系列2');app.library.updateFilm(b.filmId,{series:null});expect(identifySeries([a,app.repo.getEntry(b.id)!]).size).toBe(0);
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectBackdrop, selectPoster, type TmdbImage } from '../electron/main/services/metadata/artwork';
+import { selectBackdrop, selectSeriesBackdrop, selectPoster, type TmdbImage } from '../electron/main/services/metadata/artwork';
 
 const poster = (path: string, language: string | null): TmdbImage =>
   ({ file_path: path, iso_639_1: language, width: 1000, height: 1500, vote_average: 7, vote_count: 30 });
@@ -39,5 +39,18 @@ describe('影视图片筛选', () => {
   it('缺少明确背景语言及畸形数据不进入候选', () => {
     expect(selectBackdrop([{ ...background('/unknown.jpg'), iso_639_1: undefined }, background('/zh.jpg', 'zh')])).toBeNull();
     expect(selectBackdrop([null, { file_path: '/bad.jpg', width: Infinity, height: 720 }] as unknown as TmdbImage[])).toBeNull();
+  });
+  it('全剧回退按季分配不同的优质实际图片，和导入/接口顺序无关',()=>{
+    const gallery=['d','b','a','c'].map(name=>background(`/${name}.jpg`,'en'));
+    expect([1,2,3,4].map(n=>selectSeriesBackdrop(gallery,n))).toEqual(['/a.jpg','/b.jpg','/c.jpg','/d.jpg']);
+    expect(selectSeriesBackdrop([...gallery].reverse(),3)).toBe('/c.jpg');
+    expect(selectSeriesBackdrop([...gallery,gallery[0]],4)).toBe('/d.jpg');
+  });
+  it('不为制造分季差异而选低质图；候选不够时如实复用，不转海报或单集剧照',()=>{
+    const good={...background('/good.jpg','en'),vote_average:8,vote_count:100};
+    expect(selectSeriesBackdrop([good,{...background('/low.jpg','en'),vote_average:4,vote_count:100}],2)).toBe('/good.jpg');
+    expect(selectSeriesBackdrop([good],8)).toBe('/good.jpg');expect(selectSeriesBackdrop([],1)).toBeNull();
+    expect(selectSeriesBackdrop([poster('/poster.jpg','en')],1)).toBeNull();
+    expect(selectSeriesBackdrop([good,{...good,file_path:'/near-textless.jpg',iso_639_1:null}],2)).toBe('/near-textless.jpg');
   });
 });

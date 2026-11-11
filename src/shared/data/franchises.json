@@ -1,3 +1,4 @@
 [
-  {"key":"universe:breaking-bad","title":"绝命毒师宇宙","tv":["1396","60059"],"movie":["559969"],"collections":[]}
+  {"key":"universe:breaking-bad","title":"绝命毒师宇宙","tv":["1396","60059"],"movie":["559969"],"collections":[]},
+  {"key":"universe:despicable-me","title":"神偷奶爸与小黄人","tv":[],"movie":[],"collections":["86066","544669"],"source":"https://github.com/Kometa-Team/Kometa/blob/cc35af0686967b74ead474277d9eb16119bc888c/defaults/movie/franchise.yml#L89"}
 ]

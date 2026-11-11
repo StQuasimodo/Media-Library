@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it} from 'vitest';
 import {rmSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {TestApp,candidate,pngFetch} from './helpers';
-import {seriesFolders} from '../src/shared/franchises';
+import {seriesFolders,franchise} from '../src/shared/franchises';
 import {backdropUrl,backdropLabel} from '../src/renderer/lib/format';
 import {MetadataService} from '../electron/main/services/metadataService';
 import type {TmdbProvider} from '../electron/main/services/metadata/tmdb';
@@ -39,6 +39,16 @@ describe('universe folders and artwork preservation',()=>{
   const metadata=new MetadataService({getCandidate:async()=>fallback} as unknown as TmdbProvider,app.repo,app.library);
   const restored=await metadata.selectArtwork(first.film.id,'backdrop',null);expect(restored?.backdropPath).toBe(path);expect(backdropUrl(restored!)).not.toBeNull();
   await app.library.applyExternalMetadata(first.film.id,{...fallback,backdropUrl:null,backdropSelection:'unavailable'});expect(app.repo.getFilm(first.film.id)?.backdropPath).toBe(path);
-  app.restart();expect(backdropLabel(app.repo.getFilm(first.film.id)!)).toContain('全剧通用横图');
+  app.restart();expect(backdropLabel(app.repo.getFilm(first.film.id)!)).toContain('按季分配');
+ });
+ it('joins confirmed original/spin-off collection IDs without title guessing and preserves a manual exclusion',async()=>{
+  app=new TestApp({fetchImpl:pngFetch()});
+  const a=await app.library.importCandidate(candidate({externalId:'20352',title:'神偷奶爸',series:{key:'tmdb:collection:86066',title:'神偷奶爸系列',order:1}}));
+  const b=await app.library.importCandidate(candidate({externalId:'211672',title:'小黄人大眼萌',series:{key:'tmdb:collection:544669',title:'小黄人系列',order:1}}));
+  const unrelated=await app.library.importCandidate(candidate({externalId:'999999',title:'神偷奶爸2',series:null}));
+  const before=seriesFolders(app.repo.listEntries());expect(before.find(f=>f.key==='universe:despicable-me')?.entries.map(e=>e.filmId).sort()).toEqual([a.film.id,b.film.id].sort());
+  expect(franchise(unrelated.film)).toBeNull();expect(before.find(f=>f.entries.some(e=>e.filmId===unrelated.film.id))?.standalone).toBe(true);
+  app.library.assignFranchise([b.film.id],null);app.restart();expect(franchise(app.repo.getFilm(b.film.id)!)).toBeNull();expect(app.repo.getFilm(b.film.id)?.series?.key).toBe('tmdb:collection:544669');
+  const malformed={...a.film,mediaType:'tv' as const};expect(franchise(malformed)).toBeNull();
  });
 });

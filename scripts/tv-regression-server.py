@@ -259,7 +259,7 @@ def serve(root, log):
                 self.reply({'posters': [
                     {'file_path': '/traditional-poster.png', 'iso_639_1': 'zh', 'width': 1000, 'height': 1500},
                     {'file_path': poster, 'iso_639_1': 'en', 'width': 1000, 'height': 1500}],
-                    **({} if n == 3 else {'backdrops': [{'file_path': f'/s{i}-promo.png', 'iso_639_1': 'en', 'width': 1920, 'height': 1080} for i in ([1, 2, 3] if n is None else [n])]})})
+                    **({} if n is not None else {'backdrops': [{'file_path': f'/s{i}-promo.png', 'iso_639_1': 'en', 'width': 1920, 'height': 1080} for i in [1, 2, 3]]})})
             elif path == '/configuration':
                 self.reply({'images': {'secure_base_url': 'https://image.tmdb.org/t/p/'}})
             elif path == '/search/tv':

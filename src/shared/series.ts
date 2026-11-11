@@ -38,20 +38,21 @@ export function identifySeries(entries:CollectionEntry[]):Map<string,FilmSeries>
     const root=sequence?.root ?? film.title;
     const identity=film.mediaType==='tv' && film.metadataSource==='tmdb' && film.externalId ? parseTmdbIdentity(film.externalId,'tv') : null;
     const structured=film.series ?? (identity ? {key:`tmdb:tv:${identity.id}`,title:root.replace(/\s*·\s*特别篇$/,''),order:identity.season ?? -1}:null);
+    const inferTitle=film.series!==null&&film.metadataSource!=='tmdb';
     const rootKey=`${film.mediaType}:${normal(root)}`;
 
     if(structured && !structured.customOrder && !structured.key.startsWith('manual:')) {const keys=known.get(rootKey) ?? new Set<string>();keys.add(structured.key);known.set(rootKey,keys);}
-    return {entry,sequence,structured,root,rootKey};
+    return {entry,sequence,structured,root,rootKey,inferTitle};
   });
   const roots=new Map<string,number>();
-  for(const item of base)if(!item.structured?.customOrder && !item.structured?.key.startsWith('manual:'))roots.set(item.rootKey,(roots.get(item.rootKey) ?? 0)+1);
-  for(const item of base)if(item.sequence && !item.structured?.customOrder && !item.structured?.key.startsWith('manual:') &&
+  for(const item of base)if(item.inferTitle&&!item.structured?.customOrder && !item.structured?.key.startsWith('manual:'))roots.set(item.rootKey,(roots.get(item.rootKey) ?? 0)+1);
+  for(const item of base)if(item.inferTitle&&item.sequence && !item.structured?.customOrder && !item.structured?.key.startsWith('manual:') &&
     (item.entry.film.mediaType==='tv' || (roots.get(item.rootKey) ?? 0)>1 || known.has(item.rootKey)))numbered.add(item.rootKey);
   const names=new Map(base.filter(item=>item.structured).map(item=>[item.structured!.key,item.structured!.title]));
   const result=new Map<string,FilmSeries>();
   for(const item of base) {
     if(item.structured) {result.set(item.entry.id,{...item.structured,order:item.structured.customOrder || item.structured.key.startsWith('manual:') ? item.structured.order : item.sequence?.order ?? item.structured.order});continue;}
-    if(!numbered.has(item.rootKey))continue;
+    if(!item.inferTitle||!numbered.has(item.rootKey))continue;
     const matches=known.get(item.rootKey);
     const key=matches?.size===1 ? [...matches][0] : `title:${item.rootKey}`;
     result.set(item.entry.id,{key,title:names.get(key) ?? item.root,order:item.sequence?.order ?? 1});

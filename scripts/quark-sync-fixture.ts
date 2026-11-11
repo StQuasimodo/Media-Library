@@ -8,7 +8,7 @@ export function installQuarkSyncFixture(profile: string) {
   // Distinct synthetic gallery backgrounds let screenshots catch accidental reuse of one
   // season's image. These are test swatches, not actual TMDB artwork.
   const stills=new Map<string,Buffer>();
-  for(const [name,color] of [['/season1-still.png',[120,75,35]],['/season2-still.png',[35,85,150]]] as const) {
+  for(const [name,color] of [['/season1-still.png',[120,75,35]],['/season2-still.png',[35,85,150]],['/season3-promo.png',[35,110,75]]] as const) {
     const bitmap=Buffer.alloc(160*90*4);
     for(let pixel=0;pixel<160*90;pixel++) {
       const shade=0.6+0.4*(pixel%160)/159;
@@ -57,7 +57,7 @@ export function installQuarkSyncFixture(profile: string) {
       const poster=path==='/tv/603/season/1'?'/season-fixture.png':path==='/tv/603/season/2'?'/season2-fixture.png':
         path==='/tv/603'?'/sync-fixture.png':path.includes('/tv/1396/season/')?'/breaking-season.jpg':'/breaking.jpg';
       return Response.json({posters:[{file_path:poster,iso_639_1:'en',width:1000,height:1500}],
-        backdrops:(path==='/tv/603/season/1'?['/season1-still.png']:path==='/tv/603/season/2'?['/season2-still.png']:path==='/tv/603'||path==='/tv/1396'?['/season1-still.png','/season2-still.png']:[]).map(file_path=>({file_path,iso_639_1:'en',width:1920,height:1080}))});
+        backdrops:(path==='/tv/603/season/1'?['/season1-still.png']:path==='/tv/603/season/2'?['/season2-still.png']:path==='/tv/1396'?['/season1-still.png','/season2-still.png','/season3-promo.png']:path==='/tv/603'?['/season1-still.png','/season2-still.png']:[]).map(file_path=>({file_path,iso_639_1:'en',width:1920,height:1080}))});
     }
     if(url.pathname.endsWith('/tv/1396'))return Response.json(breaking);
     if(url.pathname.endsWith('/movie/550'))return refreshFailure ? Response.json({}, {status:404}) : Response.json({id:550,title:'搏击俱乐部',original_title:'Fight Club',overview:'全部刷新受控资料',runtime:139,genres:[]});

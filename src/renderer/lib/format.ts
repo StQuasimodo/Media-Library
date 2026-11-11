@@ -121,5 +121,5 @@ export function backdropUrl(film:import('@shared/types').Film):string|null {
   return imageUrl(path);
 }
 export function backdropLabel(film:import('@shared/types').Film):string|null {
-  return backdropUrl(film)&&film.backdropPath?.startsWith('backdrop/series/')?'全剧通用横图 · 季份未标注':null;
+  return backdropUrl(film)&&film.backdropPath?.startsWith('backdrop/series/')?'全剧图库按季分配 · 季份未标注':null;
 }

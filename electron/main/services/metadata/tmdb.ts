@@ -10,7 +10,7 @@ import type {
 import { AppError } from '../../errors';
 import { parseTmdbIdentity } from '../../../../src/shared/tmdbIdentity';
 import type { Logger } from '../logger';
-import { selectBackdrop, selectPoster, type TmdbImages } from './artwork';
+import { selectBackdrop, selectSeriesBackdrop, selectPoster, type TmdbImages } from './artwork';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
@@ -268,7 +268,8 @@ export class TmdbProvider {
       const label = identity.season === 0 ? '特别篇' : `第${identity.season}季`;
       const seasonImages = await this.images(path, config);
       const seasonBackdrop=backdropUrl(selectBackdrop(seasonImages?.backdrops));
-      const selectedBackdrop=seasonBackdrop??series.backdropUrl;
+      const seriesImages=seasonBackdrop?null:await this.images(`/tv/${identity.id}`,config);
+      const selectedBackdrop=seasonBackdrop??backdropUrl(selectSeriesBackdrop(seriesImages?.backdrops,identity.season));
       return { ...series, externalId, title: `${series.title} · ${label}`,
         originalTitle: series.originalTitle ? `${series.originalTitle} · ${label}` : null,
         year: parseYear(season.air_date), overview: overview || null,

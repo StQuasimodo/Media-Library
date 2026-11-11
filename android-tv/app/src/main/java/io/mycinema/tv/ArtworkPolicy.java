@@ -35,18 +35,29 @@ final class ArtworkPolicy {
         }
         List<JSONObject> ranked=ordered(simplified.isEmpty()?allowed:simplified,2.0/3);return ranked.isEmpty()?null:Json.text(ranked.get(0),"file_path");
     }
-    static String backdrop(JSONArray images,int season) {
-        List<JSONObject> allowed=new ArrayList<>(),textless=new ArrayList<>();
+    private static List<JSONObject> backdropCandidates(JSONArray images) {
+        List<JSONObject> allowed=new ArrayList<>();
         for(int i=0;i<images.length();i++){
             JSONObject image=images.optJSONObject(i);if(image==null||!valid(image))continue;
             double width=image.optDouble("width"),height=image.optDouble("height"),ratio=width/height;
             boolean noText=image.has("iso_639_1")&&image.isNull("iso_639_1");
             if((noText||Json.text(image,"iso_639_1").equals("en"))&&width>=1280&&height>=720&&ratio>=1.5&&ratio<=2.05&&!(image.optInt("vote_count",0)>0&&image.optDouble("vote_average",0)<4)){
-                allowed.add(image);if(noText)textless.add(image);
+                allowed.add(image);
             }
         }
+        return allowed;
+    }
+    static String backdrop(JSONArray images,int season) {
+        List<JSONObject> allowed=backdropCandidates(images);
         List<JSONObject> promotional=new ArrayList<>();for(JSONObject image:allowed)if(Json.text(image,"iso_639_1").equals("en"))promotional.add(image);
         List<JSONObject> ranked=ordered(promotional.isEmpty()?allowed:promotional,16.0/9);
         return ranked.isEmpty()?null:Json.text(ranked.get(0),"file_path");
+    }
+    /** Whole-show visual allocation only: never proof of season identity. */
+    static String seriesBackdrop(JSONArray images,int season){
+        List<JSONObject> ranked=ordered(backdropCandidates(images),16.0/9);if(ranked.isEmpty())return null;
+        double floor=score(ranked.get(0),16.0/9)-8;List<JSONObject> promotional=new ArrayList<>(),textless=new ArrayList<>();
+        for(JSONObject image:ranked)if(score(image,16.0/9)>=floor){if(Json.text(image,"iso_639_1").equals("en"))promotional.add(image);else textless.add(image);}
+        promotional.addAll(textless);int index=season>0?season-1:0;return Json.text(promotional.get(index%promotional.size()),"file_path");
     }
 }

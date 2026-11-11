@@ -141,7 +141,7 @@ final class TmdbClient {
         }
         JSONObject posters=images(path),backgrounds=posters;
         String selectedBackground=ArtworkPolicy.backdrop(Json.array(posters,"backdrops"),season),backgroundScope="season";
-        if(season>=0&&selectedBackground==null){backgrounds=images("/tv/"+id);selectedBackground=ArtworkPolicy.backdrop(Json.array(backgrounds,"backdrops"),-1);backgroundScope="series";}
+        if(season>=0&&selectedBackground==null){backgrounds=images("/tv/"+id);selectedBackground=ArtworkPolicy.seriesBackdrop(Json.array(backgrounds,"backdrops"),season);backgroundScope="series";}
         Json.put(film,"posterUrl",image(ArtworkPolicy.poster(Json.array(posters,"posters")),true));
         Json.put(film,"backdropUrl",image(selectedBackground,false));
         if(season>=0)Json.put(film,"backdropScope",backgroundScope);

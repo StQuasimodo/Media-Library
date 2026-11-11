@@ -439,6 +439,9 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     assert.ok(manualSeason);extraFilmIds.push(manualSeason.filmId);
     checks.push('normal TMDB search expands six season rows, single/batch season import, collected markers, personal rating preservation, whole-series choice and manual missing-season form through real UI/IPC');
     const noStill=imported.find((entry:any)=>entry.film.externalId==='1396:season:3').film;
+    assert.equal(new Set(imported.map((entry:any)=>readFileSync(join(profile,'images',entry.film.backdropPath)).toString('hex'))).size,3,'three poster-only season galleries must select three different landscape image bytes');
+    for(const n of [1,2,3]){const film=imported.find((entry:any)=>entry.film.externalId===`1396:season:${n}`).film;await route(`/film/${film.id}`,"!!document.querySelector('.film-title')");await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(film.backdropPath)})`);await shot(`23-${n}-allocated-landscape`);}
+    checks.push('three seasons without own backgrounds use three distinct actual landscape bitmaps; gallery order and single import do not choose one shared first image');
     assert.ok(noStill.backdropPath.startsWith('backdrop/series/1396/'));assert.ok(noStill.posterPath);
     await route(`/film/${noStill.id}`,"!!document.querySelector('.film-title')");
     await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(noStill.backdropPath)})`);

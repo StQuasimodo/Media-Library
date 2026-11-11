@@ -240,6 +240,19 @@ describe('TMDB 详情', () => {
     expect(third.backdropUrl).toBe(first.backdropUrl);expect(third.posterUrl).toContain('/season-en.jpg');
     expect((await tmdb.getCandidate('1396','tv')).backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/a-art.jpg');
   });
+  it('多个季均只有海报时分配不同的全剧横图；刷新、单季/乱序导入选择一致',async()=>{
+    const fetchImpl=(async(input:string|URL|Request)=>{
+      const path=new URL(String(input)).pathname;
+      if(path.endsWith('/tv/1396/images'))return jsonResponse({posters:[],backdrops:['d','b','a','c'].map(name=>({file_path:`/${name}.jpg`,iso_639_1:'en',width:1920,height:1080,vote_average:7,vote_count:30}))});
+      if(path.endsWith('/images'))return jsonResponse({posters:[{file_path:'/season.jpg',iso_639_1:'en',width:1000,height:1500}]});
+      const match=/\/season\/(\d+)$/.exec(path);if(match)return jsonResponse({season_number:Number(match[1]),overview:'本季',episodes:[{still_path:'/not-a-background.jpg'}]});
+      return jsonResponse({id:1396,name:'绝命毒师',overview:'整剧'});
+    }) as typeof fetch;
+    const tmdb=provider(fetchImpl);const films=await Promise.all([4,2,1,3].map(n=>tmdb.getCandidate(`1396:season:${n}`,'tv')));
+    expect(new Set(films.map(f=>f.backdropUrl)).size).toBe(4);expect(films.every(f=>f.backdropScope==='series')).toBe(true);
+    expect((await tmdb.getCandidate('1396:season:3','tv')).backdropUrl).toBe(films[3].backdropUrl);
+    expect((await provider(fetchImpl).getCandidate('1396:season:2','tv')).backdropUrl).toBe(films[1].backdropUrl);
+  });
   it('解析电影详情字段', async () => {
     const fetchImpl = (async (input: string | URL | Request) => {
       const url = String(input);

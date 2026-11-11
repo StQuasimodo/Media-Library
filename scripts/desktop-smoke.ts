@@ -464,7 +464,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='海报墙').click()");
     await route('/settings',"!!document.querySelector('#updates')");assert.equal((await js('window.cinema.updates.status()')).preferences.automatic,true);
     assert.equal((await js('window.cinema.updates.status()')).preferences.mirror,'auto');
-    assert.equal((await js('window.cinema.updates.check()')).phase,'error');
+    const timedOut=await js('window.cinema.updates.check()');assert.equal(timedOut.phase,'error');assert.ok(timedOut.error.includes('检查更新连接超时'),timedOut.error);
     await waitFor("document.querySelector('#updates .field-error')?.textContent.includes('检查更新连接超时')");
     const updateRequestsBeforeSaving=cloudFixture.updateRequests();
     await js("(()=>{const select=document.querySelector('[aria-label=更新下载来源]');select.value='https://ghfast.top/';select.dispatchEvent(new Event('change',{bubbles:true}));})()");

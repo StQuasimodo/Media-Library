@@ -46,7 +46,7 @@ export function installQuarkSyncFixture(profile: string) {
     : net.fetch(request,{bypassCustomProtocolHandlers:true}));
   globalThis.fetch=(async(input: string | URL | Request)=>{
     const url=new URL(String(input));
-    if(['raw.githubusercontent.com','gh-proxy.com','ghfast.top','ghproxy.net'].includes(url.hostname)&&url.pathname.endsWith('/updates/windows-preview.json')){updateRequests++;throw new DOMException('The operation was aborted due to timeout','TimeoutError');}
+    if(['raw.githubusercontent.com','gh-proxy.com','ghfast.top','ghproxy.net'].includes(url.hostname)&&/\/updates\/windows-(stable|preview)\.json$/.test(url.pathname)){updateRequests++;throw new DOMException('The operation was aborted due to timeout','TimeoutError');}
     if(url.hostname==='image.tmdb.org') return new Response(Uint8Array.from(stills.get('/'+url.pathname.split('/').at(-1)) ?? Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64')),{headers:{'content-type':'image/png'}});
     assert.ok(['api.tmdb.org','api.themoviedb.org'].includes(url.hostname),'fixture must not access another host');
     const movie={id:603,media_type:'movie',title:'黑客帝国',original_title:'The Matrix',belongs_to_collection:{id:234,name:'黑客帝国系列'},release_date:'1999-03-31',overview:'受控匹配测试资料',poster_path:null,backdrop_path:null,genres:[]};

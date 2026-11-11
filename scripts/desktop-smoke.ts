@@ -463,12 +463,23 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='海报墙').click()");
     await route('/settings',"!!document.querySelector('#updates')");assert.equal((await js('window.cinema.updates.status()')).preferences.automatic,true);
     assert.equal((await js('window.cinema.updates.status()')).preferences.mirror,'auto');
+    assert.equal((await js('window.cinema.updates.check()')).phase,'error');
+    await waitFor("document.querySelector('#updates .field-error')?.textContent.includes('检查更新连接超时')");
+    const updateRequestsBeforeSaving=cloudFixture.updateRequests();
     await js("(()=>{const select=document.querySelector('[aria-label=更新下载来源]');select.value='https://ghfast.top/';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
     await waitFor("window.cinema.updates.status().then(s=>s.preferences.mirror==='https://ghfast.top/')");
+    await waitFor("!document.querySelector('#updates .field-error') && [...document.querySelectorAll('.toast')].some(n=>n.textContent.includes('镜像设置已保存'))");
+    await js("(()=>{const select=document.querySelector('[aria-label=更新下载来源]');select.value='custom';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await waitFor("!!document.querySelector('#updates input[placeholder]')");
+    await js("(()=>{const input=document.querySelector('#updates input[placeholder]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'https://mirror.test/');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await js("[...document.querySelectorAll('#updates button')].find(b=>b.textContent==='保存镜像').click()");
+    await waitFor("window.cinema.updates.status().then(s=>s.preferences.mirror==='https://mirror.test/' && s.phase==='idle' && s.error===null)");
+    assert.equal(cloudFixture.updateRequests(),updateRequestsBeforeSaving,'preset and custom saves must not make network requests');
     await js("(()=>{const select=document.querySelector('[aria-label=更新下载来源]');select.value='auto';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
     await waitFor("window.cinema.updates.status().then(s=>s.preferences.mirror==='auto')");
     await js("document.querySelector('#updates').scrollIntoView({block:'start',behavior:'instant'})");await shot('27-update-settings');
     checks.push('cross-media universe folder and drill-down, retained canonical series, manual artwork lock survives refresh, memory-only still protocol rendered in Electron, update settings IPC/UI');
+    checks.push('controlled update timeout is localized; preset/custom mirror saves clear old error, display saved confirmation and make zero network requests');
 
     for(const title of ['影墙排序10','影墙排序2','影墙排序']) {
       const entry=await js(`window.cinema.library.createManual({title:${JSON.stringify(title)},mediaType:'movie'})`);extraFilmIds.push(entry.film.id);

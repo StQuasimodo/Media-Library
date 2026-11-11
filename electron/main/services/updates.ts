@@ -19,7 +19,7 @@ export function verifyUpdateEnvelope(body:string,platform:'windows'|'tv',channel
   return m;
 }
 export class DesktopUpdates {
-  private state:UpdateStatus;private prefsFile:string;private directory:string;private file:string|null=null;private timer:ReturnType<typeof setTimeout>|null=null;private closed=false;
+  private state:UpdateStatus;private prefsFile:string;private directory:string;private file:string|null=null;private timer:ReturnType<typeof setTimeout>|null=null;private closed=false;private activeCheck:AbortController|null=null;
   constructor(version:string,root:string,private readonly fetcher:typeof fetch=fetch,private readonly certificate=signing.certificatePem){
     this.prefsFile=join(root,'update-preferences.json');this.directory=join(root,'updates');let prefs:Partial<UpdatePreferences>={};
     try{prefs=JSON.parse(readFileSync(this.prefsFile,'utf8'));}catch{/* First launch. */}
@@ -33,23 +33,26 @@ export class DesktopUpdates {
     if(patch.preview!==undefined){if(typeof patch.preview!=='boolean')throw new Error('更新设置无效。');next.preview=patch.preview;}
     if(patch.mirror!==undefined){if(typeof patch.mirror!=='string')throw new Error('镜像地址无效。');next.mirror=validateMirror(patch.mirror);}
     mkdirSync(this.directory,{recursive:true});writeFileSync(this.prefsFile+'.tmp',JSON.stringify(next));renameSync(this.prefsFile+'.tmp',this.prefsFile);this.state.preferences=next;
-    if(next.preview!==p.preview||next.mirror!==p.mirror){this.state.manifest=null;this.state.phase='idle';this.file=null;}return this.status();
+    if(next.preview!==p.preview||patch.mirror!==undefined){const previous=this.activeCheck;this.activeCheck=null;previous?.abort();this.state.manifest=null;this.state.phase='idle';this.state.error=null;this.state.lastChecked=null;this.file=null;}return this.status();
   }
   start(){if(this.closed)return;this.timer=setTimeout(()=>{if(this.state.preferences.automatic)void this.check();this.start();},12*60*60*1000);this.timer.unref();if(this.state.preferences.automatic)void this.check();}
-  close(){this.closed=true;if(this.timer)clearTimeout(this.timer);}
+  close(){this.closed=true;if(this.timer)clearTimeout(this.timer);const previous=this.activeCheck;this.activeCheck=null;previous?.abort();}
   private sources(url:string){return updateSources(url,this.state.preferences.mirror);}
   async check(){
-    if(['checking','downloading'].includes(this.state.phase))return this.status();this.state.phase='checking';this.state.error=null;
+    if(this.closed||['checking','downloading'].includes(this.state.phase))return this.status();const current=new AbortController();this.activeCheck=current;this.state.phase='checking';this.state.error=null;
     const channel=this.state.preferences.preview?'preview':'stable';const url=`https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/windows-${channel}.json`;
     let failure='更新服务暂不可用，请检查网络或配置镜像。';
-    for(const source of this.sources(url))try{
-      const response=await this.fetcher(source,{credentials:'omit',redirect:'error',signal:AbortSignal.timeout(12000),cache:'no-store'});if(!response.ok)throw new Error('更新源请求失败。');
+    try{for(const source of this.sources(url))try{
+      if(this.activeCheck!==current)return this.status();
+      const response=await this.fetcher(source,{credentials:'omit',redirect:'error',signal:AbortSignal.any([current.signal,AbortSignal.timeout(12000)]),cache:'no-store'});if(!response.ok)throw new Error('更新源请求失败。');
       const reader=response.body?.getReader();if(!reader)throw new Error('更新说明为空。');let bytes=0;const chunks:Uint8Array[]=[];
       try{for(;;){const part=await reader.read();if(part.done)break;bytes+=part.value.length;if(bytes>65536)throw new Error('更新说明过大。');chunks.push(part.value);}}finally{await reader.cancel().catch(()=>{});}
       const manifest=verifyUpdateEnvelope(Buffer.concat(chunks).toString('utf8'),'windows',channel,this.certificate);
+      if(this.activeCheck!==current)return this.status();
       this.state.lastChecked=new Date().toISOString();this.state.manifest=compareVersions(manifest.version,this.state.currentVersion)>0?manifest:null;this.state.phase=this.state.manifest?'available':'idle';return this.status();
-    }catch(error){failure=error instanceof Error?error.message:failure;}
+    }catch(error){if(this.activeCheck!==current)return this.status();failure=error instanceof Error?(error.name==='TimeoutError'?'检查更新连接超时，镜像设置不受影响。请稍后重试或切换更新来源。':error instanceof TypeError?'无法连接更新来源，请检查网络或切换镜像。':error.message):failure;}
     this.state.phase='error';this.state.error=failure;return this.status();
+    }finally{if(this.activeCheck===current)this.activeCheck=null;}
   }
   download(){if(!['available','error'].includes(this.state.phase)||!this.state.manifest)return this.status();this.state.phase='downloading';this.state.downloadedBytes=0;this.state.error=null;void this.fetchPackage(this.state.manifest);return this.status();}
   private async fetchPackage(manifest:UpdateManifest){

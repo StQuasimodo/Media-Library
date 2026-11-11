@@ -29,7 +29,7 @@ export function installQuarkSyncFixture(profile: string) {
     'sync-show':[directory('sync-season','Season 1')],
     'sync-season':[video('sync-e1','S01E01.mkv'),video('sync-e2','S01E02.mkv')],
   };
-  let failure=false,searches=0,failedSeason:number|null=null,refreshFailure=false;
+  let failure=false,searches=0,failedSeason:number|null=null,refreshFailure=false,updateRequests=0;
   const store=session.fromPartition('persist:mycinema-quark-web');
   Object.defineProperty(store,'fetch',{configurable:true,value:async(input: string | URL | Request)=>{
     const url=new URL(String(input));
@@ -46,6 +46,7 @@ export function installQuarkSyncFixture(profile: string) {
     : net.fetch(request,{bypassCustomProtocolHandlers:true}));
   globalThis.fetch=(async(input: string | URL | Request)=>{
     const url=new URL(String(input));
+    if(['raw.githubusercontent.com','gh-proxy.com','ghfast.top','ghproxy.net'].includes(url.hostname)&&url.pathname.endsWith('/updates/windows-preview.json')){updateRequests++;throw new DOMException('The operation was aborted due to timeout','TimeoutError');}
     if(url.hostname==='image.tmdb.org') return new Response(Uint8Array.from(stills.get('/'+url.pathname.split('/').at(-1)) ?? Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64')),{headers:{'content-type':'image/png'}});
     assert.ok(['api.tmdb.org','api.themoviedb.org'].includes(url.hostname),'fixture must not access another host');
     const movie={id:603,media_type:'movie',title:'黑客帝国',original_title:'The Matrix',belongs_to_collection:{id:234,name:'黑客帝国系列'},release_date:'1999-03-31',overview:'受控匹配测试资料',poster_path:null,backdrop_path:null,genres:[]};
@@ -74,6 +75,7 @@ export function installQuarkSyncFixture(profile: string) {
     throw new Error('Unexpected fixture metadata path');
   }) as typeof fetch;
   return {
+    updateRequests:()=>updateRequests,
     searches:()=>searches,
     setSeasonFailure:(number:number|null)=>{failedSeason=number;},
     addSeasons:()=>{tree['sync-show'].push(directory('sync-season2','Season 2'));tree['sync-season2']=[video('sync-e21','S02E01.mkv')];tree['sync-media'].push(directory('sync-obscure','Obscure.2024'));tree['sync-obscure']=[video('sync-o31','S03E01.mkv')];},

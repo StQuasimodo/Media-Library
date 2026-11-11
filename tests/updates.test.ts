@@ -35,3 +35,43 @@ describe('Built-in update mirrors',()=>{
  it('contains only explicit HTTPS presets and builds origin-first fallbacks',async()=>{const {UPDATE_MIRRORS,updateSources}=await import('../src/shared/updates');expect(UPDATE_MIRRORS.map(m=>m.url)).toEqual(['https://gh-proxy.com/','https://ghfast.top/','https://ghproxy.net/']);const original='https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/windows-preview.json';expect(updateSources(original,'auto')).toEqual([original,...UPDATE_MIRRORS.map(m=>m.url+original)]);expect(updateSources(original,'')).toEqual([original]);expect(updateSources(original,UPDATE_MIRRORS[1].url)).toEqual([original,UPDATE_MIRRORS[1].url+original]);});
  it('tries the next preset after origin failure or forged manifest and preserves explicit opt-out',async()=>{const folder=mkdtempSync(join(tmpdir(),'mycinema-presets-'));const calls:string[]=[];const updates=new DesktopUpdates('1.2.0',folder,(async(input:RequestInfo|URL)=>{const url=String(input);calls.push(url);if(url.startsWith('https://raw.'))throw new TypeError('origin unavailable');if(url.startsWith('https://gh-proxy.com/'))return new Response('{"payload":"Zm9yZ2Vk","signature":"YmFk"}');return new Response(envelope());}) as typeof fetch,publicKey);try{expect(updates.status().preferences.mirror).toBe('auto');expect((await updates.check()).phase).toBe('available');expect(calls).toHaveLength(3);expect(calls[2]).toMatch(/^https:\/\/ghfast.top\//);updates.configure({mirror:''});updates.close();const restored=new DesktopUpdates('1.2.0',folder,fetch,publicKey);expect(restored.status().preferences.mirror).toBe('');restored.close();}finally{updates.close();rmSync(folder,{recursive:true,force:true});}});
 });
+
+describe('Saving mirrors during update checks',()=>{
+ it('saves locally without requests and clears a previous timeout even for the same source',async()=>{
+  const folder=mkdtempSync(join(tmpdir(),'mycinema-timeout-'));
+  const fetcher=vi.fn(async()=>{throw new DOMException('The operation was aborted due to timeout','TimeoutError');});
+  const updates=new DesktopUpdates('1.2.0',folder,fetcher as typeof fetch,publicKey);
+  try{
+   updates.configure({mirror:'https://mirror.test/'});expect(fetcher).not.toHaveBeenCalled();
+   const failed=await updates.check();expect(failed.phase).toBe('error');expect(failed.error).toContain('检查更新连接超时');expect(failed.error).not.toContain('The operation was aborted');
+   expect(fetcher).toHaveBeenCalledTimes(2);
+   const saved=updates.configure({mirror:'https://mirror.test/'});
+   expect(saved.phase).toBe('idle');expect(saved.error).toBeNull();expect(saved.lastChecked).toBeNull();expect(fetcher).toHaveBeenCalledTimes(2);
+   const restored=new DesktopUpdates('1.2.0',folder,fetcher as typeof fetch,publicKey);
+   try{expect(restored.status().preferences.mirror).toBe('https://mirror.test/');}finally{restored.close();}
+  }finally{updates.close();rmSync(folder,{recursive:true,force:true});}
+ });
+ it.each(['success','timeout'] as const)('cancels the old check and ignores its late %s after a new check completes',async(outcome)=>{
+  const folder=mkdtempSync(join(tmpdir(),'mycinema-check-race-'));
+  let finish!:(response:Response)=>void,fail!:(error:Error)=>void,oldSignal:AbortSignal|undefined;
+  const fetcher=vi.fn((_input:RequestInfo|URL,options?:RequestInit)=>{
+   if(!oldSignal){oldSignal=options?.signal??undefined;return new Promise<Response>((resolve,reject)=>{finish=resolve;fail=reject;});}
+   return Promise.resolve(new Response(envelope()));
+  });
+  const updates=new DesktopUpdates('1.2.0',folder,fetcher as typeof fetch,publicKey);
+  try{
+   const previous=updates.check();expect(oldSignal?.aborted).toBe(false);
+   const saved=updates.configure({mirror:'https://ghfast.top/'});expect(saved.phase).toBe('idle');expect(oldSignal?.aborted).toBe(true);
+   const next=await updates.check();expect(next.phase).toBe('available');
+   if(outcome==='timeout')fail(new DOMException('The operation was aborted due to timeout','TimeoutError'));
+   else finish(new Response(envelope({...manifest(),version:'9.0.0'})));
+   await previous;expect(updates.status()).toEqual(next);expect(fetcher).toHaveBeenCalledTimes(2);
+  }finally{updates.close();rmSync(folder,{recursive:true,force:true});}
+ });
+ it('cancels a previous channel check before it can offer an update from the wrong channel',async()=>{
+  const folder=mkdtempSync(join(tmpdir(),'mycinema-channel-race-'));let finish!:(response:Response)=>void;
+  const updates=new DesktopUpdates('1.2.0',folder,(()=>new Promise<Response>(resolve=>{finish=resolve;})) as typeof fetch,publicKey);
+  try{const previous=updates.check();updates.configure({preview:true});finish(new Response(envelope()));await previous;expect(updates.status()).toMatchObject({phase:'idle',manifest:null,error:null,preferences:{preview:true}});}
+  finally{updates.close();rmSync(folder,{recursive:true,force:true});}
+ });
+});

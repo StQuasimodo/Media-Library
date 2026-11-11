@@ -204,3 +204,15 @@ shared/series统一识别整剧身份、明确标题序号与官方系列。组�
 `services/libraryRefresh.ts`由AppRuntime持有单个后台任务，先调用既有QuarkSync/官方工具目录读取，再对库内作品快照逐部调用MetadataService.refreshFilm。使用既有图片缓存、身份匹配和增量事务，不新增数据库表或改变账号存储。新增三个IPC只接受可信应用顶层页面；重复启动复用当前任务。来源未配置、手动收藏、单部错误与全局凭据/网络异常分别统计，图片不完整单独报告，失败明细最多50项。
 
 AppState统一轮询进度，路由切换继续，完成后invalidate各页数据。停止/关闭上下文会取消任务；每次异步读取后、缓存完成后与写库前核对取消及原上下文，防止迟到写入。运行期间拒绝恢复数据库、改Key、切换账号/目录和编辑元数据等冲突；个人字段不会被外部资料覆盖。任务状态只存在进程内，退出不自动恢复未完成任务，已有成功更新留在SQLite。
+
+## 两端更新、影视宇宙与选图（1.3 / TV0.3，2026-11-11）
+
+新增IPC：`updates:status/configure/check/download/install`、`library:assignFranchise`、`metadata:artwork/selectArtwork`，对应preload API具名方法。更新通道仅主应用顶层页面可调用；安装前复核哈希并备份，Windows只在打包后的Windows环境调用安装。更新独立于数据库启动，因此数据库故障时仍能检查修复版本。
+
+`services/updates.ts`与TV `TvUpdates`使用固定公开证书验证域分隔`MY_CINEMA_UPDATE_V1\n`加原始JSON字节的RSA/SHA256签名。公开清单位于`updates/`，CI在发行后按GitHub资产摘要签名更新；私钥只从Secret恢复到runner临时位置并清理。镜像只提供公开字节，不传入账号头。TV使用只读`UpdateProvider`为系统安装器授予单个APK URI，额外校验当前签名、包名、版本代码。
+
+现有`series_json`增加可选`franchise`对象（显式null表示移出自动宇宙），不新增表/迁移；canonical系列与order不变。两端共用`src/shared/data/franchises.json`的明确关系，手选覆盖在既有元数据内持久保存，刷新沿用。
+
+图片手选标识编码在现有安全相对路径`poster|backdrop/manual/<tmdb文件名>.<实际扩展>`，Android使用`.img`；自动季背景额外包含季身份路径。显示层拒绝旧的未标季整剧图，刷新不会覆盖手选锁定。`metadata:artwork`只返回允许的图片标识/预览，提交选择再次检查来源；剧照走内存`mycinema://transient/<固定文件名>`，无磁盘写入，响应no-store；TV直接受限解码，不进入图片缓存。
+
+本节替代此前按季轮换整剧背景的规则；详见[选图说明](ARTWORK.md)。

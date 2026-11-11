@@ -57,3 +57,9 @@ Android电视开发预览可由[Publish verified Android TV preview](../.github/
 TV固定签名须从私有Secret `TV_DEVELOPMENT_KEYSTORE_BASE64`恢复**当前固定密钥原文件**，恢复前必须同时校验私人密钥和仓库固定证书指纹；缓存缺失不生成替代签名。当前固定密钥缺失时暂停安装包分发，数据导出与并行迁移方案见[签名恢复说明](TV-SIGNING-MIGRATION-2026-11-10.md)。迁移实验的 `tvMigrationPreview` 使用独立应用ID，仅允许该身份覆盖测试versionCode；不改变正式版本，不上传实验APK，不作为正式升级证明。
 
 以 `1.1.0` 为例：`My-Cinema-1.1.0-Setup.exe`、`My-Cinema-1.1.0-portable-win64.zip`、Tag `v1.1.0`。`INSTALL.cmd` 和 `RUN-PORTABLE.cmd` 自动引用当前版本；SHA-256 必须来自本次实际打包产物。
+
+## 自动更新清单
+
+Windows1.3预览与TV0.3预览开始使用`updates/{platform}-{channel}.json`。它是可更新的发行索引，不改变历史Tag或包字节；仅在通过原有验证并发布资产后，由`update-feeds.yml`使用固定签名生成。稳定渠道排除prerelease，预览渠道选择最高版本，客户端不允许降级；TV还要求versionCode高于已安装。
+
+清单签名公钥随应用发布。私钥不得放入仓库、发行资产、日志或CI缓存；替换签名需要明确迁移方案。更新清单签名不代表Windows已有Authenticode。TV沿用固定be6ca6证书，可覆盖alpha.5；不能据此覆盖更旧的其他签名安装。

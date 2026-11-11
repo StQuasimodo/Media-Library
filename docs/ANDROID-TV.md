@@ -1,5 +1,7 @@
 # My Cinema 电视端
 
+2026-11-11：[0.3.0-alpha.4/code12](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.4)补充通用剧集/电影证据关联，后台处理并保留手动整理；全剧横图回退按质量接近的候选分季分配。完整API22与原包同签名升级回归通过；真实账号和长虹实机未代验收。[算法、产物与结果](SERIES-RELATIONSHIPS.md)。
+
 2026-11-11：[0.3.0-alpha.3/code11](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.3)自动选横版背景，本季无图时回退全剧图库并注明季份未标注，取消海报背景。固定签名/收藏/播放器不变，完整API22回归和alpha.5原APK覆盖升级通过；长虹实机未验收。[调研与真实交付](OPEN-SOURCE-ARTWORK-COLLECTIONS-2026-11-11.md#本轮实际交付)。
 
 2026-11-11：[0.3.0-alpha.2/code10](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.2)优化遥控快捷菜单、免输入评分/状态、最近搜索、整系列整理和焦点记忆；新增可直接选取的内置更新镜像。[操作与验证](TV-REMOTE-AND-MIRRORS-2026-11-11.md)。保留alpha.5以来固定签名，实体遥控器/系统语音仍需实机验收。

@@ -1,0 +1,49 @@
+{
+  "version": "1.3.0-beta.4",
+  "source": "335a73b9647f4fc21697f6021acfd973683aa659",
+  "tagSourceVerified": true,
+  "run": "42996408934",
+  "workflowResult": "success",
+  "unitTests": 234,
+  "typecheckAndProductionBuild": "passed",
+  "actualWindowsElectron": true,
+  "headless": false,
+  "sandboxDisabled": false,
+  "actualInstallerUi": "passed",
+  "actualTmdbAccountVerified": false,
+  "releaseUrl": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.4",
+  "prerelease": true,
+  "assets": [
+    {
+      "name": "INSTALL.cmd",
+      "size": 1338,
+      "digest": "sha256:0209e2baf39fc0c06710854f64599faaee0418f597e39640f612a505399b6ff7",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.4/INSTALL.cmd"
+    },
+    {
+      "name": "My-Cinema-1.3.0-beta.4-portable-win64.zip",
+      "size": 171297747,
+      "digest": "sha256:8a55079c6a5f1c044ffc4fe469f91af5a1fc0017814cae70f077cc24736472d1",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.4/My-Cinema-1.3.0-beta.4-portable-win64.zip"
+    },
+    {
+      "name": "My-Cinema-1.3.0-beta.4-Setup.exe",
+      "size": 122954129,
+      "digest": "sha256:78b76ffb7ceab8669f9d8533806b52bc65ca5688cc074326e29d148b95a0dbf5",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.4/My-Cinema-1.3.0-beta.4-Setup.exe"
+    },
+    {
+      "name": "RUN-PORTABLE.cmd",
+      "size": 976,
+      "digest": "sha256:103a8f79e8dcb7e6747480cb33d8910f969643cf7c7d196270a0b317147fd42a",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.4/RUN-PORTABLE.cmd"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 368,
+      "digest": "sha256:ed9a6e8ca1a1fea907741712774fd3369822db5fc5340e55c9e5f557360ba499",
+      "browser_download_url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.4/SHA256SUMS.txt"
+    }
+  ],
+  "evidenceNote": "Fixture movie ID900001 and actor IDs are synthetic. Screenshots use synthetic posters/backgrounds; movie metadata aesthetics and real account integration are not independently accepted."
+}

@@ -55,3 +55,18 @@
 本地234项测试、生产构建、全部Java/仪器测试源码编译已通过。两端共用[正反例数据](../tests/fixtures/related-tv-cases.json)，覆盖《浴血黑帮》《续命之徒》《X档案》《冲出宁静号》及误合并反例，人物ID为受控测试值。
 
 Windows/API22回归额外验证三个无横图的季实际使用不同图片字节/解码像素，以及独立电影自动加入剧集文件夹；实际结果以发布后的产物记录为准。回归中的电影ID900001和演员ID是受控值，不冒充真实TMDB账号在线验收。长虹电视与用户真实账号仍需单独验收。
+
+## 本轮交付（2026-11-11）
+
+两端应用与测试均来自`335a73b9647f4fc21697f6021acfd973683aa659`；后续文档不冒充构建源码，包名/签名/数据库版本没有更换。
+
+| 平台 | 实际流程 | 产物 |
+|---|---|---|
+| Windows1.3.0-beta.4 | [42996408934](https://github.com/StQuasimodo/Media-Library/actions/runs/42996408934)通过：234项测试、构建、真实Windows Electron（非无头、sandbox开启）、34/64项窗口检查、旧凭据兼容和实际安装器6项检查 | [下载](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.4) · [身份与资产](../artifacts/releases/v1.3.0-beta.4/validation.json) · [实际UI结果](../artifacts/releases/v1.3.0-beta.4/controlled-ui-report.json) |
+| TV0.3.0-alpha.4/code12 | [完整API22构建42996413849](https://github.com/StQuasimodo/Media-Library/actions/runs/42996413849)通过：38项图片/归类检查（含两端共用10个关系样本）、26项遥控检查、3个公开镜像HTTPS验签、真实1080p解码/90秒取流、备份/500海报/进程及模拟器内核重启、alpha.5原APK同签名升级 | [发布42997572706](https://github.com/StQuasimodo/Media-Library/actions/runs/42997572706)通过 · [下载](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.4) · [身份](../artifacts/releases/tv-v0.3.0-alpha.4/BUILD.json) · [完整UI结果](../artifacts/releases/tv-v0.3.0-alpha.4/full-ui.json) |
+
+Windows实际窗口验证了自动文件夹与推断来源提示；API22通过生产后台任务验证附加演职员资料、自动关联及原收藏保留。分季图同时比较实际字节/解码像素，不以路径不同替代图片不同。[Windows文件夹截图](../artifacts/releases/v1.3.0-beta.4/inferred-tv-film-folder.png) · [推断说明截图](../artifacts/releases/v1.3.0-beta.4/inferred-film-provenance.png) · [季1](../artifacts/releases/v1.3.0-beta.4/season-1-fixture.png) · [季2](../artifacts/releases/v1.3.0-beta.4/season-2-fixture.png) · [季3](../artifacts/releases/v1.3.0-beta.4/season-3-fixture.png)。截图为受控色块，不作真实物料审美验收。
+
+Windows安装器122954129字节，SHA256`78b76ffb7ceab8669f9d8533806b52bc65ca5688cc074326e29d148b95a0dbf5`。APK48797575字节，SHA256`337292ab92a4549a45ef997591ec3027c3cd7d392cef15632aee1ff9057881cc`，已下载构建原包独立核对；固定证书仍为be6ca662…，ARMv7/x86打包检查通过，运行验收为API22 x86。实体长虹电视、ARMv7运行、真实TMDB/夸克账号及4K原盘未代验收。
+
+两端公开预览清单已下载并用生产验签器验证版本、code12、大小/哈希一致：[清单记录](../artifacts/releases/published-feeds-relations-2026-11-11.json)。Latest/稳定渠道仍为1.2.0，旧版本资产未覆盖。早期准备包在发布前取消，以补充特别篇边界及用户明确要求的通用关系层；最终仅发布上述源码和产物。

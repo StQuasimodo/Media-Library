@@ -22,9 +22,9 @@
 
 [下载 Windows 安装包与免安装版](https://github.com/StQuasimodo/Media-Library/releases/latest)。安装与首次配置见[使用指南](docs/USAGE.md)。
 
-稳定版为[1.2.0](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0)。[Windows1.3.0-beta.3](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.3)支持应用内更新、系列文件夹、重新登录保留夸克目录和手选图库，并修复保存镜像后的旧超时提示；首次需手动安装，之后可在应用检查更新。
+稳定版为[1.2.0](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.2.0)。[Windows1.3.0-beta.4](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.4)支持应用内更新、系列文件夹、通用剧集/衍生电影关联、分季横图分配、重新登录保留夸克目录和手选图库；首次需手动安装，之后可在应用检查更新。
 
-[Android TV0.3.0-alpha.3开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.3)：优化遥控器、减少文字输入，内置更新镜像并自动选横版背景；保留独立收藏、本机夸克WebDAV及内置播放，minSdk21/ARMv7/x86。可覆盖alpha.5，**不能覆盖更换签名前的旧安装**。[安装说明](docs/ANDROID-TV.md) · [两端验证与实机限制](docs/OPEN-SOURCE-ARTWORK-COLLECTIONS-2026-11-11.md#本轮实际交付)。
+[Android TV0.3.0-alpha.4开发预览](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.4)：优化遥控器、减少文字输入，内置镜像、通用衍生关联与分季横图分配；保留独立收藏、本机夸克WebDAV及内置播放，minSdk21/ARMv7/x86。可覆盖alpha.5，**不能覆盖更换签名前的旧安装**。[安装说明](docs/ANDROID-TV.md) · [两端验证与实机限制](docs/SERIES-RELATIONSHIPS.md#本轮交付2026-11-11)。
 
 从源码开发需要 Node.js 22+ 和 pnpm 11：
 

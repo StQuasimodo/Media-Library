@@ -1,0 +1,51 @@
+{
+  "publicMirrorChecks": [
+    {
+      "mirror": "https:\/\/gh-proxy.com\/",
+      "signedManifestHttpsVerified": true
+    },
+    {
+      "mirror": "https:\/\/ghfast.top\/",
+      "signedManifestHttpsVerified": true
+    },
+    {
+      "mirror": "https:\/\/ghproxy.net\/",
+      "signedManifestHttpsVerified": true
+    }
+  ],
+  "result": "passed",
+  "checks": [
+    "DPAD traverses real poster grid",
+    "confirm opens selected film",
+    "back restores exact selected poster and focus",
+    "menu search offers remote choices without keyboard",
+    "existing-title collection search needs no text input",
+    "single-result grid reached from toolbar",
+    "one confirm opens the single filtered result",
+    "search reset reachable through DPAD menu",
+    "quick rating contains no editable keyboard field",
+    "8.5 rating saved by direction and confirm keys",
+    "rating path committed to real SQLite",
+    "rating save keeps focus on rating action",
+    "watch state changed without opening editor",
+    "focusing search field does not automatically open IME",
+    "recent searches persist bounded and deduplicated",
+    "recent title picker does not require keyboard",
+    "built-in mirror selection has no address entry",
+    "GHFast selected and saved using DPAD",
+    "update TLS still rejects an unrelated self-signed certificate",
+    "series bulk picker has no text fields",
+    "series picker combines both seasons into one checkbox",
+    "DPAD selects the series checkbox row",
+    "folder destination button focusable",
+    "suggested folder title avoids typing",
+    "one group selection files all seasons under suggested universe name",
+    "exit confirmation defaults to cancel"
+  ],
+  "remoteKeyEvents": 52,
+  "buildRun": "42996413849",
+  "apiLevel": 22,
+  "textInputUsedForQuickActions": false,
+  "physicalRemoteVerified": false,
+  "voiceServiceVerified": false
+}

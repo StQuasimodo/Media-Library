@@ -42,6 +42,8 @@
 
 ## 当前交付（2026-11-11）
 
+[剧集与衍生电影关联算法](SERIES-RELATIONSHIPS.md)：TMDB合集的实际能力、通用证据推断、分季横图分配与验证边界。
+
 [自动选图与系列归类调研](OPEN-SOURCE-ARTWORK-COLLECTIONS-2026-11-11.md)：Jellyfin、MoviePilot、Sonarr、Radarr、Kometa的代码依据、可用做法及本轮修复。
 
 [遥控器与内置镜像](TV-REMOTE-AND-MIRRORS-2026-11-11.md)：Windows1.3-beta.2 / TV0.3-alpha.2的操作、第三方来源调研与实测范围。

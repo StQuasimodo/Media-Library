@@ -43,6 +43,6 @@ pnpm dev
 - [架构说明](docs/ARCHITECTURE.md)：Electron、数据层与安全模型。
 - [验证说明](docs/VERIFICATION.md) · [故障排查](docs/TROUBLESHOOTING.md) · [修复记录](docs/REPAIRS-2026-10-24.md)。
 - [全部文档](docs/README.md)。
-- [自动选图与系列归类调研](docs/OPEN-SOURCE-ARTWORK-COLLECTIONS-2026-11-11.md)。
+- [自动选图调研](docs/OPEN-SOURCE-ARTWORK-COLLECTIONS-2026-11-11.md) · [剧集与衍生电影关联算法](docs/SERIES-RELATIONSHIPS.md)。
 
 个人非商业项目。影视资料与图片来自 TMDB；本产品未获得 TMDB 的认可或认证。

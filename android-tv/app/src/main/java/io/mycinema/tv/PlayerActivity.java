@@ -118,6 +118,6 @@ public final class PlayerActivity extends Activity {
         if(controls.getVisibility()!=View.VISIBLE&&(code==KeyEvent.KEYCODE_DPAD_UP||code==KeyEvent.KEYCODE_DPAD_DOWN)){showControls();return true;}return super.onKeyDown(code,event);
     }
     @Override public void onBackPressed(){if(controls.getVisibility()==View.VISIBLE){remote.removeCallbacks(hideControls);controls.setVisibility(View.GONE);}else{showControls();AlertDialog prompt=new AlertDialog.Builder(this).setTitle("退出播放？").setMessage("进度会保存在电视本机。").setNegativeButton("继续播放",null).setPositiveButton("退出",(dialog,n)->finish()).create();prompt.setOnShowListener(d->prompt.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus());prompt.show();}}
-    @Override protected void onStop(){remote.removeCallbacksAndMessages(null);if(controller!=null)controller.stop();super.onStop();}
+    @Override protected void onStop(){remote.removeCallbacksAndMessages(null);centerCaptured=false;if(seekFeedback!=null)seekFeedback.setVisibility(View.GONE);if(controller!=null)controller.stop();super.onStop();}
     @Override protected void onDestroy(){remote.removeCallbacksAndMessages(null);if(controller!=null)controller.close();if(catalog!=null)catalog.close();super.onDestroy();}
 }

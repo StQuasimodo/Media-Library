@@ -33,9 +33,9 @@ import org.json.JSONObject;
 final class TvUpdates implements AutoCloseable {
     private static final String DOMAIN="MY_CINEMA_UPDATE_V1\n";
     private static final OkHttpClient HTTP=new OkHttpClient.Builder().cookieJar(CookieJar.NO_COOKIES).connectTimeout(12,TimeUnit.SECONDS).readTimeout(30,TimeUnit.SECONDS).callTimeout(5,TimeUnit.MINUTES).build();
-    private final Context context;private final SharedPreferences prefs;private final String channel;
+    private final OkHttpClient http;private final Context context;private final SharedPreferences prefs;private final String channel;
     private volatile Call active;private volatile boolean closed;private volatile JSONObject manifest;private final java.util.concurrent.ExecutorService checks=java.util.concurrent.Executors.newSingleThreadExecutor();
-    TvUpdates(Context context){this.context=context.getApplicationContext();prefs=context.getSharedPreferences("app-updates",Context.MODE_PRIVATE);channel=BuildConfig.VERSION_NAME.contains("-")?"preview":"stable";
+    TvUpdates(Context context){this.context=context.getApplicationContext();http=UpdateTls.client(context,HTTP);prefs=context.getSharedPreferences("app-updates",Context.MODE_PRIVATE);channel=BuildConfig.VERSION_NAME.contains("-")?"preview":"stable";
         try{String pending=prefs.getString("pending","");if(!pending.isEmpty()){JSONObject saved=verify(pending,channel,certificate());if(saved.optInt("versionCode")>context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionCode&&saved.optInt("minSdk",Integer.MAX_VALUE)<=Build.VERSION.SDK_INT)manifest=saved;}}catch(Exception ignored){}
     }
     private String certificate() throws Exception {try(InputStream input=context.getAssets().open("update-signing.json")){return new JSONObject(new String(TmdbClient.read(input,16384),StandardCharsets.UTF_8)).getString("certificatePem");}}
@@ -54,7 +54,7 @@ final class TvUpdates implements AutoCloseable {
     private Response response(String address) throws Exception {return response(address,false);}
     private Response response(String address,boolean download) throws Exception {
         if(closed||Thread.currentThread().isInterrupted())throw new java.io.IOException();HttpUrl url=HttpUrl.parse(address);if(url==null||!url.isHttps()||!url.username().isEmpty()||!url.password().isEmpty())throw new java.io.IOException();
-        active=HTTP.newCall(new Request.Builder().url(url).header("Cache-Control","no-store").build());active.timeout().timeout(download?300000:12000,TimeUnit.MILLISECONDS);Response response=active.execute();if(!response.isSuccessful()||response.body()==null||!response.request().url().isHttps()){response.close();throw new java.io.IOException();}return response;
+        active=http.newCall(new Request.Builder().url(url).header("Cache-Control","no-store").build());active.timeout().timeout(download?300000:12000,TimeUnit.MILLISECONDS);Response response=active.execute();if(!response.isSuccessful()||response.body()==null||!response.request().url().isHttps()){response.close();throw new java.io.IOException();}return response;
     }
     static JSONObject verify(String envelope,String expectedChannel,String certificate) throws Exception {
         if(envelope.length()>65536)throw new IllegalArgumentException("更新说明过大。");JSONObject signed=new JSONObject(envelope);String body=signed.optString("payload"),encoded=signed.optString("signature");if(body.length()>49152||encoded.length()>8192||body.isEmpty()||encoded.isEmpty())throw new IllegalArgumentException("更新说明无效。");

@@ -1,0 +1,12 @@
+Public CA certificates, not private keys. Loaded only by the updater on API21-23.
+Downloaded 2026-11-11 over HTTPS from the CA publishers:
+ISRG Root X1: https://letsencrypt.org/certs/isrgrootx1.pem
+SHA256 96bcec06264976f37460779acf28c5a7cfe8a3c0aae11a8ffcee05c0bddf08c6
+ISRG Root X2: https://letsencrypt.org/certs/isrg-root-x2.pem
+SHA256 69729b8e15a86efc177a57afb7171dfc64add28c2fca8cf1507e34453ccb1470
+GTS Root R4: https://pki.goog/repo/certs/gtsr4.pem
+SHA256 349dfa4058c5e263123b398ae795573c4e1313c83fe68f93556cd5e8031b3c7d
+Both the system and additional X509 managers verify certificate chains/expiry.
+OkHttp's default hostname verifier remains enabled. Other app traffic and the
+Android system trust store are unchanged. The update manifest uses a separate
+pinned application-signing certificate, which is never added as a TLS root.

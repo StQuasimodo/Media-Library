@@ -3,7 +3,7 @@ import {rmSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {TestApp,candidate,pngFetch} from './helpers';
 import {seriesFolders,franchise} from '../src/shared/franchises';
-import {backdropUrl,backdropLabel} from '../src/renderer/lib/format';
+import {backdropUrl} from '../src/renderer/lib/format';
 import {MetadataService} from '../electron/main/services/metadataService';
 import type {TmdbProvider} from '../electron/main/services/metadata/tmdb';
 import {transientImage} from '../electron/main/services/transientImages';
@@ -34,12 +34,12 @@ describe('universe folders and artwork preservation',()=>{
   app=new TestApp({fetchImpl:pngFetch()});const fallback=candidate({externalId:'1396:season:1',mediaType:'tv',backdropScope:'series',backdropSelection:'resolved'});
   const first=await app.library.importCandidate(fallback),second=await app.library.importCandidate({...fallback,externalId:'1396:season:2'});
   const path=first.film.backdropPath!;expect(path).toMatch(/^backdrop\/series\/1396\//);expect(second.film.backdropPath).toBe(path);expect(app.images.read(path)).not.toBeNull();
-  expect(backdropLabel(first.film)).toContain('季份未标注');expect(backdropUrl({...first.film,externalId:'60059:season:1'})).toBeNull();expect(backdropUrl({...first.film,backdropPath:first.film.posterPath})).toBeNull();
+  expect(backdropUrl(first.film)).toContain('/series/1396/');expect(backdropUrl({...first.film,externalId:'60059:season:1'})).toBeNull();expect(backdropUrl({...first.film,backdropPath:first.film.posterPath})).toBeNull();
   await app.library.selectArtwork(first.film.id,'backdrop','https://image.tmdb.org/t/p/w1280/chosen.jpg',true);
   const metadata=new MetadataService({getCandidate:async()=>fallback} as unknown as TmdbProvider,app.repo,app.library);
   const restored=await metadata.selectArtwork(first.film.id,'backdrop',null);expect(restored?.backdropPath).toBe(path);expect(backdropUrl(restored!)).not.toBeNull();
   await app.library.applyExternalMetadata(first.film.id,{...fallback,backdropUrl:null,backdropSelection:'unavailable'});expect(app.repo.getFilm(first.film.id)?.backdropPath).toBe(path);
-  app.restart();expect(backdropLabel(app.repo.getFilm(first.film.id)!)).toContain('按季分配');
+  app.restart();expect(backdropUrl(app.repo.getFilm(first.film.id)!)).toContain('/series/1396/');
  });
  it('joins confirmed original/spin-off collection IDs without title guessing and preserves a manual exclusion',async()=>{
   app=new TestApp({fetchImpl:pngFetch()});

@@ -15,11 +15,11 @@ android {
         minSdk 21
         ndk { abiFilters 'armeabi-v7a', 'x86' }
         targetSdk 35
-        versionCode 17
+        versionCode 18
         if (migrationPreview && project.hasProperty('tvUpgradeTestVersionCode')) {
             versionCode Integer.parseInt(project.property('tvUpgradeTestVersionCode'))
         }
-        versionName '0.3.0-alpha.9'
+        versionName '0.3.0-alpha.10'
         testInstrumentationRunner 'io.mycinema.tv.SmokeInstrumentation'
     }
     signingConfigs {

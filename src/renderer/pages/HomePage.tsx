@@ -1,4 +1,4 @@
-import {backdropUrl,backdropLabel} from '../lib/format';
+import {backdropUrl} from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CollectionEntry } from '@shared/types';
@@ -100,7 +100,6 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
                 <div className="hero-original">{focused.film.originalTitle}</div>
               ) : null}
 
-              {backdropLabel(focused.film)?<p className="artwork-source">{backdropLabel(focused.film)}</p>:null}
               <div className="hero-meta">
                 {focused.film.year ? <span>{focused.film.year}</span> : null}
                 <span>{focused.film.mediaType === 'tv' ? '剧集' : '电影'}</span>

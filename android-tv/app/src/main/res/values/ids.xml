@@ -11,4 +11,5 @@
     <item name="nav_cursor" type="id"/><item name="scene_body" type="id"/>
     <item name="cinema_blurred_backdrop" type="id"/><item name="cinema_backdrop_dim" type="id"/>
     <item name="detail_scroll" type="id"/><item name="detail_hero" type="id"/>
+    <item name="detail_primary" type="id"/><item name="detail_watch_status" type="id"/><item name="detail_rating" type="id"/>
 </resources>

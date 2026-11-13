@@ -120,9 +120,10 @@ final class CloudHlsScenario {
             int before=frames();test.runOnMainSync(()->{try{player().setTime(40000);}catch(Exception error){throw new IllegalStateException(error);}});
             await(()->player().getTime()>=39500&&player().getTime()<48000&&frames()>before,"HLS seek settles near target with new frames");Json.put(report,"cloudHlsPostSeekMs",player().getTime());
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);await(()->controller().snapshot().state==PlaybackController.State.PAUSED&&!player().isPlaying(),"cloud pause through remote");
-            long held=player().getTime();Thread.sleep(800);check(Math.abs(player().getTime()-held)<1000,"cloud paused clock remains stable");MediaPlayer previous=player();
+            long held=player().getTime();Thread.sleep(800);check(Math.abs(player().getTime()-held)<1000,"cloud paused clock remains stable");Json.put(report,"cloudHlsPausedBeforeReconnectMs",held);Json.put(report,"cloudHlsSavedBeforeReconnectMs",controller().snapshot().position);MediaPlayer previous=player();
             test.runOnMainSync(()->{View reconnect=label(activity.getWindow().getDecorView(),"重新连接");check(reconnect!=null&&reconnect.performClick(),"cloud remote reconnect");});
-            await(()->player()!=null&&player()!=previous&&controller().snapshot().state==PlaybackController.State.PAUSED&&Math.abs(player().getTime()-held)<2000,"cloud reconnect restores position and pause state");
+            await(()->player()!=null&&player()!=previous&&controller().snapshot().state==PlaybackController.State.PAUSED&&Math.abs(player().getTime()-held)<2000&&frames()>0,"cloud reconnect restores position and pause state");
+            Json.put(report,"cloudHlsPausedAfterReconnectMs",player().getTime());Json.put(report,"cloudHlsPausedReconnectDisplayedPictures",frames());
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);await(()->player().isPlaying()&&player().getTime()>held+500&&frames()>0,"cloud resumes with new frames after paused reconnect");
             Bitmap shot=test.getUiAutomation().takeScreenshot();try(FileOutputStream output=new FileOutputStream(new File(context.getFilesDir(),"q03-cloud-hls-playing.png"))){shot.compress(Bitmap.CompressFormat.PNG,100,output);}shot.recycle();
             test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;

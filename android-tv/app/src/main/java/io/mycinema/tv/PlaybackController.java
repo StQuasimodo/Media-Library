@@ -17,6 +17,7 @@ import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
+import org.videolan.libvlc.interfaces.IMedia;
 
 /** Owns a single decoder session. The Activity renders state and handles remote focus only. */
 final class PlaybackController implements Closeable {
@@ -35,6 +36,7 @@ final class PlaybackController implements Closeable {
     private Future<?> connecting;private NetworkScope network;private PlaybackRelay relay;
     private PlaybackRelay.Session davSession;private CloudHlsRelay hlsRelay;
     private LibVLC vlc;private volatile MediaPlayer player;private VLCVideoLayout video;
+    private PausedRestore pausedRestore;
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
     private boolean loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered,playbackRate=1f;
     private State state=State.STOPPED;private String message="";
@@ -46,7 +48,15 @@ final class PlaybackController implements Closeable {
     private boolean current(int session,MediaPlayer engine){return session==generation&&engine==player&&!disposed;}
     private void publish(){snapshot=new Snapshot(state,position,duration,buffered,message);listener.changed(snapshot);}
     private void state(State state,String message){this.state=state;this.message=message;publish();}
-    private void sample(){if(player==null||!loaded||state==State.ENDED)return;long time=player.getTime(),length=player.getLength();if(time>=0&&(restoreAt<0||Math.abs(time-restoreAt)<5000)){position=time;restoreAt=-1;}if(length>0)duration=length;}
+    private int restoreOutput(){
+        if(player==null)return -1;IMedia media=player.getMedia();if(media==null)return -1;
+        try{IMedia.Stats stats=media.getStats();if(stats==null)return -1;return player.getVideoTracksCount()>0||stats.decodedVideo>0?stats.displayedPictures:player.getAudioTracksCount()>0?stats.decodedAudio:-1;}finally{media.release();}
+    }
+    private void sample(){
+        if(player==null||!loaded||state==State.ENDED)return;long time=player.getTime(),length=player.getLength();
+        boolean reached=restoreAt<0||(pausedRestore==null?Math.abs(time-restoreAt)<5000:pausedRestore.ready(time,restoreOutput(),android.os.SystemClock.elapsedRealtime()));
+        if(time>=0&&reached){position=time;restoreAt=-1;pausedRestore=null;}if(length>0)duration=length;
+    }
     private void save(){if(loaded&&state!=State.ENDED){sample();listener.progress(position,duration);}}
     private final Runnable timer=new Runnable(){@Override public void run(){if(player==null||disposed)return;sample();publish();if(++ticks%5==0)save();main.postDelayed(this,1000);}};
 
@@ -87,7 +97,7 @@ final class PlaybackController implements Closeable {
             else if(loaded&&engine.isPlaying()){if(wantPaused){sample();pauseWhenRestored();}else state(State.PLAYING,"");}
         }
         else if(event.type==MediaPlayer.Event.Playing){
-            loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;engine.setRate(playbackRate);if(position>0){restoreAt=position;engine.setTime(position);}}
+            loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;engine.setRate(playbackRate);if(position>0){restoreAt=position;pausedRestore=wantPaused?new PausedRestore(position,restoreOutput()):null;engine.setTime(position);}}
             if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
         }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
         else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();state(State.PAUSED,"");}
@@ -140,7 +150,7 @@ final class PlaybackController implements Closeable {
         generation++;main.removeCallbacks(timer);if(network!=null){network.close();network=null;}if(connecting!=null){connecting.cancel(true);connecting=null;}
         if(hlsRelay!=null){hlsRelay.close();hlsRelay=null;}if(davSession!=null){davSession.close();davSession=null;}if(relay!=null){relay.close();relay=null;}if(vlc!=null)VlcDialogs.release(vlc);
         if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}
-        if(vlc!=null){vlc.release();vlc=null;}loaded=false;
+        if(vlc!=null){vlc.release();vlc=null;}loaded=false;pausedRestore=null;
     }
     void stop(){save();release();state(State.STOPPED,"");}
     @Override public void close(){if(disposed)return;stop();disposed=true;connector.shutdownNow();}

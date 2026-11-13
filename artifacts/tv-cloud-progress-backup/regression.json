@@ -1,0 +1,19 @@
+{
+  "profile": "api22-hd-1gb",
+  "result": "passed",
+  "api": 22,
+  "controlledTmdbSuccessFlow": true,
+  "actualPublic401Verified": true,
+  "processRestartVerified": true,
+  "emulatorRebootVerified": true,
+  "physicalTelevisionVerified": false,
+  "realAccountVerified": false,
+  "apk": {
+    "target": "working",
+    "releaseTag": null,
+    "appSource": "e6d737693a38ee33f26ca17607485a95e49378b2",
+    "testSource": "e6d737693a38ee33f26ca17607485a95e49378b2",
+    "sha256": "008a2c82682eeee5545803d29538f8c83405c01754e784867698cd457edf8c2e",
+    "releasedBytesVerified": false
+  }
+}

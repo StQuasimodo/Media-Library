@@ -1,6 +1,6 @@
 # TV 云端 HLS：回看、换链与持续播放
 
-alpha.9 已开始补齐云端进度备份；本页记录的旧版范围与结果保持不变，新行为和验收见 [云端进度备份](TV-CLOUD-PROGRESS-BACKUP.md)。
+alpha.9 已补齐云端进度备份；本页记录的旧版范围与结果保持不变，新行为和验收见 [云端进度备份](TV-CLOUD-PROGRESS-BACKUP.md)。
 
 TV 开发预览 `0.3.0-alpha.8` / versionCode16，承接 [alpha.7 试播 PoC](TV-QUARK-HLS-POC.md)。本阶段修正取流生命周期、暂停恢复时序并补齐稳定性验证，不更换播放器内核、登录方式或数据库。
 

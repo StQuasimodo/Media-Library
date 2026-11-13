@@ -33,7 +33,17 @@ v3需本版或更新兼容版本读取，旧版会拒绝未知格式。现有v1/
 - API22真实三库与独立文档服务：v3导出/取消/恢复、恢复前副本、空列表、v1/v2兼容、遥控器旧备份范围提示、恶意记录拒绝、媒体阶段和云端最后阶段分别注入SQL错误检查回滚。
 - 实际LibVLC播放产生云端进度后导出，清零该进度，再恢复备份并打开新Activity，验证恢复后的真实续播及原文件进度隔离；保留此前云端断流/换链/90秒、原文件90秒及完整回归。
 
-19项本地云端进度策略、17项暂停恢复策略、Java主源码/instrumentation编译、现有234项业务测试已通过。新源码完整Gradle/Lint、固定签名/API21/ARMv7+x86打包与API22/x86待CI执行，定义的场景不代表已经通过。
+19项本地云端进度策略、17项暂停恢复策略、Java主源码/instrumentation编译、现有234项业务测试已通过。[完整构建与API22回归43409640028](https://github.com/StQuasimodo/Media-Library/actions/runs/43409640028)通过，实际构建/测试源码 `e6d737693a38ee33f26ca17607485a95e49378b2`。Gradle/Lint、API21/v1固定签名、ARMv7+x86打包检查通过；API22/x86完成142项功能检查、25项备份检查、12项升级/迁移检查，及500海报、进程/模拟器内核重启、原文件/云端播放回归。
+
+已实际验证：旧格式两条云端进度45555/22222ms迁移后独立保留，原文件45123ms及TMDB/Quark/WebDAV凭据保留；重开不重复导入。v3真实文档服务往返、v1/v2范围兼容和确认提示、空列表替换、未知云端字段过滤、媒体及云端最后阶段SQL失败时三库回滚通过。不是仅比较生成的JSON。
+
+真实LibVLC产生的云端进度39562ms，经导出→清零→恢复后保持精确值，再由新Activity续播并出帧，原文件进度不变。原文件暂停重连109985→110901ms（偏差916ms，已显示11帧），云端40000→39562ms（偏差438ms，已显示94帧）。本轮验证当前LibVLC3.7.7/API22的打开时定位路径，不依赖桌面VLC能力推测。
+
+云端连续采样90189ms、媒体推进88084ms、显示1336帧、连续区间丢1帧；初始采样另记录4帧丢失。files/cache增长0字节，上游Range最大4MiB。PSS起止114315/146343KiB、最大每5秒采样163175KiB，进程CPU28601ms；这些是共享模拟器的有限样本，不能声称无掉帧、解码加速或实机4K性能。
+
+原始证据：[构建身份](../artifacts/tv-cloud-progress-backup/BUILD.json)、[25项备份](../artifacts/tv-cloud-progress-backup/backup.json)、[12项升级/迁移](../artifacts/tv-cloud-progress-backup/upgrade.json)、[播放器/续播](../artifacts/tv-cloud-progress-backup/quark-dav.json)、[142项功能检查](../artifacts/tv-cloud-progress-backup/features.json)、[实际设置界面](../artifacts/tv-cloud-progress-backup/backup-settings.png)。截图为测试收藏/凭据，不是真实账号。
+
+已下载 `My-Cinema-TV-0.3.0-alpha.9-debug.apk` 并核对实际字节、BUILD与模拟器所测APK一致：48,822,320字节，SHA256 `008a2c82682eeee5545803d29538f8c83405c01754e784867698cd457edf8c2e`。沿用固定开发签名；之后的证据/说明提交不改变已测试应用代码。完整日志与APK见上述CI附件。
 
 首轮 [43407495716](https://github.com/StQuasimodo/Media-Library/actions/runs/43407495716)，源码 `8accd4a8e8648fa953b709ad5555246869cba4e2`，12项旧版升级/偏好迁移、25项备份/回滚和135项功能检查通过，但完整回归在原文件暂停重连失败。诊断：保存目标111154ms，原生时钟已到134152ms、已显示310帧，控制器仍处BUFFERING。原有严格位置确认错过窗口后没有重试/结束路径。本轮完整失败不计成功，原始[迁移](../artifacts/tv-cloud-progress-backup/first-upgrade.json)、[备份](../artifacts/tv-cloud-progress-backup/first-backup.json)、[播放失败](../artifacts/tv-cloud-progress-backup/first-quark-dav.json)保留。
 

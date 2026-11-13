@@ -26,7 +26,13 @@ TV 开发预览 `0.3.0-alpha.7`（versionCode 15）。媒体源进入已挂载�
 - API22：真实本机端点的认证、子清单/MAP 重写、Range/HEAD、403 后一次根地址刷新、字节相同与稳定本机路由；清单时间轴变化、伪装分片的清单、跨域重定向拒绝。
 - API22 LibVLC：实际解码音视频并显示帧、定位约 40 秒、遥控器暂停、暂停时重连、恢复播放、退出后重新打开续播；原文件进度/身份不变；关闭试播后原 DAV 仍可读。
 
-最终执行结果、源码提交、CI 地址与 APK 哈希在验收完成后记录。当前代码和测试定义不等同于已验收。
+[完整构建与 API22 回归 43397867773](https://github.com/StQuasimodo/Media-Library/actions/runs/43397867773) 首次运行通过，实际构建/测试源码 `1b1ad730ce1af01037ec1f51f727c0868ed62abb`。Gradle/Lint、API21/v1 固定签名、ARMv7/x86 打包检查通过；API22/x86 的 106 项功能检查（含 25 项 HLS + 26 项版本策略）、16 项备份、同签名升级、500 海报、进程/模拟器内核重启，以及全部既有原文件播放回归通过。
+
+真实 LibVLC 对合成云端 HLS/fMP4 的初次采样：解码视频 100 帧、音频 314 块，实际轨道 1920×1080 H.264/AAC；信息面板采样显示 28 帧、丢失 4 帧，不能据此声称无掉帧或 4K 性能。实际定位至 40000 ms，完成遥控暂停、暂停时重连、恢复出帧、关闭后保存 41561 ms 并由新 Activity 续播。403 后根版本仅刷新一次，前后 Range 字节相同；时间轴变化、伪装清单和跨域重定向测试全部拒绝。原文件进度/媒体身份保持原值，试播关闭后原 DAV 可继续读取。原文件另外完成 90025 ms 连续播放，推进 89755 ms、显示 1350 帧；这些连续播放数据属于原文件，不是 HLS 长播性能。
+
+原始证据：[构建身份](../artifacts/tv-quark-hls-poc/BUILD.json)、[HLS 与原文件回归](../artifacts/tv-quark-hls-poc/quark-dav.json)、[106 项功能检查](../artifacts/tv-quark-hls-poc/features.json)、[实际 API22 播放截图](../artifacts/tv-quark-hls-poc/cloud-hls-playing.png)。截图是受控测试图案，不是真实网盘影片。完整原始日志与 APK 见上述 CI 构建附件。
+
+已下载 APK 并核对下载字节、BUILD 与模拟器实际所测 APK 的哈希和源码一致：`My-Cinema-TV-0.3.0-alpha.7-debug.apk`，48,817,733 字节，SHA256 `aab6f12a665559889321f6cc4509b1095ea5f73a2eed37f437e85fb1957f3504`。沿用固定开发签名；未发布 Release 或更新自动更新 feed。后续证据/说明提交不改变上述已测试应用代码。
 
 ## 尚未验收
 

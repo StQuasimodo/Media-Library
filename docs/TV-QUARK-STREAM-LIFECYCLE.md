@@ -1,5 +1,7 @@
 # 夸克取流生命周期：第一阶段
 
+本文记录 alpha.5 生命周期阶段；后续依次见 [版本检查](TV-QUARK-CLOUD-VERSIONS.md) 与 [手动 HLS 试播 PoC](TV-QUARK-HLS-POC.md)。下述测试与“未接入”状态仅对应本阶段。
+
 TV 开发版 `0.3.0-alpha.5` / code13。沿用 Java、minSdk21、LibVLC、原签名和现有数据库。本轮实现研究报告中的控制请求调度与临时地址生命周期，电影仍按 Range 流式读取，不增加磁盘电影缓存。
 
 ## 已实现

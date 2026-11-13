@@ -1,5 +1,7 @@
 # 夸克云端播放能力检查
 
+本文记录 alpha.6 只读阶段的历史验收。alpha.7 增加的手动 HLS 试播、独立进度及边界见 [HLS PoC](TV-QUARK-HLS-POC.md)；以下旧阶段的 `cloudPlaybackVerified=false` 不代表新阶段已验证或未验证。
+
 TV开发版 `0.3.0-alpha.6` / code14。承接[请求调度与地址生命周期](TV-QUARK-STREAM-LIFECYCLE.md)，先接通云端版本能力检查，尚未切换播放源。
 
 ## 使用

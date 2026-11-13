@@ -38,7 +38,7 @@ final class PlaybackController implements Closeable {
     private LibVLC vlc;private volatile MediaPlayer player;private VLCVideoLayout video;
     private PausedRestore pausedRestore;
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
-    private boolean loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered,playbackRate=1f;
+    private boolean restoreFailed,seekAtOpen,loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered,playbackRate=1f;
     private State state=State.STOPPED;private String message="";
     private volatile Snapshot snapshot=new Snapshot(State.STOPPED,0,0,0,"");
 
@@ -53,12 +53,18 @@ final class PlaybackController implements Closeable {
         try{IMedia.Stats stats=media.getStats();if(stats==null)return -1;return player.getVideoTracksCount()>0||stats.decodedVideo>0?stats.displayedPictures:player.getAudioTracksCount()>0?stats.decodedAudio:-1;}finally{media.release();}
     }
     private void sample(){
-        if(player==null||!loaded||state==State.ENDED)return;long time=player.getTime(),length=player.getLength();
-        boolean reached=restoreAt<0||(pausedRestore==null?Math.abs(time-restoreAt)<5000:pausedRestore.ready(time,restoreOutput(),android.os.SystemClock.elapsedRealtime()));
-        if(time>=0&&reached){position=time;restoreAt=-1;pausedRestore=null;}if(length>0)duration=length;
+        if(player==null||!loaded||state==State.ENDED||restoreFailed)return;long time=player.getTime(),length=player.getLength();if(length>0)duration=length;
+        boolean reached=restoreAt<0;
+        if(!reached&&pausedRestore!=null){
+            PausedRestore.Outcome outcome=pausedRestore.observe(time,restoreOutput(),android.os.SystemClock.elapsedRealtime());
+            if(outcome==PausedRestore.Outcome.RETRY){player.setTime(restoreAt);return;}
+            if(outcome==PausedRestore.Outcome.FAILED){restoreFailed=true;wantPaused=true;player.pause();state(State.ERROR,"无法准确恢复暂停位置，原进度保留。请重新连接或按播放重试。");return;}
+            reached=outcome==PausedRestore.Outcome.READY;
+        }else if(!reached)reached=Math.abs(time-restoreAt)<5000;
+        if(time>=0&&reached){position=time;restoreAt=-1;pausedRestore=null;}
     }
     private void save(){if(loaded&&state!=State.ENDED){sample();listener.progress(position,duration);}}
-    private final Runnable timer=new Runnable(){@Override public void run(){if(player==null||disposed)return;sample();publish();if(++ticks%5==0)save();main.postDelayed(this,1000);}};
+    private final Runnable timer=new Runnable(){@Override public void run(){if(player==null||disposed)return;sample();if(wantPaused&&loaded&&!restoreFailed&&restoreAt<0&&state!=State.PAUSED&&state!=State.ENDED&&state!=State.ERROR)pauseWhenRestored();publish();if(++ticks%5==0)save();main.postDelayed(this,1000);}};
 
     void start(VLCVideoLayout video,long resume,boolean paused){
         if(disposed)return;stop();this.video=video;position=Math.max(0,resume);restoreAt=-1;duration=0;wantPaused=paused;mutedForRestore=paused;loaded=false;restoreApplied=false;buffered=0;loginAttempts=0;ticks=0;
@@ -79,7 +85,7 @@ final class PlaybackController implements Closeable {
                             vlc=new LibVLC(context,options);player=new MediaPlayer(vlc);final MediaPlayer engine=player;
                             engine.attachViews(video,null,false,false);engine.setEventListener(event->onEvent(session,engine,event));mutedForRestore=wantPaused;
                             Media media=new Media(vlc,Uri.parse(endpoint==null?ready.url():endpoint.url.toString()));
-                            try{if(endpoint!=null)localLogin(endpoint,session,engine,media);media.setHWDecoderEnabled(true,false);engine.setMedia(media);}finally{media.release();}
+                            try{if(endpoint!=null)localLogin(endpoint,session,engine,media);seekAtOpen=wantPaused&&position>0;if(seekAtOpen)media.addOption(":start-time="+String.format(java.util.Locale.ROOT,"%.3f",position/1000.0));media.setHWDecoderEnabled(true,false);engine.setMedia(media);}finally{media.release();}
                             if(mutedForRestore)engine.setVolume(0);engine.play();main.postDelayed(timer,1000);
                         }catch(Exception|LinkageError failure){state(State.ERROR,"播放器启动失败，请重新连接或更换资源。");release();}
                     });pending=null;pendingSession=null;pendingHls=null;
@@ -97,22 +103,24 @@ final class PlaybackController implements Closeable {
             else if(loaded&&engine.isPlaying()){if(wantPaused){sample();pauseWhenRestored();}else state(State.PLAYING,"");}
         }
         else if(event.type==MediaPlayer.Event.Playing){
-            loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;engine.setRate(playbackRate);if(position>0){restoreAt=position;pausedRestore=wantPaused?new PausedRestore(position,restoreOutput()):null;engine.setTime(position);}}
+            if(restoreFailed){engine.pause();return;}loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;engine.setRate(playbackRate);if(position>0){restoreAt=position;pausedRestore=wantPaused?new PausedRestore(position,restoreOutput()):null;if(!seekAtOpen)engine.setTime(position);}}
             if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
         }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
-        else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();state(State.PAUSED,"");}
+        else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();if(!restoreFailed)state(State.PAUSED,"");}
         else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=hlsRelay!=null?hlsRelay.error():relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
-        else if(event.type==MediaPlayer.Event.EndReached){wantPaused=true;restoreAt=-1;position=0;duration=Math.max(duration,engine.getLength());state(State.ENDED,"播放完毕");listener.progress(0,duration);}
+        else if(event.type==MediaPlayer.Event.EndReached){if(restoreFailed)return;wantPaused=true;restoreAt=-1;position=0;duration=Math.max(duration,engine.getLength());state(State.ENDED,"播放完毕");listener.progress(0,duration);}
     }
 
     void reconnect(){if(video==null||disposed)return;save();long resume=state==State.ENDED?0:position;boolean paused=state!=State.ENDED&&wantPaused;start(video,resume,paused);}
     private void pauseWhenRestored(){
+        if(restoreFailed)return;
         if(!loaded||!restoreApplied||restoreAt>=0){state(State.BUFFERING,"正在恢复暂停位置…");return;}
         if(player!=null){player.pause();state(State.PAUSED,"");}
     }
     void toggle(){
         if(player==null){if(state==State.CONNECTING){wantPaused=!wantPaused;message=wantPaused?"连接后保持暂停":"";publish();}else reconnect();return;}wantPaused=!wantPaused;
         if(!loaded)return;
+        if(restoreFailed){if(!wantPaused)reconnect();return;}
         if(wantPaused){pauseWhenRestored();save();}else{if(mutedForRestore){mutedForRestore=false;player.setVolume(100);}if(state==State.ENDED){position=0;restoreApplied=false;player.setTime(0);}player.play();if(player.isPlaying())state(State.PLAYING,"");}
     }
     void setPaused(boolean paused){if(state==State.ERROR||state==State.STOPPED){wantPaused=paused;if(!paused)reconnect();return;}if(wantPaused!=paused)toggle();}
@@ -124,7 +132,7 @@ final class PlaybackController implements Closeable {
         playbackRate=rate;return true;
     }
     boolean seek(long delta){
-        if(player==null||!player.isSeekable())return false;sample();long target=Math.max(0,position+delta);if(duration>0)target=Math.min(target,Math.max(0,duration-1000));player.setTime(target);return true;
+        if(player==null||restoreFailed||!player.isSeekable())return false;sample();long target=Math.max(0,position+delta);if(duration>0)target=Math.min(target,Math.max(0,duration-1000));player.setTime(target);return true;
     }
     private void localLogin(MediaSources.Lease endpoint,int session,MediaPlayer engine,Media media){
         if(!endpoint.url.host().equals("127.0.0.1")||!endpoint.url.scheme().equals("http"))throw new IllegalArgumentException("Local endpoint required");
@@ -150,7 +158,7 @@ final class PlaybackController implements Closeable {
         generation++;main.removeCallbacks(timer);if(network!=null){network.close();network=null;}if(connecting!=null){connecting.cancel(true);connecting=null;}
         if(hlsRelay!=null){hlsRelay.close();hlsRelay=null;}if(davSession!=null){davSession.close();davSession=null;}if(relay!=null){relay.close();relay=null;}if(vlc!=null)VlcDialogs.release(vlc);
         if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}
-        if(vlc!=null){vlc.release();vlc=null;}loaded=false;pausedRestore=null;
+        if(vlc!=null){vlc.release();vlc=null;}loaded=false;pausedRestore=null;restoreFailed=false;seekAtOpen=false;
     }
     void stop(){save();release();state(State.STOPPED,"");}
     @Override public void close(){if(disposed)return;stop();disposed=true;connector.shutdownNow();}

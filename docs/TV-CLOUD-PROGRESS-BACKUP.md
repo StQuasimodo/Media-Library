@@ -33,6 +33,10 @@ v3需本版或更新兼容版本读取，旧版会拒绝未知格式。现有v1/
 - API22真实三库与独立文档服务：v3导出/取消/恢复、恢复前副本、空列表、v1/v2兼容、遥控器旧备份范围提示、恶意记录拒绝、媒体阶段和云端最后阶段分别注入SQL错误检查回滚。
 - 实际LibVLC播放产生云端进度后导出，清零该进度，再恢复备份并打开新Activity，验证恢复后的真实续播及原文件进度隔离；保留此前云端断流/换链/90秒、原文件90秒及完整回归。
 
-19项本地策略、Java主源码/instrumentation编译、现有234项业务测试已通过。完整Gradle/Lint、固定签名/API21/ARMv7+x86打包与API22/x86新场景待CI执行，定义的场景不代表已经通过。
+19项本地云端进度策略、17项暂停恢复策略、Java主源码/instrumentation编译、现有234项业务测试已通过。新源码完整Gradle/Lint、固定签名/API21/ARMv7+x86打包与API22/x86待CI执行，定义的场景不代表已经通过。
+
+首轮 [43407495716](https://github.com/StQuasimodo/Media-Library/actions/runs/43407495716)，源码 `8accd4a8e8648fa953b709ad5555246869cba4e2`，12项旧版升级/偏好迁移、25项备份/回滚和135项功能检查通过，但完整回归在原文件暂停重连失败。诊断：保存目标111154ms，原生时钟已到134152ms、已显示310帧，控制器仍处BUFFERING。原有严格位置确认错过窗口后没有重试/结束路径。本轮完整失败不计成功，原始[迁移](../artifacts/tv-cloud-progress-backup/first-upgrade.json)、[备份](../artifacts/tv-cloud-progress-backup/first-backup.json)、[播放失败](../artifacts/tv-cloud-progress-backup/first-quark-dav.json)保留。
+
+随后修复播放器恢复流程：暂停重连在打开媒体时设置目标 `start-time`，避免先开始播放再异步跳转；继续要求目标±1秒、新输出及250ms稳定，不放宽验证容差。错过位置最多重新精确定位2次，整体20秒上限；不能确认时暂停并报告错误、保留原目标，不继续无限缓冲或保存错误位置。计时器也处理已确认的暂停，晚到的事件不能覆盖错误状态。原文件集成断言进一步增加位置上界和新画面要求。`start-time`在当前Android AAR的实际行为以本轮API22结果为准，不借用桌面VLC能力声明。
 
 真实夸克账号、长虹实机、ARMv7运行、4K/HDR仍未验收。文档服务由独立测试APK提供，不冒充实机系统文件选择器或U盘验收。未发布Release或更新feed。

@@ -37,6 +37,21 @@ final class PlaybackArchitectureScenario {
         control("none");check(Arrays.equals(tail,reference(size-64,size-1)),"suffix body matches actual tail");Json.put(report,"suffixRangeByteExact",true);
         control("wrong_initial");try(Response response=get(file,"bytes=1000-1063")){check(response.code()==502&&response.body().bytes().length==0,"wrong initial Content-Range is rejected before video headers");}control("none");Json.put(report,"wrongInitialRangeRejected",true);
 
+        // Execute production MediaTransfer: expiry refreshes before any 401/403 is needed.
+        MediaSources leaseBackend=new MediaSources(context);java.util.concurrent.atomic.AtomicInteger resolutions=new java.util.concurrent.atomic.AtomicInteger();
+        MediaTransfer expiring=new MediaTransfer((target,scope)->{
+            MediaSources.Lease lease=leaseBackend.withScope(scope).resolve(target);
+            return resolutions.incrementAndGet()==1?new MediaSources.Lease(lease.url,lease.headers,lease::requestHeaders,LeaseLifetime.quark("0",System.currentTimeMillis(),System.nanoTime())):lease;
+        });
+        try(NetworkScope owned=new NetworkScope()){
+            java.io.ByteArrayOutputStream first=new java.io.ByteArrayOutputStream(),second=new java.io.ByteArrayOutputStream(),third=new java.io.ByteArrayOutputStream();
+            expiring.serve(entry.json(),"bytes=1000-1063",false,first,owned);
+            expiring.serve(entry.json(),"bytes=1000-1063",false,second,owned);
+            expiring.serve(entry.json(),"bytes=1000-1063",false,third,owned);
+            check(resolutions.get()==2&&Arrays.equals(first.toByteArray(),second.toByteArray())&&Arrays.equals(second.toByteArray(),third.toByteArray()),"expired lease refreshed proactively once; valid replacement reused with byte-exact output");
+            Json.put(report,"proactiveLeaseRefreshByteExact",true);
+        }finally{expiring.close();}
+
         // Both old URLs must really return403; a barrier in the upstream makes the race reproducible.
         ExecutorService pair=Executors.newFixedThreadPool(2);
         try{

@@ -47,6 +47,7 @@ final class FeaturesScenario {
         Library.Item unrelated=new Library.Item(film("神偷奶爸2","999999","movie","tmdb:collection:999999",1),new JSONObject());check(folders.universe(unrelated)==null,"similar title does not invent a spin-off relation");Json.put(spinoff.film.getJSONObject("series"),"franchise",null);check(folders.universe(spinoff)==null,"manual exclusion overrides collection relation");
     }
     private void features()throws Exception{
+        checks.addAll(QuarkTransportPolicyTest.run());
         allocationAndRelations();
         String envelope,cert;try(InputStream input=test.getContext().getAssets().open("tv-preview.json")){envelope=new String(TmdbClient.read(input,65536),StandardCharsets.UTF_8);}try(InputStream input=context.getAssets().open("update-signing.json")){cert=Json.object(new String(TmdbClient.read(input,16384),StandardCharsets.UTF_8)).getString("certificatePem");}
         check(TvUpdates.verify(envelope,"preview",cert).getString("platform").equals("tv"),"real released feed signature verifies with bundled certificate on API22");

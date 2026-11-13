@@ -45,7 +45,7 @@ final class QuarkDavManager {
         PlaybackRelay active;QuarkDavTree mounted;synchronized(this){active=ensure();mounted=tree;}
         String path=mounted.locate(id,scope);JSONObject config=new JSONObject();Json.put(config,"url",active.url());
         // Closing the client socket alone cannot cancel the relay's blocked upstream call.
-        PlaybackRelay.Session session=active.openDirectorySession(id,HttpUrl.parse(active.url()+path));
+        PlaybackRelay.Session session=active.openDirectorySession(id,HttpUrl.parse(active.url()+path),scope.quarkPriority()==QuarkRequestGate.BACKGROUND);
         try(PlaybackRelay.Session owned=session){
             scope.own(session);
             List<MediaSources.Entry> rows=new MediaSources(context).withScope(scope).listDav(config,active.url()+path,session.endpoint.headers.get("Authorization")),result=new ArrayList<>();

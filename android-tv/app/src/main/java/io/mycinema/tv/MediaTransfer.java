@@ -36,7 +36,7 @@ final class MediaTransfer {
         // Resolve under a per-file lock, never while holding the whole cache lock.
         // A concurrent 403 for the same rejected lease reuses an already-refreshed address.
         try{synchronized(slot){scope.check();if(closed)throw new IOException("Transport stopped");
-            if(slot.lease==null||slot.lease==rejected){MediaSources.Lease fresh=provider.resolve(file,scope);scope.check();if(closed)throw new IOException("Transport stopped");slot.lease=fresh;}
+            if(slot.lease==null||slot.lease==rejected||slot.lease.expired()){MediaSources.Lease fresh=provider.resolve(file,scope);scope.check();if(closed)throw new IOException("Transport stopped");slot.lease=fresh;}
             return slot.lease;
         }}finally{synchronized(this){slot.users--;trim();}}
     }

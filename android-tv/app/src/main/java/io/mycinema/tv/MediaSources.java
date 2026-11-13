@@ -25,6 +25,7 @@ import okhttp3.Response;
 
 /** Read-only network sources. Credentials never enter media records or playback intents. */
 final class MediaSources {
+    private static final QuarkRequestGate QUARK_GATE=new QuarkRequestGate();
     static final String UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
     static final OkHttpClient HTTP=new OkHttpClient.Builder().connectTimeout(15,TimeUnit.SECONDS).readTimeout(25,TimeUnit.SECONDS)
         .followRedirects(false).followSslRedirects(false).build();
@@ -39,9 +40,11 @@ final class MediaSources {
     static final class Lease {
         final HttpUrl url;final Map<String,String> headers;
         interface Headers {Map<String,String> read() throws Exception;}
-        private final Headers live;
+        private final Headers live;private final LeaseLifetime lifetime;
         Lease(HttpUrl url,Map<String,String> headers){this(url,headers,null);}
-        Lease(HttpUrl url,Map<String,String> headers,Headers live){this.url=url;this.headers=java.util.Collections.unmodifiableMap(new LinkedHashMap<>(headers));this.live=live;}
+        Lease(HttpUrl url,Map<String,String> headers,Headers live){this(url,headers,live,null);}
+        Lease(HttpUrl url,Map<String,String> headers,Headers live,LeaseLifetime lifetime){this.lifetime=lifetime;this.url=url;this.headers=java.util.Collections.unmodifiableMap(new LinkedHashMap<>(headers));this.live=live;}
+        boolean expired(){return lifetime!=null&&lifetime.expired(System.nanoTime());}
         Map<String,String> requestHeaders() throws Exception {return live==null?headers:live.read();}
     }
     private final SecretStore quark,dav;private final Context context;private final NetworkScope scope;private String loginCookie;
@@ -73,20 +76,26 @@ final class MediaSources {
         scope.check();return source.equals("quark")?(CinemaApplication.dav(context).enabled()?CinemaApplication.dav(context).list(parent,scope):rawQuarkList(parent)):listDav(Json.object(dav.read()),parent);
     }
     private JSONObject quarkRequest(String cookie,HttpUrl url,RequestBody body) throws Exception {
-        if(loginCookie!=null)cookie=loginCookie;
-        Request.Builder request=new Request.Builder().url(url).header("Cookie",cookie).header("Referer","https://pan.quark.cn/").header("User-Agent",UA);
-        if(body!=null)request.post(body);
-        try(NetworkScope.Exchange exchange=scope.open(HTTP,request.build())){Response response=exchange.response;
+        int priority=url.encodedPath().endsWith("/file/download")?QuarkRequestGate.PLAYBACK:scope.quarkPriority();
+        try(QuarkRequestGate.Ticket ticket=QUARK_GATE.acquire(priority,scope::check)){
+            // A queued request must use the credential most recently renewed/saved.
+            cookie=loginCookie!=null?loginCookie:quark.read();validateCookie(cookie);
+            Request.Builder request=new Request.Builder().url(url).header("Cookie",cookie).header("Referer","https://pan.quark.cn/").header("User-Agent",UA);
+            if(body!=null)request.post(body);
+            try(NetworkScope.Exchange exchange=scope.open(HTTP,request.build())){Response response=exchange.response;
+            if(response.code()==429){QUARK_GATE.rateLimited(response.header("Retry-After"));throw new IllegalStateException("夸克请求过于频繁，已暂停后续请求，请稍后重试。");}
             requireSuccess(response,"夸克");JSONObject json=Json.object(new String(TmdbClient.read(response.body().byteStream(),2*1024*1024),StandardCharsets.UTF_8));
+            if(json.optInt("status",0)==429){QUARK_GATE.rateLimited(null);throw new IllegalStateException("夸克请求过于频繁，已暂停后续请求，请稍后重试。");}
             if(json.optInt("code",-1)!=0||json.optInt("status",0)!=200)throw new IllegalStateException("夸克请求未通过，请重新连接账号或检查官方页面的访问限制。");
             // Persist only renewal of the session cookie issued by the API host.
             String updated=cookie;
-            for(Cookie renewal:Cookie.parseAll(url,response.headers()))if(renewal.name().equals("__puus")){
-                updated=updated.replaceAll("(?i)(^|;\\s*)__puus=[^;]*","").replaceAll("^;\\s*","");updated+=(updated.isEmpty()?"":"; ")+"__puus="+renewal.value();
+            for(Cookie renewal:Cookie.parseAll(url,response.headers()))if(renewal.name().equals("__puus")||renewal.name().equals("__pus")){
+                updated=updated.replaceAll("(?i)(^|;\\s*)"+renewal.name()+"=[^;]*","").replaceAll("^;\\s*","");updated+=(updated.isEmpty()?"":"; ")+renewal.name()+"="+renewal.value();
             }
             if(loginCookie!=null)loginCookie=updated;
             else if(!updated.equals(cookie)&&quark.exists()){String previous="";try{previous=quark.read();}catch(IllegalStateException unreadable){/* A new login may replace an unreadable old file. */}if(previous.equals(cookie))quark.save(updated);}
             return json;
+            }
         }
     }
     private static HttpUrl.Builder api(String path){return HttpUrl.parse("https://drive-pc.quark.cn/1/clouddrive/"+path).newBuilder().addQueryParameter("pr","ucpro").addQueryParameter("fr","pc");}
@@ -161,7 +170,7 @@ final class MediaSources {
         JSONArray rows=result.optJSONArray("data");String value=rows!=null&&rows.length()>0?rows.getJSONObject(0).optString("download_url"):"";HttpUrl url=HttpUrl.parse(value);
         if(url==null||!url.isHttps()||!url.username().isEmpty()||!url.password().isEmpty())throw new IllegalStateException("夸克未返回可用的HTTPS播放地址，请检查账号权限或稍后重试。");
         headers.put("Referer","https://pan.quark.cn/");headers.put("User-Agent",UA);
-        if(quarkHost(url.host()))headers.put("Cookie",quark.read());return new Lease(url,headers,()->{Map<String,String> latest=new LinkedHashMap<>(headers);if(quarkHost(url.host()))latest.put("Cookie",quark.read());return latest;});
+        if(quarkHost(url.host()))headers.put("Cookie",quark.read());return new Lease(url,headers,()->{Map<String,String> latest=new LinkedHashMap<>(headers);if(quarkHost(url.host()))latest.put("Cookie",quark.read());return latest;},LeaseLifetime.quark(url.queryParameter("Expires"),System.currentTimeMillis(),System.nanoTime()));
     }
     static boolean quarkHost(String host){return host.equals("quark.cn")||host.endsWith(".quark.cn")||host.endsWith(".quark-hdb.com")||host.equals("uc.cn")||host.endsWith(".uc.cn");}
     static void requireSuccess(Response response,String source){int code=response.code();if(code==401)throw new IllegalStateException(source+"登录已失效或账号密码不正确，请重新连接。");if(code<200||code>=300)throw new IllegalStateException(source+"请求失败（HTTP "+code+"），请检查权限、地址或稍后重试。");}

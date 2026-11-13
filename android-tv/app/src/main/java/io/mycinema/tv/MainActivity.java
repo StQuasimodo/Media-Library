@@ -81,7 +81,7 @@ public final class MainActivity extends Activity {
         backdropShade=new View(this);backdropShade.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xf5101216,0xc0101216,0x99101216}));root.addView(backdropShade,new FrameLayout.LayoutParams(-1,-1));
         backdropDim=new View(this);backdropDim.setId(R.id.cinema_backdrop_dim);backdropDim.setBackgroundColor(SPACE);backdropDim.setAlpha(0);root.addView(backdropDim,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout layout=column();layout.setPadding(dp(32),dp(12),dp(32),dp(16));root.addView(layout,new FrameLayout.LayoutParams(-1,-1));
-        navHost=new FrameLayout(this);navCursor=new View(this);navCursor.setId(R.id.nav_cursor);navCursor.setBackground(surface(0x18e9ecf2,0));navHost.addView(navCursor,new FrameLayout.LayoutParams(dp(76),dp(36)));navHost.addOnLayoutChangeListener((view,l,t,r,b,ol,ot,or,ob)->moveNav(false));
+        navHost=new FrameLayout(this);navCursor=new View(this);navCursor.setId(R.id.nav_cursor);navCursor.setBackground(surface(0x18e9ecf2,0));navHost.addView(navCursor,new FrameLayout.LayoutParams(dp(76),dp(36)));navHost.addOnLayoutChangeListener((view,l,t,r,b,ol,ot,or,ob)->{if(l!=ol||t!=ot||r!=or||b!=ob)moveNav(false);});
         LinearLayout nav=row();nav.setGravity(Gravity.CENTER_VERTICAL);TextView brand=text("My Cinema",23,PRIMARY);brand.setTypeface(Typeface.create("serif",Typeface.ITALIC));nav.addView(brand,new LinearLayout.LayoutParams(dp(160),dp(48)));
         String[] labels={"首页","影视库","专题","想看","设置"},routes={"home","library","collections","watchlist","settings"};
         int[] ids={R.id.nav_home,R.id.nav_library,R.id.nav_collections,R.id.nav_watchlist,R.id.nav_settings};
@@ -99,7 +99,7 @@ public final class MainActivity extends Activity {
     @Override protected void onDestroy(){disposed=true;if(body!=null)body.animate().cancel();if(navCursor!=null)navCursor.animate().cancel();if(updates!=null)updates.close();jobs.shutdownNow();relationJobs.shutdownNow();if(artwork!=null)artwork.close();if(library!=null)library.close();super.onDestroy();}
     @Override public void onBackPressed(){if(!history.isEmpty()){Page page=history.pop();show(page.screen,page.value);}else if(!screen.equals("home"))top("home");else confirm("退出 My Cinema？","收藏已保存在电视本机。",this::finish);}
     private void moveNav(boolean animate){
-        View selected=findViewById(activeNav);if(selected==null||selected.getWidth()==0)return;navCursor.animate().cancel();FrameLayout.LayoutParams bounds=(FrameLayout.LayoutParams)navCursor.getLayoutParams();bounds.width=selected.getWidth();bounds.height=dp(36);bounds.topMargin=(navHost.getHeight()-dp(36))/2;navCursor.setLayoutParams(bounds);
+        View selected=findViewById(activeNav);if(selected==null||selected.getWidth()==0)return;navCursor.animate().cancel();FrameLayout.LayoutParams bounds=(FrameLayout.LayoutParams)navCursor.getLayoutParams();int width=selected.getWidth(),height=dp(36),top=(navHost.getHeight()-height)/2;if(bounds.width!=width||bounds.height!=height||bounds.topMargin!=top){bounds.width=width;bounds.height=height;bounds.topMargin=top;navCursor.setLayoutParams(bounds);}
         if(animate&&UiMotion.enabled(this))navCursor.animate().translationX(selected.getLeft()).setDuration(320).setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f)).start();else navCursor.setTranslationX(selected.getLeft());
     }
     private void top(String route){history.clear();query="";status="";series="";yearFilter=0;show(route,"");}

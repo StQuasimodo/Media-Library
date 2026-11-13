@@ -76,7 +76,7 @@ final class MediaSources {
         scope.check();return source.equals("quark")?(CinemaApplication.dav(context).enabled()?CinemaApplication.dav(context).list(parent,scope):rawQuarkList(parent)):listDav(Json.object(dav.read()),parent);
     }
     private JSONObject quarkRequest(String cookie,HttpUrl url,RequestBody body) throws Exception {
-        int priority=url.encodedPath().endsWith("/file/download")?QuarkRequestGate.PLAYBACK:scope.quarkPriority();
+        int priority=(url.encodedPath().endsWith("/file/download")||url.encodedPath().endsWith("/file/v2/play/project"))?QuarkRequestGate.PLAYBACK:scope.quarkPriority();
         try(QuarkRequestGate.Ticket ticket=QUARK_GATE.acquire(priority,scope::check)){
             // A queued request must use the credential most recently renewed/saved.
             cookie=loginCookie!=null?loginCookie:quark.read();validateCookie(cookie);
@@ -171,6 +171,13 @@ final class MediaSources {
         if(url==null||!url.isHttps()||!url.username().isEmpty()||!url.password().isEmpty())throw new IllegalStateException("夸克未返回可用的HTTPS播放地址，请检查账号权限或稍后重试。");
         headers.put("Referer","https://pan.quark.cn/");headers.put("User-Agent",UA);
         if(quarkHost(url.host()))headers.put("Cookie",quark.read());return new Lease(url,headers,()->{Map<String,String> latest=new LinkedHashMap<>(headers);if(quarkHost(url.host()))latest.put("Cookie",quark.read());return latest;},LeaseLifetime.quark(url.queryParameter("Expires"),System.currentTimeMillis(),System.nanoTime()));
+    }
+    List<QuarkCloudVersions.Version> cloudVersions(JSONObject file) throws Exception {
+        if(!Json.text(file,"source").equals("quark")||Json.text(file,"fileId").isEmpty())throw new IllegalArgumentException("请选择夸克影视文件。");
+        scope.check();CinemaApplication.dav(context).playback(file,scope); // Verify current mount ancestry before the API probe.
+        JSONObject body=new JSONObject();Json.put(body,"fid",Json.text(file,"fileId"));Json.put(body,"resolutions","low,normal,high,super,2k,4k");Json.put(body,"supports","fmp4_av,m3u8");
+        JSONObject response=quarkRequest(quark.read(),api("file/v2/play/project").build(),RequestBody.create(MediaType.parse("application/json"),body.toString()));
+        scope.check();return QuarkCloudVersions.parse(response);
     }
     static boolean quarkHost(String host){return host.equals("quark.cn")||host.endsWith(".quark.cn")||host.endsWith(".quark-hdb.com")||host.equals("uc.cn")||host.endsWith(".uc.cn");}
     static void requireSuccess(Response response,String source){int code=response.code();if(code==401)throw new IllegalStateException(source+"登录已失效或账号密码不正确，请重新连接。");if(code<200||code>=300)throw new IllegalStateException(source+"请求失败（HTTP "+code+"），请检查权限、地址或稍后重试。");}

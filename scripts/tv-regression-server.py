@@ -79,6 +79,28 @@ def serve(root, log):
             self.wfile.write(xml)
 
         def do_POST(self):
+            if urlparse(self.path).path == '/1/clouddrive/file/v2/play/project':
+                if '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
+                    self.reply({},401)
+                    return
+                body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
+                if body.get('fid') != 'movie-file' or body.get('supports') != 'fmp4_av,m3u8':
+                    self.reply({},400)
+                    return
+                with lock:
+                    state['cloudQueries']=state.get('cloudQueries',0)+1
+                    cloud=state.get('cloudMode','normal')
+                if cloud=='denied':
+                    self.reply({'status':403,'code':403,'message':'fixture entitlement refusal'})
+                    return
+                if cloud=='empty':
+                    self.reply({'status':200,'code':0,'data':{'video_list':[]}})
+                    return
+                def version(res,fmt,w,h,**flags):
+                    return {'resolution':res,'video_info':{'format':fmt,'width':w,'height':h,'codec':'h264','fps':24,'bitrate':3500000,'audio':{'codec':'aac','channels':2},'url':'https://drive-pc.quark.cn/cloud/video.'+('m3u8' if fmt=='m3u8' else 'mp4')+'?token=cloud-fixture-private','success':True,'finish':True,**flags}}
+                rows=[version('4k','m3u8',1920,1080),version('high','fmp4_av',1280,720),version('2k','m3u8',2560,1440,finish=False),{**version('super','mp4',1920,1080),'accessable':False}]
+                self.reply({'status':200,'code':0,'data':{'video_list':rows}})
+                return
             if urlparse(self.path).path == '/1/clouddrive/file/download':
                 if '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
                     self.reply({},401)
@@ -189,6 +211,11 @@ def serve(root, log):
             query = parse_qs(uri.query)
             if self.server.server_port == 8765:
                 if uri.path == '/control':
+                    cloud=query.get('cloud',[state.get('cloudMode','normal')])[0]
+                    if cloud not in ['normal','empty','denied']:
+                        self.reply({'error':'invalid cloud fixture mode'},400)
+                        return
+                    state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
                     if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav']:

@@ -90,6 +90,7 @@ public final class MediaBrowserActivity extends Activity {
     private void inspectCloudVersions(String key){
         JSONObject selected=catalog.get(key);if(selected==null){status.setText("请先重新读取该文件所在目录。");return;}
         job("检查夸克云端播放版本…",(driver,scope)->driver.cloudVersions(selected),versions->{
+            status.setText(versions.isEmpty()?"夸克未提供云端版本，原文件入口保留。":"云端版本检查完成 · "+versions.size()+" 项（仅查看）");
             if(cloudDialog!=null)cloudDialog.dismiss();
             if(versions.isEmpty()){cloudDialog=new AlertDialog.Builder(this).setTitle("云端播放版本").setMessage("夸克暂未提供该文件的云端播放版本。原文件播放入口保留，未更改资源、画质或进度。").setPositiveButton("返回",null).create();}
             else{String[] labels=new String[versions.size()];for(int i=0;i<labels.length;i++)labels[i]=versions.get(i).label();

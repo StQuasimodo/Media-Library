@@ -3,7 +3,7 @@ if(process.env.RELEASE_REVISION) { await import('./publish-release-revision.mjs'
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -31,13 +31,35 @@ for (const line of lines) {
   checked.add(match[2]);
 }
 const repo = process.env.GITHUB_REPOSITORY || gh(['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner']);
+let retainedRun = null;
 if (process.env.RELEASE_BUILD_RUN_ID) {
   const runId = process.env.RELEASE_BUILD_RUN_ID;
   assert.match(runId, /^\d+$/);
   const run = JSON.parse(gh(['api', `repos/${repo}/actions/runs/${runId}`]));
   assert.equal(run.head_sha, source, 'Retained build must match the requested source commit.');
   const { jobs } = JSON.parse(gh(['api', `repos/${repo}/actions/runs/${runId}/jobs`]));
-  assert.ok(jobs.some(job => job.steps.some(step => step.name === 'Verify packaged files and write SHA-256 checksums' && step.conclusion === 'success')), 'Retained build must have passed package verification.');
+  assert.equal(run.status, 'completed', 'Retained build must be complete.');
+  const workflow = run.path.split('@')[0];
+  const integrated = workflow === '.github/workflows/integrated-preview.yml';
+  assert.ok(integrated || workflow === '.github/workflows/release.yml', 'Unexpected source workflow.');
+  const artifact = integrated ? 'My-Cinema-Integrated-Quark-Preview' : 'my-cinema-windows';
+  assert.equal(process.env.RELEASE_BUILD_ARTIFACT || 'my-cinema-windows', artifact, 'Artifact and original workflow must match.');
+  if (integrated) assert.equal(run.conclusion, 'success', 'Integrated preview must have passed its entire workflow.');
+  const required = integrated ? [
+    'Test and build integrated application', 'Check actual application and integrated Quark login',
+    'Check controlled Quark scan, matching, resource details and incremental updates',
+    'Preserve real Windows credentials through an application upgrade',
+    'Package preview installer and portable version', 'Verify actual installer shortcut choices',
+  ] : ['Run tests', 'Build production application', 'Check real Electron, preload and SQLite on Windows',
+    'Check controlled Quark scan, matching, resource details and incremental updates',
+    'Verify real Windows credential compatibility with v1.0.0',
+    'Verify packaged files and write SHA-256 checksums', 'Verify actual installer shortcut choices'];
+  assert.ok(jobs.some(job => required.every(name => job.steps.some(step => step.name === name && step.conclusion === 'success'))), 'Original test, package and installer verification must all pass.');
+  retainedRun = run;
+}
+if (process.argv.includes('--verify-only')) {
+  console.log(`[release] Verified ${version}, retained build identity and four artifact checksums; no publication performed.`);
+  process.exit(0);
 }
 const temporary = mkdtempSync(join(tmpdir(), 'mycinema-release-'));
 try {
@@ -50,12 +72,39 @@ try {
   assert.equal(ref.object.type, 'commit');
   assert.equal(ref.object.sha, source, 'Release tag must point to the original build.');
   const notes = join(temporary, 'notes.md');
-  writeFileSync(notes, execFileSync('git', ['show', `${source}:docs/RELEASE-NOTES.md`]));
-  const args = ['release', 'create', tag, '--repo', repo,
-    '--title', `My Cinema v${version}`, '--notes-file', notes,
-    ...(version.includes('-') ? ['--prerelease'] : []),
-    ...[...assets, 'SHA256SUMS.txt'].map(name => join(directory, name))];
-  console.log(gh(args));
+  const notesFile = argument('--notes-file');
+  writeFileSync(notes, notesFile ? readFileSync(resolve(notesFile)) : execFileSync('git', ['show', `${source}:docs/RELEASE-NOTES.md`]));
+  const buildFile = join(directory, 'BUILD.json');
+  if (!existsSync(buildFile)) writeFileSync(buildFile, JSON.stringify({ version, source,
+    buildRun: retainedRun ? String(retainedRun.id) : process.env.GITHUB_RUN_ID || null,
+    buildUrl: retainedRun?.html_url || null,
+    assets: assets.map(name => { const data=readFileSync(join(directory,name)); return {name,bytes:data.length,sha256:createHash('sha256').update(data).digest('hex')}; }),
+  }, null, 2) + '\n');
+  const build = JSON.parse(readFileSync(buildFile, 'utf8'));
+  assert.equal(build.version, version); assert.equal(build.source, source);
+  const delivery = [...assets, 'SHA256SUMS.txt', 'BUILD.json'];
+  const releases = JSON.parse(gh(['api', `repos/${repo}/releases?per_page=100`, '--paginate', '--slurp'])).flat();
+  let release = releases.find(row => row.tag_name === tag);
+  if (!release) {
+    gh(['release', 'create', tag, '--repo', repo, '--verify-tag', '--draft',
+      '--title', `My Cinema v${version}`, '--notes-file', notes,
+      ...(version.includes('-') ? ['--prerelease'] : []), '--latest=false']);
+    release = JSON.parse(gh(['api', `repos/${repo}/releases?per_page=100`])).find(row => row.tag_name === tag);
+  }
+  assert.ok(release?.draft, 'Only an unpublished draft can be resumed; never replace a public release.');
+  const identity = name => { const data=readFileSync(join(directory,name)); return {digest:'sha256:'+createHash('sha256').update(data).digest('hex'),size:data.length}; };
+  for (const asset of release.assets) {
+    assert.ok(delivery.includes(asset.name), 'Unexpected asset in draft.');
+    const expected=identity(asset.name);assert.equal(asset.digest,expected.digest,'Existing draft asset differs; refusing overwrite.');assert.equal(asset.size,expected.size);
+  }
+  const missing=delivery.filter(name=>!release.assets.some(asset=>asset.name===name));
+  if(missing.length) gh(['release','upload',tag,'--repo',repo,...missing.map(name=>join(directory,name))]);
+  const uploaded=JSON.parse(gh(['api',`repos/${repo}/releases/${release.id}`]));
+  assert.equal(uploaded.assets.length,delivery.length);
+  for(const name of delivery){const asset=uploaded.assets.find(asset=>asset.name===name),expected=identity(name);assert.ok(asset);assert.equal(asset.digest,expected.digest);assert.equal(asset.size,expected.size);}
+  gh(['release','edit',tag,'--repo',repo,'--title',`My Cinema v${version}`,'--notes-file',notes,
+    '--draft=false',...(version.includes('-')?['--prerelease']:[]),'--latest=false']);
+  console.log(uploaded.html_url);
   if (!version.includes('-')) {
     const release = JSON.parse(gh(['api', `repos/${repo}/releases/tags/v${version}`]));
     execFileSync('gh', ['api', '--method', 'PATCH', `repos/${repo}/releases/${release.id}`, '--input', '-'], {

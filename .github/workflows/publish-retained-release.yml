@@ -10,6 +10,17 @@ on:
         description: Exact 40-character source commit of that build
         required: true
         type: string
+      artifact_name:
+        description: Retained artifact from the validated build
+        type: choice
+        options:
+          - my-cinema-windows
+          - My-Cinema-Integrated-Quark-Preview
+        default: my-cinema-windows
+      use_current_notes:
+        description: Use the reviewed release notes from this checkout instead of historical build notes
+        type: boolean
+        default: false
 permissions:
   contents: write
   actions: read
@@ -29,7 +40,7 @@ jobs:
           node-version: '24'
       - uses: actions/download-artifact@v4
         with:
-          name: my-cinema-windows
+          name: ${{ inputs.artifact_name }}
           path: release
           run-id: ${{ inputs.build_run_id }}
           github-token: ${{ github.token }}
@@ -43,7 +54,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_SOURCE_SHA: ${{ inputs.build_source }}
           RELEASE_BUILD_RUN_ID: ${{ inputs.build_run_id }}
-        run: node scripts/publish-release.mjs
+          RELEASE_BUILD_ARTIFACT: ${{ inputs.artifact_name }}
+          RELEASE_USE_CURRENT_NOTES: ${{ inputs.use_current_notes }}
+        run: |
+          $publishArguments = @()
+          if ($env:RELEASE_USE_CURRENT_NOTES -eq 'true') { $publishArguments += @('--notes-file', 'docs/RELEASE-NOTES.md') }
+          node scripts/publish-release.mjs @publishArguments
 
       - uses: actions/upload-artifact@v4
         if: always()

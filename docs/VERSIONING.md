@@ -48,7 +48,7 @@ Windows版仍以根`package.json`为唯一版本来源。2026-10-27新增的独�
 
 ## 仅发布失败时的恢复
 
-若构建、测试和包校验都已通过，仅上传/Release 创建失败，可用 [Publish verified retained release](../.github/workflows/publish-retained-release.yml)发布原产物，填写原 `build_run_id` 和40位 `build_source`，无需重新打包。恢复流程校验构建提交、原包校验步骤、文件哈希与Tag指向；不得把后续修复发布脚本的提交当成构建源码，不覆盖现有Release资产。
+若构建、测试和包校验都已通过，仅上传/Release 创建失败，可用 [Publish verified retained release](../.github/workflows/publish-retained-release.yml)发布原产物，填写原 `build_run_id` 和40位 `build_source`，无需重新打包。集成预览选择 `My-Cinema-Integrated-Quark-Preview`；确认当前发行说明后可显式启用 `use_current_notes`。恢复流程只接受指定构建工作流，并核验原始测试、打包与安装选项步骤；未公开草稿可按哈希续传，拒绝覆盖不同字节或已公开资产。恢复流程校验构建提交、原包校验步骤、文件哈希与Tag指向；不得把后续修复发布脚本的提交当成构建源码，不覆盖现有Release资产。
 
 发布使用 `scripts/publish-release.mjs` 的参数数组，先创建或核对固定Tag，再创建Release，避免PowerShell把标量展开为字符，以及对历史提交传递不必要的目标参数。若runner无法创建标签，维护者可先通过已有仓库权限创建指向原构建的标签，再恢复发布；禁止强制改写标签。仅修复发布脚本而复用同一批文件，不构成分发新内容。
 

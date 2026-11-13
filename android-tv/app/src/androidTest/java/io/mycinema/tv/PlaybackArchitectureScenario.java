@@ -37,6 +37,16 @@ final class PlaybackArchitectureScenario {
         control("none");check(Arrays.equals(tail,reference(size-64,size-1)),"suffix body matches actual tail");Json.put(report,"suffixRangeByteExact",true);
         control("wrong_initial");try(Response response=get(file,"bytes=1000-1063")){check(response.code()==502&&response.body().bytes().length==0,"wrong initial Content-Range is rejected before video headers");}control("none");Json.put(report,"wrongInitialRangeRejected",true);
 
+        // Both old URLs must really return403; a barrier in the upstream makes the race reproducible.
+        ExecutorService pair=Executors.newFixedThreadPool(2);
+        try{
+            int downloads=control("expire_concurrent").optInt("downloads");
+            Future<byte[]> a=pair.submit(()->{try(Response response=get(file,"bytes=1000-1063")){check(response.code()==206,"concurrent range a");return response.body().bytes();}});
+            Future<byte[]> b=pair.submit(()->{try(Response response=get(file,"bytes=1000-1063")){check(response.code()==206,"concurrent range b");return response.body().bytes();}});
+            byte[] aa=a.get(15,TimeUnit.SECONDS),bb=b.get(15,TimeUnit.SECONDS);state=control(null);
+            check(state.optInt("expiredReplies")==2&&state.optInt("downloads")==downloads+1&&aa.length==64&&Arrays.equals(aa,bb),"simultaneous403s renew the rejected lease once");Json.put(report,"concurrentExpirySingleRefresh",true);
+        }finally{pair.shutdownNow();control("none");}
+
         // Execute production MediaTransfer: expiry refreshes before any 401/403 is needed.
         MediaSources leaseBackend=new MediaSources(context);java.util.concurrent.atomic.AtomicInteger resolutions=new java.util.concurrent.atomic.AtomicInteger();
         MediaTransfer expiring=new MediaTransfer((target,scope)->{
@@ -51,16 +61,6 @@ final class PlaybackArchitectureScenario {
             check(resolutions.get()==2&&Arrays.equals(first.toByteArray(),second.toByteArray())&&Arrays.equals(second.toByteArray(),third.toByteArray()),"expired lease refreshed proactively once; valid replacement reused with byte-exact output");
             Json.put(report,"proactiveLeaseRefreshByteExact",true);
         }finally{expiring.close();}
-
-        // Both old URLs must really return403; a barrier in the upstream makes the race reproducible.
-        ExecutorService pair=Executors.newFixedThreadPool(2);
-        try{
-            int downloads=control("expire_concurrent").optInt("downloads");
-            Future<byte[]> a=pair.submit(()->{try(Response response=get(file,"bytes=1000-1063")){check(response.code()==206,"concurrent range a");return response.body().bytes();}});
-            Future<byte[]> b=pair.submit(()->{try(Response response=get(file,"bytes=1000-1063")){check(response.code()==206,"concurrent range b");return response.body().bytes();}});
-            byte[] aa=a.get(15,TimeUnit.SECONDS),bb=b.get(15,TimeUnit.SECONDS);state=control(null);
-            check(state.optInt("expiredReplies")==2&&state.optInt("downloads")==downloads+1&&aa.length==64&&Arrays.equals(aa,bb),"simultaneous403s renew the rejected lease once");Json.put(report,"concurrentExpirySingleRefresh",true);
-        }finally{pair.shutdownNow();control("none");}
 
         // Use a fresh transport to force its lease API call to block, then stop the real server.
         MediaSources backend=new MediaSources(context);QuarkDavTree tree=new QuarkDavTree("tv-root","取消验证",(id,scope)->backend.withScope(scope).rawQuarkList(id));

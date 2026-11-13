@@ -1,0 +1,22 @@
+{
+  "legacyCloudProgressMigrationVerified": true,
+  "result": "passed",
+  "checks": [
+    "actual same-signer published code8 to current version upgrade",
+    "all collection, association and progress backup data preserved byte-for-value",
+    "upgrade produces v3 backup with both legacy cloud timelines",
+    "legacy cloud progress migrates without merging distinct variants or original progress",
+    "legacy preference data remains intact after transactional import",
+    "legacy preference mutation is durable before one-time import check",
+    "reopening never reimports stale legacy preferences over SQLite progress",
+    "Android Keystore TMDB credential survives APK replacement",
+    "encrypted Quark account survives APK replacement",
+    "encrypted WebDAV credential survives APK replacement",
+    "chosen Quark folder survives APK replacement",
+    "manual match and exact playback position preserved"
+  ],
+  "apiLevel": 22,
+  "buildRun": "43452263793",
+  "phase": "upgrade",
+  "physicalTelevisionVerified": false
+}

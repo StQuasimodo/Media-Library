@@ -1,0 +1,32 @@
+{
+  "result": "passed",
+  "checks": [
+    "shared folder title: 哈利·波特（系列）",
+    "shared folder title: The Matrix (Collection)",
+    "shared folder title: Doctor Who (2005) (Series)",
+    "shared folder title: 剧集（欧美）",
+    "shared folder title: Batman (1989) (3 films)",
+    "shared folder title: 手动专题",
+    "shared folder title: (500) Days of Summer",
+    "shared folder title: 某（特别）电影",
+    "shared folder title: Foo（共3部作品）",
+    "actual two-pass blur changes pixels without changing source",
+    "idle navigation does not request continuous layouts",
+    "native scene entry has intermediate opacity",
+    "persistent navigation pill moves through intermediate positions",
+    "navigation and page settle on selected library",
+    "rapid navigation settles on newest destination",
+    "fixture opened through native library grid",
+    "sharp and blurred backgrounds decode on API22",
+    "detail initial focus preserves large unobscured hero",
+    "detail contains no technical artwork provenance",
+    "scroll progressively blends blur, dimming and artwork movement",
+    "remote primary action focuses and scrolls to resources",
+    "blur derivative adds no disk cache",
+    "native folder card omits parenthetical suffix",
+    "folder display preserves stored title and identity",
+    "system reduced motion immediately settles page and navigation"
+  ],
+  "apiLevel": 22,
+  "physicalTelevisionVerified": false
+}

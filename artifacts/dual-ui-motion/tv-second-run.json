@@ -1,0 +1,26 @@
+{
+  "run": 43450943633,
+  "source": "16554fcd268b6117b27e63a1355fd378647c30bb",
+  "result": "failed",
+  "failedStage": "remote",
+  "error": "quick rating contains no editable keyboard field",
+  "productionFix": "00d9514069d1f4f089dde9320719d14d8a8f829a",
+  "completed": {
+    "tv-features/report.json": {
+      "result": "passed",
+      "checks": 167
+    },
+    "tv-features/motion-report.json": {
+      "result": "passed",
+      "checks": 25
+    },
+    "tv-backup/report.json": {
+      "result": "passed",
+      "checks": 25
+    },
+    "tv-upgrade/upgrade.json": {
+      "result": "passed",
+      "checks": 12
+    }
+  }
+}

@@ -12,3 +12,17 @@
 本地：TypeScript、243 个 Vitest 测试、前端构建通过。完整 Android 主源码和 instrumentation 通过 Java 8 编译。隔离 SQLite 配合无头 Chromium 检查了动画中间帧、文件夹显示与持久化原名、1440×900 / 1280×720 / 960×600 详情布局、真实模糊层和减少动态效果，见 `artifacts/dual-ui-motion/browser-report.json`。此结果只证明前端渲染，不代表 Electron 桌面运行或电视实机表现。
 
 提交后通过独立的 Windows Electron 测试和 API 22/x86 原生 instrumentation 验收；运行编号和截图在结果返回后补充。ARMv7 原生库打包检查不能替代长虹电视实机流畅度验收。
+
+## Windows 实际验收
+
+[43449050339](https://github.com/StQuasimodo/Media-Library/actions/runs/43449050339) 完整通过，源码 `2ecdd2137a15f5920646cc7406bf20a4cd76ec5b`。两个独立用户目录分别完成 36 项 UI / 受控 CLI 检查与 67 项完整资料/夸克流程检查，均为 Windows 原生 Electron 窗口，未启用 headless 或禁用 sandbox。包含动画中间帧、详情背景/标题滚动、减少动态效果、文件夹显示与存储原名、无技术来源提示；安装选项 6 项检查、凭据跨版本读取及重启均通过。安装包与便携包已下载，全部 SHA256 校验通过，报告与哈希在同名 artifacts 目录。
+
+首轮 [43448405590](https://github.com/StQuasimodo/Media-Library/actions/runs/43448405590) 已执行 UI 检查，但后续外部夸克登录页未就绪而失败。重跑使用明确的 `probe_live_quark=false`，原有默认线上检查仍保留；此次受控回归不证明真实账号登录成功。
+
+## 电视端回调修正
+
+首轮 [43448402691](https://github.com/StQuasimodo/Media-Library/actions/runs/43448402691) 构建、Lint、安装与 12 项升级检查完成，UI smoke 未完成，已主动取消。复查 Android 5.1 `View.layout` 确认：当 `LAYOUT_REQUIRED` 设置时，即使视图边界未变，也会调用布局监听器。原滑块回调无条件 `setLayoutParams` 会反复请求布局，现仅在实际边界/尺寸变化时更新。新增空闲布局稳定性检查，并限制 smoke 命令最长 180 秒。此轮不记为 UI 通过，见取消记录；新回归运行结果待返回后补充。
+
+浏览器截图使用隔离夹具和本机已有电影图片，只用于展示层检查；Windows 受控场景、电视模拟器截图和真实媒体/账号验收分别记录。
+
+重跑 [43450943633](https://github.com/StQuasimodo/Media-Library/actions/runs/43450943633) 已通过原生动效专项 25 项（包括空闲布局稳定性、实际动画中间帧、真实位图模糊、首屏和滚动、资源入口、名称显示/存储身份与减少动态效果）。后续原有 DPAD 回归发现：扩大 Hero 后「下→右→确认」误入记录编辑器。已为 Hero 主操作补充明确的向下焦点衔接，并固定状态/评分的横向邻接；保留原来的键序并增加逐步焦点断言，继续完整回归。原始失败报告保留，不能以专项通过替代整套通过。

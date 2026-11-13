@@ -37,7 +37,7 @@ final class MediaSources {
         String key(){return source+":"+id;}
         JSONObject json(){JSONObject data=new JSONObject();Json.put(data,"source",source);Json.put(data,"fileId",id);Json.put(data,"name",name);Json.put(data,"parent",parent);Json.put(data,"size",size);Json.put(data,"key",key());if(!davPath.isEmpty()){Json.put(data,"davPath",davPath);Json.put(data,"davRoot",davRoot);}return data;}
     }
-    static final class Lease {
+    static class Lease {
         final HttpUrl url;final Map<String,String> headers;
         interface Headers {Map<String,String> read() throws Exception;}
         private final Headers live;private final LeaseLifetime lifetime;final boolean sameOriginOnly;

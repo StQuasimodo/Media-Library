@@ -18,13 +18,18 @@ final class CloudHlsRelay implements Closeable {
     private final CloudHlsSession session;private final MediaTransfer transfer;private volatile boolean closed;private volatile String error="";
     CloudHlsRelay(MediaSources sources,JSONObject file,String selector)throws Exception {
         server=new ServerSocket(0,4,InetAddress.getByName("127.0.0.1"));String base="http://127.0.0.1:"+server.getLocalPort()+prefix;
-        session=new CloudHlsSession(scope->sources.withScope(scope).cloudHls(file,selector),base);transfer=new MediaTransfer(session::resource);
+        session=new CloudHlsSession(scope->sources.withScope(scope).cloudHls(file,selector),base);
+        transfer=new MediaTransfer(new MediaTransfer.Provider(){
+            public MediaSources.Lease resolve(JSONObject target,NetworkScope scope)throws Exception{return session.resource(target,null,scope);}
+            public MediaSources.Lease refresh(JSONObject target,MediaSources.Lease rejected,NetworkScope scope)throws Exception{return session.resource(target,rejected,scope);}
+        });
         Thread acceptor=new Thread(()->{while(!closed)try{Socket client=server.accept();client.setSoTimeout(15000);synchronized(sockets){sockets.add(client);}try{workers.execute(()->serve(client));}catch(RejectedExecutionException rejected){client.close();synchronized(sockets){sockets.remove(client);}}}catch(IOException ignored){if(!closed)error="云端试播连接中断。";}},"cinema-cloud-hls");acceptor.setDaemon(true);acceptor.start();
     }
     void prepare(NetworkScope scope)throws Exception {session.manifest("0.m3u8",scope);}
     MediaSources.Lease endpoint(){Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",authorization());return new MediaSources.Lease(HttpUrl.parse("http://127.0.0.1:"+server.getLocalPort()+prefix+"0.m3u8"),headers);}
     private String authorization(){return "Basic "+Base64.encodeToString(("cinema:"+password).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);}
     String error(){return error.isEmpty()?transfer.error():error;}
+    int recoveries(){return transfer.recoveries();}
     private static String value(Map<String,String> headers,String key,String fallback){String value=headers.get(key);return value==null?fallback:value;}
     private static String line(InputStream input)throws IOException {StringBuilder out=new StringBuilder();for(int i=0;i<8192;i++){int c=input.read();if(c<0)throw new IOException();if(c=='\n')return out.toString().replace("\r","");out.append((char)c);}throw new IOException();}
     private static void reply(OutputStream out,int status,byte[] body,boolean head)throws IOException {

@@ -12,9 +12,17 @@ import org.json.JSONObject;
 final class CloudHlsSession implements Closeable {
     interface Provider {MediaSources.Lease resolve(NetworkScope scope)throws Exception;}
     static final class Node {
-        final int id,parent,index,depth;final boolean playlist;HttpUrl url;int generation;String fingerprint="";List<Integer> children=new ArrayList<>();MediaSources.Lease issuedRoot;
+        final int id,parent,index,depth;final boolean playlist;HttpUrl url;int generation;String fingerprint="";List<Integer> children=new ArrayList<>();
         Node(int id,int parent,int index,int depth,boolean playlist,HttpUrl url,int generation){this.id=id;this.parent=parent;this.index=index;this.depth=depth;this.playlist=playlist;this.url=url;this.generation=generation;}
         String path(){return Integer.toString(id,36)+(playlist?".m3u8":".bin");}
+    }
+    /** Lineage follows the exact lease, including a rejected request already evicted from the LRU. */
+    private static final class ResourceLease extends MediaSources.Lease {
+        final MediaSources.Lease owner;
+        ResourceLease(HttpUrl url,MediaSources.Lease owner){
+            super(url,owner.headers,owner::requestHeaders,LeaseLifetime.quark(url.queryParameter("Expires"),System.currentTimeMillis(),System.nanoTime()),true);
+            this.owner=owner;
+        }
     }
     private final Provider provider;private final String base;
     private final List<Node> nodes=new ArrayList<>();private final LinkedHashMap<Integer,byte[]> manifests=new LinkedHashMap<>(8,0.75f,true);
@@ -71,11 +79,11 @@ final class CloudHlsSession implements Closeable {
         throw new IOException("Cloud playlist authentication failed");
     }
     synchronized byte[] manifest(String path,NetworkScope scope)throws Exception {Node node=node(path);if(!node.playlist)throw new IOException("Not a playlist");return manifest(node,scope);}
-    synchronized MediaSources.Lease resource(JSONObject file,NetworkScope scope)throws Exception {
+    synchronized MediaSources.Lease resource(JSONObject file,MediaSources.Lease rejected,NetworkScope scope)throws Exception {
         Node node=node(Json.text(file,"fileId"));if(node.playlist)throw new IOException("Not a binary resource");
-        root(node.issuedRoot,scope);current(node,scope);node.issuedRoot=root;
-        MediaSources.Lease owner=root;
-        return new MediaSources.Lease(node.url,owner.headers,owner::requestHeaders,LeaseLifetime.quark(node.url.queryParameter("Expires"),System.currentTimeMillis(),System.nanoTime()),true);
+        // Cache misses reuse a valid graph. Only the root that issued a rejected/expired lease is renewed.
+        root(rejected instanceof ResourceLease?((ResourceLease)rejected).owner:null,scope);current(node,scope);
+        return new ResourceLease(node.url,root);
     }
     @Override public synchronized void close(){closed=true;manifests.clear();nodes.clear();root=null;}
 }

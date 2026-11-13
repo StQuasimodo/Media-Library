@@ -16,7 +16,10 @@ import okhttp3.Response;
 
 /** Streaming policy, independent of DAV directory handling and the decoder. */
 final class MediaTransfer {
-    interface Provider {MediaSources.Lease resolve(JSONObject file,NetworkScope scope) throws Exception;}
+    interface Provider {
+        MediaSources.Lease resolve(JSONObject file,NetworkScope scope) throws Exception;
+        default MediaSources.Lease refresh(JSONObject file,MediaSources.Lease rejected,NetworkScope scope) throws Exception {return resolve(file,scope);}
+    }
     static final long SEGMENT_BYTES=4L*1024*1024;
     private final Provider provider;
     private final LinkedHashMap<String,Slot> leases=new LinkedHashMap<>(8,0.75f,true);
@@ -36,7 +39,10 @@ final class MediaTransfer {
         // Resolve under a per-file lock, never while holding the whole cache lock.
         // A concurrent 403 for the same rejected lease reuses an already-refreshed address.
         try{synchronized(slot){scope.check();if(closed)throw new IOException("Transport stopped");
-            if(slot.lease==null||slot.lease==rejected||slot.lease.expired()){MediaSources.Lease fresh=provider.resolve(file,scope);scope.check();if(closed)throw new IOException("Transport stopped");slot.lease=fresh;}
+            if(slot.lease==null||slot.lease==rejected||slot.lease.expired()){
+                MediaSources.Lease fresh=slot.lease==null?provider.resolve(file,scope):provider.refresh(file,slot.lease,scope);
+                scope.check();if(closed)throw new IOException("Transport stopped");slot.lease=fresh;
+            }
             return slot.lease;
         }}finally{synchronized(this){slot.users--;trim();}}
     }

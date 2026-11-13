@@ -45,6 +45,7 @@ def serve(root, log):
              'slowListStarts': 0, 'slowDavStarts': 0}
     lock = threading.Lock()
     expired_pair = threading.Barrier(2)
+    cloud_expired_pair = threading.Barrier(2)
     log.parent.mkdir(parents=True, exist_ok=True)
 
     class Handler(BaseHTTPRequestHandler):
@@ -139,6 +140,9 @@ def serve(root, log):
                 self.reply({},401)
                 return
             if signature<0 or expired:
+                if expired and state['fault']=='cloud_expire_pair':
+                    try:cloud_expired_pair.wait(timeout=5)
+                    except threading.BrokenBarrierError:pass
                 self.reply({},403)
                 return
             filename=uri.path[len('/cloud/'):]
@@ -169,7 +173,13 @@ def serve(root, log):
             if filename.endswith('.m3u8'):
                 if filename=='media.m3u8' and state.get('cloudShape','normal')=='changed':body=body.replace(b'#EXTINF:',b'#EXT-X-DISCONTINUITY\n#EXTINF:',1)
                 self.send_response(200);self.send_header('Content-Type','application/vnd.apple.mpegurl');self.send_header('Content-Length',str(len(body)));self.end_headers()
-                if not head:self.wfile.write(body)
+                slow=filename=='media.m3u8' and state['fault']=='cloud_slow_manifest'
+                if slow:
+                    with lock:state['cloudSlowManifestStarts']=state.get('cloudSlowManifestStarts',0)+1
+                    time.sleep(10)
+                if not head:
+                    try:self.wfile.write(body)
+                    except (BrokenPipeError,ConnectionResetError,ssl.SSLEOFError):pass
                 return
             start,end=0,len(body)-1;status=200
             range_value=self.headers.get('Range')
@@ -180,12 +190,23 @@ def serve(root, log):
                 else:start=int(match[1]);end=min(end,int(match[2])) if match[2] else end
                 if start>=len(body) or end<start:self.reply({},416);return
                 status=206
-            with lock:state['cloudBinaryGets']=state.get('cloudBinaryGets',0)+1
+            with lock:
+                state['cloudBinaryGets']=state.get('cloudBinaryGets',0)+1
+                if not range_value or not re.fullmatch(r'bytes=\d+-\d+',range_value):state['cloudUnboundedGets']=state.get('cloudUnboundedGets',0)+1
+                state['maxCloudRangeBytes']=max(state.get('maxCloudRangeBytes',0),end-start+1)
+                target=state.get('cloudDropSegment')
+                drop=not head and filename.endswith('.m4s') and (not target or filename==target) and end-start+1>65536 and state['fault']=='cloud_drop_expire' and state.get('cloudDrops',0)==0
+                if drop:
+                    state['cloudDrops']=1
+                    state['expiredCloudLease']=signature
             self.send_response(status);self.send_header('Content-Type','video/mp4');self.send_header('Content-Length',str(end-start+1));self.send_header('Accept-Ranges','bytes');self.send_header('ETag','"cloud-static-v1"')
             if status==206:self.send_header('Content-Range','bytes '+str(start)+'-'+str(end)+'/'+str(len(body)))
             self.end_headers()
             if not head:
-                try:self.wfile.write(body[start:end+1])
+                try:
+                    if drop:
+                        self.wfile.write(body[start:start+65536]);self.wfile.flush();self.close_connection=True;return
+                    self.wfile.write(body[start:end+1])
                 except (BrokenPipeError,ConnectionResetError,ssl.SSLEOFError):pass
 
         def do_HEAD(self):
@@ -288,21 +309,36 @@ def serve(root, log):
                     state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
+                    target=None
+                    if 'cloudDropAtMs' in query:
+                        try:target_time=int(query['cloudDropAtMs'][0])/1000
+                        except ValueError:self.reply({},400);return
+                        if not 0<=target_time<180:self.reply({},400);return
+                        position=0.0;duration=0.0
+                        for line in (root/'cloud/media.m3u8').read_text().splitlines():
+                            if line.startswith('#EXTINF:'):duration=float(line.split(':',1)[1].split(',',1)[0])
+                            elif line and not line.startswith('#'):
+                                if position<=target_time<position+duration:target=line;break
+                                position+=duration
+                        if target is None:self.reply({},400);return
                     with lock:
                         state['mode'] = mode
                         state['fault']=fault
                         state['drops']=0
                         state['expiredLease']=state['downloads'] if fault=='expire_concurrent' else -1
                         state['expiredReplies']=0
-                        state['expiredCloudLease']=state.get('cloudLeases',-1) if fault=='cloud_expire' else -2
+                        state['expiredCloudLease']=state.get('cloudLeases',-1) if fault in ['cloud_expire','cloud_expire_pair'] else -2
                         state['cloudExpiredReplies']=0
+                        state['cloudDrops']=0
+                        state['cloudDropSegment']=target
                         state['quarkGets']=0
                         state['unboundedQuarkGets']=0
                         state['maxQuarkRangeBytes']=0
                         if fault=='expire_concurrent':expired_pair.reset()
+                        if fault=='cloud_expire_pair':cloud_expired_pair.reset()
                 self.reply(dict(state))
                 return
             if uri.path.startswith('/cloud/'):

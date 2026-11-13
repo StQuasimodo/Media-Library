@@ -22,16 +22,18 @@ import java.util.Locale;
 public final class PlayerActivity extends Activity {
     private MediaCatalog catalog;private JSONObject file;private PlaybackController controller;private VLCVideoLayout video;
     private TextView title,status,seekFeedback;private final android.os.Handler remote=new android.os.Handler(android.os.Looper.getMainLooper());private PlaybackController.State previousState;private boolean centerCaptured;private long lastSeekKey;
-    private LinearLayout controls;private Button toggle;private long resume;private String cloudVariant="";private CloudPlaybackProgress cloudProgress;
+    private LinearLayout controls;private Button toggle;private long resume;private String cloudVariant="";private CloudPlaybackProgress cloudProgress;private boolean cloudSaveFailed;
     private final Runnable hideControls=()->{if(controller!=null&&controller.snapshot().state==PlaybackController.State.PLAYING&&hasWindowFocus())controls.setVisibility(View.GONE);};
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN|WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         catalog=new MediaCatalog(this);file=catalog.get(getIntent().getStringExtra("mediaKey"));if(file==null){finish();return;}cloudVariant=getIntent().getStringExtra("cloudVariant");if(cloudVariant==null)cloudVariant="";if(cloudVariant.length()>256||cloudVariant.contains("://")){finish();return;}
-        cloudProgress=new CloudPlaybackProgress(this);if(!cloudVariant.isEmpty())Json.put(file,"_cloudVariant",cloudVariant);
+        if(!cloudVariant.isEmpty()){
+            try{cloudProgress=new CloudPlaybackProgress(this);}catch(Exception failure){android.widget.Toast.makeText(this,"云端播放进度暂不可用，原数据已保留。",android.widget.Toast.LENGTH_LONG).show();finish();return;}Json.put(file,"_cloudVariant",cloudVariant);
+        }
         resume=cloudVariant.isEmpty()?catalog.position(Json.text(file,"key")):cloudProgress.position(Json.text(file,"key"),cloudVariant);
         controller=new PlaybackController(this,file,new PlaybackController.Listener(){
             public void changed(PlaybackController.Snapshot snapshot){render(snapshot);}
-            public void progress(long position,long duration){resume=position;if(cloudVariant.isEmpty())catalog.progress(Json.text(file,"key"),position,duration);else cloudProgress.save(Json.text(file,"key"),cloudVariant,position,duration);}
+            public void progress(long position,long duration){resume=position;if(cloudVariant.isEmpty())catalog.progress(Json.text(file,"key"),position,duration);else try{cloudProgress.save(Json.text(file,"key"),cloudVariant,position,duration);cloudSaveFailed=false;}catch(Exception failure){if(!cloudSaveFailed)android.widget.Toast.makeText(PlayerActivity.this,"云端进度未能保存，请检查存储空间。",android.widget.Toast.LENGTH_LONG).show();cloudSaveFailed=true;}}
         });
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(0xff000000);video=new VLCVideoLayout(this);root.addView(video,new FrameLayout.LayoutParams(-1,-1));seekFeedback=new TextView(this);seekFeedback.setTextColor(MainActivity.PRIMARY);seekFeedback.setTextSize(24);seekFeedback.setGravity(Gravity.CENTER);seekFeedback.setVisibility(View.GONE);root.addView(seekFeedback,new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER));
         controls=new LinearLayout(this);controls.setOrientation(LinearLayout.VERTICAL);controls.setPadding(24,12,24,18);controls.setBackgroundColor(0xdd101216);FrameLayout.LayoutParams params=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);root.addView(controls,params);
@@ -121,5 +123,5 @@ public final class PlayerActivity extends Activity {
     }
     @Override public void onBackPressed(){if(controls.getVisibility()==View.VISIBLE){remote.removeCallbacks(hideControls);controls.setVisibility(View.GONE);}else{showControls();AlertDialog prompt=new AlertDialog.Builder(this).setTitle("退出播放？").setMessage("进度会保存在电视本机。").setNegativeButton("继续播放",null).setPositiveButton("退出",(dialog,n)->finish()).create();prompt.setOnShowListener(d->prompt.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus());prompt.show();}}
     @Override protected void onStop(){remote.removeCallbacksAndMessages(null);centerCaptured=false;if(seekFeedback!=null)seekFeedback.setVisibility(View.GONE);if(controller!=null)controller.stop();super.onStop();}
-    @Override protected void onDestroy(){remote.removeCallbacksAndMessages(null);if(controller!=null)controller.close();if(catalog!=null)catalog.close();super.onDestroy();}
+    @Override protected void onDestroy(){remote.removeCallbacksAndMessages(null);if(controller!=null)controller.close();if(catalog!=null)catalog.close();if(cloudProgress!=null)cloudProgress.close();super.onDestroy();}
 }

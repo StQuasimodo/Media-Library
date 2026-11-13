@@ -27,7 +27,7 @@ final class QuarkCloudVersions {
             "\n帧率："+(fps>0?String.format(Locale.ROOT,"%.2f fps",fps):"未标注")+
             "\n视频码率："+(bitrate>0?String.format(Locale.ROOT,"%.2f Mbps",bitrate/1000000.0):"未标注")+
             "\n音频编码："+audioCodec+"\n声道："+(channels>0?String.valueOf(channels):"未标注")+
-            "\n\n仅支持手动试播完整点播HLS，其他协议尚未开放。云端版本可能降低清晰度，音轨、字幕及HDR也可能与原文件不同。试播进度在本机单独保存，暂不纳入备份，不更改原文件进度。";}
+            "\n\n仅支持手动试播完整点播HLS，其他协议尚未开放。云端版本可能降低清晰度，音轨、字幕及HDR也可能与原文件不同。云端进度独立保存并随新版完整备份导出，不更改原文件进度。";}
     }
     static HttpUrl selectHls(JSONObject response,String selector){
         if(selector==null||selector.length()>256)throw new IllegalArgumentException("云端版本标识无效。");

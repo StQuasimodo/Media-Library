@@ -291,7 +291,7 @@ public final class MainActivity extends Activity {
         content.addView(button(secrets.exists()?"TMDB配置：已保存 · 重新配置":"配置TMDB API Key",this::configureKey));if(secrets.exists())content.addView(button("清除TMDB配置",()->confirm("清除TMDB配置？","本地收藏和图片会保留。",()->{secrets.clear();show("settings","");})));
         content.addView(button("资料语言："+(language.equals("zh-CN")?"简体中文":"English"),()->{language=language.equals("zh-CN")?"en-US":"zh-CN";getPreferences(0).edit().putString("language",language).apply();show("settings","");}));
         content.addView(button("媒体源 · 夸克 / WebDAV",this::mediaSources));
-        content.addView(text("收藏与备份",19,PRIMARY));content.addView(text("备份包含收藏、媒体关联和播放进度，不包含图片缓存与账号登录信息。换机后需重新连接媒体源。",14,SECONDARY));
+        content.addView(text("收藏与备份",19,PRIMARY));content.addView(text("备份包含收藏、媒体关联、原文件与云端播放进度，不包含图片缓存与账号登录信息。换机后需重新连接媒体源。",14,SECONDARY));
         content.addView(button("创建本机备份",()->job("备份收藏与播放记录…",()->{TvBackup backup=new TvBackup(this);backup.writeLocal("collection-backup.json",backup.snapshot());return true;},done->toast("已保存本机备份，包含媒体关联与播放进度。"))));
         content.addView(button("导出备份文件",()->backupDocument(true)));content.addView(button("从备份文件恢复",()->backupDocument(false)));
         if(android.os.Build.VERSION.SDK_INT<=22){content.addView(button("导出到下载目录",()->job("导出备份…",()->new TvBackup(this).exportDownloads(),file->toast("已导出到 下载/MyCinema/"+file.getName()+"，可用文件管理器复制到U盘。"))));content.addView(button("从下载目录恢复",this::downloadBackups));}
@@ -318,8 +318,12 @@ public final class MainActivity extends Activity {
         final Uri uri=data.getData();if(request==EXPORT_BACKUP)job("导出备份…",()->{new TvBackup(this).exportDocument(uri);return true;},done->toast("备份文件已导出。"));
         else job("读取备份…",()->new TvBackup(this).readDocument(uri),this::confirmRestore);
     }
-    private void confirmRestore(JSONObject data){boolean media=TvBackup.includesMedia(data);confirm(media?"恢复完整备份？":"恢复旧版收藏备份？",media?"备份将替换当前收藏、媒体关联和播放进度。当前内容会先保存为恢复前备份，已有登录配置保留。":"旧格式仅恢复收藏，现有媒体关联和进度保留，部分关联可能需要重新选择。当前内容会先保存为恢复前备份。",()->job("恢复备份…",()->{new TvBackup(this).restore(data);return true;},done->{show("settings","");toast(media?"收藏、媒体关联和进度已恢复。":"旧版收藏已恢复，现有媒体关联和进度保留。");}));}
-    private void restoreLocal(String name){confirm("恢复收藏备份？","将恢复备份包含的收藏、关联和进度；旧格式仅恢复收藏。当前内容会先另存为恢复前备份，登录配置保留。",()->job("恢复备份…",()->{TvBackup backup=new TvBackup(this);backup.restore(backup.readLocal(name));return true;},done->{show("settings","");toast("备份已恢复。");}));}
+    private void confirmRestore(JSONObject data){
+        boolean media=TvBackup.includesMedia(data),cloud=TvBackup.includesCloudProgress(data);
+        String message=cloud?"备份将替换当前收藏、媒体关联、原文件与云端播放进度。":media?"备份将替换当前收藏、媒体关联和原文件进度。旧备份不含云端进度，本机云端进度保留。":"旧格式仅恢复收藏，现有媒体关联、原文件与云端进度保留，部分关联可能需要重新选择。";
+        confirm(media?"恢复完整备份？":"恢复旧版收藏备份？",message+"当前内容会先保存为恢复前备份，已有登录配置保留。",()->job("恢复备份…",()->{new TvBackup(this).restore(data);return true;},done->{show("settings","");toast(cloud?"收藏、媒体关联及两类播放进度已恢复。":media?"收藏、媒体关联和原文件进度已恢复，本机云端进度保留。":"旧版收藏已恢复，现有媒体关联和进度保留。");}));
+    }
+    private void restoreLocal(String name){job("读取备份…",()->new TvBackup(this).readLocal(name),this::confirmRestore);}
     private void downloadBackups(){job("读取下载目录备份…",()->new TvBackup(this).downloadBackups(),files->{if(files.isEmpty()){toast("下载/MyCinema目录中没有可用备份，可用文件管理器将备份复制到这里。");return;}String[] labels=new String[files.size()];for(int i=0;i<files.size();i++)labels[i]=files.get(i).getName();choose("选择下载目录备份",labels,index->job("读取备份…",()->new TvBackup(this).readFile(files.get(index)),this::confirmRestore));});}
     private EditText field(LinearLayout form,String label,String initial,boolean multiple){form.addView(text(label,13,SECONDARY));EditText input=new EditText(this);input.setText(initial);input.setTextColor(PRIMARY);input.setTextSize(16);RemoteUi.input(input);input.setHint(label);input.setContentDescription(label+" · 确认键打开键盘");input.setSingleLine(!multiple);if(multiple)input.setMaxLines(3);form.addView(input,new LinearLayout.LayoutParams(-1,-2));return input;}
     private AlertDialog formDialog(String title,LinearLayout form,Runnable save){ScrollView scroll=new ScrollView(this);scroll.setPadding(dp(20),0,dp(20),0);scroll.addView(form);AlertDialog dialog=new AlertDialog.Builder(this).setTitle(title).setView(scroll).setPositiveButton("保存",null).setNegativeButton("取消",null).create();dialog.setOnShowListener(ignored->{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{try{save.run();dialog.dismiss();}catch(Exception error){toast(message(error));}});dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);});dialog.show();return dialog;}

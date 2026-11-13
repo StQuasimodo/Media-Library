@@ -1,5 +1,7 @@
 # TV：夸克云端 HLS 手动试播 PoC
 
+alpha.9 已开始补齐云端进度备份；本页记录的旧版范围与结果保持不变，新行为和验收见 [云端进度备份](TV-CLOUD-PROGRESS-BACKUP.md)。
+
 本文记录 alpha.7 的历史验收；alpha.8 的地址复用修复及云端连续播放验证见 [稳定性续篇](TV-QUARK-HLS-STABILITY.md)。
 
 ## 范围与入口

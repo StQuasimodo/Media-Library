@@ -52,6 +52,7 @@ assert report['result']=='passed' and report['apiLevel']==22
 assert report['buildRun']==os.environ['GITHUB_RUN_ID']
 bridge=json.load(open('.harness/tv-playback/quark-dav-report.json'))
 assert bridge['result']=='passed' and bridge['buildRun']==os.environ['GITHUB_RUN_ID']
+assert bridge['cloudBackupRestoredNativeResume']
 assert bridge['cloudPlaybackVerified'] and bridge['cloudHlsByteExactRenewal'] and bridge['cloudHlsSeekPauseResume'] and bridge['cloudOriginalProgressPreserved']
 assert bridge['cloudHlsCacheEvictionReusesRoot'] and bridge['cloudHlsConcurrentExpirySingleRefresh']
 assert bridge['cloudHlsByteExactDropAndExpiry'] and bridge['cloudHlsNativeDropAndExpiryVerified'] and bridge['cloudHlsBlockedManifestCancelled']

@@ -107,10 +107,11 @@ final class CloudHlsScenario {
         Json.put(report,"cloudHlsContinuousWallMs",android.os.SystemClock.elapsedRealtime()-start);Json.put(report,"cloudHlsContinuousAdvanceMs",last-startTime);Json.put(report,"cloudHlsContinuousDisplayedPictures",lastFrames-firstFrames);Json.put(report,"cloudHlsContinuousLostPictures",lost);
         Json.put(report,"cloudHlsProcessCpuMs",android.os.Process.getElapsedCpuTime()-cpu);Json.put(report,"cloudHlsStartPssKiB",firstPss);Json.put(report,"cloudHlsEndPssKiB",memory.getTotalPss());Json.put(report,"cloudHlsMaximumSampledPssKiB",maximumPss);Json.put(report,"cloudHlsPrivateFilesAndCacheGrowthBytes",growth);Json.put(report,"cloudHlsMaximumUpstreamRangeBytes",state.optInt("maxCloudRangeBytes"));
     }
+    private long cloudPosition(String key,String selector){try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){return cloud.position(key,selector);}}
     private void open(String key,String selector)throws Exception {activity=(PlayerActivity)test.startActivitySync(new Intent(context,PlayerActivity.class).putExtra("mediaKey",key).putExtra("cloudVariant",selector).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}
     void run(MediaSources.Entry video,String key,JSONObject report)throws Exception {
         MediaSources sources=new MediaSources(context);String selector="";for(QuarkCloudVersions.Version version:sources.cloudVersions(video.json()))if(version.canTrial())selector=version.selector();check(!selector.isEmpty(),"fixture ready HLS candidate");final String variant=selector;
-        long original;try(MediaCatalog catalog=new MediaCatalog(context)){original=catalog.position(key);}new CloudPlaybackProgress(context).save(key,variant,0,180000);
+        long original;try(MediaCatalog catalog=new MediaCatalog(context)){original=catalog.position(key);}try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){cloud.save(key,variant,0,180000);}
         try{
             Json.put(report,"cloudHlsPhase","protocol");protocol(sources,video,variant,report);rejectsChangedGraphAndUnsafeBinary(sources,video,variant,report);cancellation(sources,video,variant,report);Json.put(report,"cloudHlsPhase","native-open");open(key,variant);
             await(()->player()!=null&&player().isPlaying()&&player().getTime()>1500&&frames()>0,"cloud HLS/fMP4 really decodes and displays frames");
@@ -127,8 +128,10 @@ final class CloudHlsScenario {
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);await(()->player().isPlaying()&&player().getTime()>held+500&&frames()>0,"cloud resumes with new frames after paused reconnect");
             Bitmap shot=test.getUiAutomation().takeScreenshot();try(FileOutputStream output=new FileOutputStream(new File(context.getFilesDir(),"q03-cloud-hls-playing.png"))){shot.compress(Bitmap.CompressFormat.PNG,100,output);}shot.recycle();
             test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
-            await(()->new CloudPlaybackProgress(context).position(key,variant)>=39000,"separate cloud progress survives Activity close");long saved=new CloudPlaybackProgress(context).position(key,variant);
-            open(key,variant);await(()->player()!=null&&player().isPlaying()&&player().getTime()>=saved-1000&&frames()>0,"cloud activity reopens and resumes saved trial progress");
+            await(()->cloudPosition(key,variant)>=39000,"separate cloud progress survives Activity close");long saved=cloudPosition(key,variant);
+            TvBackup backup=new TvBackup(context);JSONObject snapshot=backup.snapshot();check(TvBackup.includesCloudProgress(snapshot),"native cloud progress exports in v3 backup");
+            try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){cloud.save(key,variant,0,180000);}backup.restore(snapshot);check(cloudPosition(key,variant)==saved,"backup restores exact native-generated cloud progress");
+            open(key,variant);await(()->player()!=null&&player().isPlaying()&&player().getTime()>=saved-1000&&frames()>0,"cloud activity reopens and resumes backup-restored trial progress");Json.put(report,"cloudBackupRestoredNativeResume",true);
             test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
             try(MediaCatalog catalog=new MediaCatalog(context)){check(catalog.position(key)==original&&!catalog.get(key).toString().contains("_cloudVariant")&&!catalog.get(key).toString().contains("cloud-fixture-private"),"original progress and persistent media identity remain unchanged");}
             check(fixture(null).optInt("cloudHeaderErrors")==0,"all decoder child requests retain correct credential boundary");

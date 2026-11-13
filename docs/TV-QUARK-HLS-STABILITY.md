@@ -24,7 +24,25 @@ TV 开发预览 `0.3.0-alpha.8` / versionCode16，承接 [alpha.7 试播 PoC](TV
 6. 记录云端流连续阶段的掉帧、进程CPU时间、起止PSS/每5秒最大采样PSS、应用files/cache体积变化和上游最大Range。采样最大PSS不是精确峰值；磁盘体积检查不能单独证明所有I/O行为，需结合生产代码无电影磁盘写入路径判断。
 7. 继续全部已有定位、遥控器暂停、暂停重连、退出续播、原文件进度隔离、原文件90秒、备份与同签名升级检查。
 
-Java主源码/instrumentation本地编译、17项取流策略、10项暂停恢复策略和234项业务测试通过。完整Gradle/Lint、签名/API21/ARMv7+x86打包和API22/x86实际链路结果等待新源码CI执行；测试定义不等同于已通过。
+Java主源码/instrumentation本地编译、17项取流策略、10项暂停恢复策略和234项业务测试通过。[完整构建与API22回归43403156651](https://github.com/StQuasimodo/Media-Library/actions/runs/43403156651)通过，实际构建/测试源码 `f55f71d34a0dca7ffb16c83812f3cbed5cb6113b`。Gradle/Lint、API21/v1固定签名、ARMv7+x86打包检查通过；API22/x86完成116项功能检查、16项备份、同签名升级、500海报、进程/模拟器内核重启及全部原文件/云端播放回归。
+
+| 实际检查 | 本次结果 |
+| --- | --- |
+| 淘汰后回看初始化段 | 字节相同，额外版本查询0次 |
+| 两个不同分片并发403 | 两个输出字节相同，根地址只刷新1次 |
+| 正文断流+地址失效 | 200001字节前后相同；原生播放器不重建解码器也恢复出帧 |
+| 阻塞子清单取消 | 主线程关闭用时2ms，客户端读取取消 |
+| 云端连续阶段 | 90182ms墙上时长，媒体推进88003ms，显示1337帧 |
+| 云端连续阶段丢帧 | 0；仅该区间，初始采样仍记录3帧丢失 |
+| 暂停重连 | 原40000ms → 新39563ms，偏差437ms，暂停时已显示93帧 |
+| 云端进度/原文件进度 | 新Activity续播通过；原文件进度和身份不变 |
+| files/cache体积变化 | 连续阶段0字节增长，上游闭合Range最大4194304字节 |
+| 连续阶段进程CPU | 27336ms；不代表实机CPU占用 |
+| PSS起止/最大采样 | 122060 → 153272KiB，最大每5秒采样169544KiB，不是精确峰值 |
+
+原始证据：[构建身份](../artifacts/tv-quark-hls-stability/BUILD.json)、[云端/原文件检查与采样](../artifacts/tv-quark-hls-stability/quark-dav.json)、[116项功能检查](../artifacts/tv-quark-hls-stability/features.json)、[实际API22截图](../artifacts/tv-quark-hls-stability/cloud-hls-playing.png)。截图为合成测试片，不是真实网盘影片。首轮与本轮掉帧/CPU不同，不能将共享模拟器上的差异归因于解码性能优化；暂停恢复修复发生在连续采样之后。
+
+APK已下载，并核对实际字节哈希、BUILD与模拟器所测APK一致：`My-Cinema-TV-0.3.0-alpha.8-debug.apk`，48,818,653字节，SHA256 `ca7bf2b97d9929b4f75dddda3a715aa8129a0029cbffe4f101441eefe2bb9f45`。保留固定开发签名，未发布Release或更新feed。之后的证据/说明提交不改变该已测试应用代码。
 
 首轮 [43401033996](https://github.com/StQuasimodo/Media-Library/actions/runs/43401033996)，源码 `8a531ba27557fd6c285ba1c5f4213c68634ced1e`，完整验收失败，不计成功。它通过缓存淘汰复用、并发403单次刷新、断流字节一致恢复、1ms阻塞清单取消、真实LibVLC断流恢复，以及90343ms云端连续播放，但在随后暂停重连失败：新会话已暂停于32299ms、显示0帧，偏离约40秒目标。原始 [失败报告](../artifacts/tv-quark-hls-stability/first-attempt-quark-dav.json)保留。连续播放采样推进87362ms、显示1240帧、丢失92帧；这些数据不代表无掉帧或实机性能。随后修正暂停恢复的生产逻辑，保留位置容差并加强出帧断言，重新完整验证。
 

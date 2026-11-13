@@ -90,11 +90,11 @@ public final class MediaBrowserActivity extends Activity {
     private void inspectCloudVersions(String key){
         JSONObject selected=catalog.get(key);if(selected==null){status.setText("请先重新读取该文件所在目录。");return;}
         job("检查夸克云端播放版本…",(driver,scope)->driver.cloudVersions(selected),versions->{
-            status.setText(versions.isEmpty()?"夸克未提供云端版本，原文件入口保留。":"云端版本检查完成 · "+versions.size()+" 项（仅查看）");
+            status.setText(versions.isEmpty()?"夸克未提供云端版本，原文件入口保留。":"云端版本检查完成 · "+versions.size()+" 项");
             if(cloudDialog!=null)cloudDialog.dismiss();
             if(versions.isEmpty()){cloudDialog=new AlertDialog.Builder(this).setTitle("云端播放版本").setMessage("夸克暂未提供该文件的云端播放版本。原文件播放入口保留，未更改资源、画质或进度。").setPositiveButton("返回",null).create();}
             else{String[] labels=new String[versions.size()];for(int i=0;i<labels.length;i++)labels[i]=versions.get(i).label();
-                cloudDialog=new AlertDialog.Builder(this).setTitle("云端播放版本 · 仅检查").setItems(labels,(dialog,n)->{cloudDialog=new AlertDialog.Builder(this).setTitle(versions.get(n).label()).setMessage(versions.get(n).details()).setPositiveButton("返回",null).create();cloudDialog.show();}).setNegativeButton("返回",null).create();}
+                cloudDialog=new AlertDialog.Builder(this).setTitle("云端播放版本 · HLS试播").setItems(labels,(dialog,n)->{AlertDialog.Builder details=new AlertDialog.Builder(this).setTitle(versions.get(n).label()).setMessage(versions.get(n).details()).setNegativeButton("返回",null);if(versions.get(n).canTrial())details.setPositiveButton("试播此HLS版本",(d,which)->startActivity(new Intent(this,PlayerActivity.class).putExtra("mediaKey",key).putExtra("cloudVariant",versions.get(n).selector())));cloudDialog=details.create();cloudDialog.show();}).setNegativeButton("返回",null).create();}
             cloudDialog.show();
         });
     }

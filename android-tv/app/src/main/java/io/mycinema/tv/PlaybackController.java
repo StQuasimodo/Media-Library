@@ -33,7 +33,7 @@ final class PlaybackController implements Closeable {
     private final Handler main=new Handler(Looper.getMainLooper());
     private final ExecutorService connector=Executors.newSingleThreadExecutor();
     private Future<?> connecting;private NetworkScope network;private PlaybackRelay relay;
-    private PlaybackRelay.Session davSession;
+    private PlaybackRelay.Session davSession;private CloudHlsRelay hlsRelay;
     private LibVLC vlc;private volatile MediaPlayer player;private VLCVideoLayout video;
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
     private boolean loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered,playbackRate=1f;
@@ -55,24 +55,25 @@ final class PlaybackController implements Closeable {
         final int session=++generation;network=new NetworkScope();final NetworkScope attempt=network;state(State.CONNECTING,"");
         try{
             connecting=connector.submit(()->{
-                PlaybackRelay pending=null;PlaybackRelay.Session pendingSession=null;
+                PlaybackRelay pending=null;PlaybackRelay.Session pendingSession=null;CloudHlsRelay pendingHls=null;
                 try{
                     MediaSources sources=new MediaSources(context).withScope(attempt);MediaSources.Lease direct=null;
-                    if(Json.text(file,"source").equals("quark")){pendingSession=CinemaApplication.dav(context).openPlayback(file,attempt);direct=pendingSession.endpoint;}else pending=new PlaybackRelay(sources,file);
-                    attempt.check();final PlaybackRelay ready=pending;final PlaybackRelay.Session readySession=pendingSession;final MediaSources.Lease endpoint=direct;
+                    if(!Json.text(file,"_cloudVariant").isEmpty()){pendingHls=new CloudHlsRelay(sources,file,Json.text(file,"_cloudVariant"));pendingHls.prepare(attempt);direct=pendingHls.endpoint();}
+                    else if(Json.text(file,"source").equals("quark")){pendingSession=CinemaApplication.dav(context).openPlayback(file,attempt);direct=pendingSession.endpoint;}else pending=new PlaybackRelay(sources,file);
+                    attempt.check();final PlaybackRelay ready=pending;final PlaybackRelay.Session readySession=pendingSession;final MediaSources.Lease endpoint=direct;final CloudHlsRelay readyHls=pendingHls;
                     main.post(()->{
-                        if(session!=generation||disposed||attempt.cancelled()){if(ready!=null)ready.close();if(readySession!=null)readySession.close();return;}relay=ready;davSession=readySession;
+                        if(session!=generation||disposed||attempt.cancelled()){if(ready!=null)ready.close();if(readySession!=null)readySession.close();if(readyHls!=null)readyHls.close();return;}relay=ready;davSession=readySession;hlsRelay=readyHls;
                         try{
                             // Only the winning, fully-resolved connection allocates a native decoder/Surface.
                             ArrayList<String> options=new ArrayList<>();options.add("--quiet");options.add("--no-video-title-show");options.add("--network-caching=1500");
                             vlc=new LibVLC(context,options);player=new MediaPlayer(vlc);final MediaPlayer engine=player;
                             engine.attachViews(video,null,false,false);engine.setEventListener(event->onEvent(session,engine,event));mutedForRestore=wantPaused;
                             Media media=new Media(vlc,Uri.parse(endpoint==null?ready.url():endpoint.url.toString()));
-                            try{if(endpoint!=null)localLogin(endpoint,session,engine);media.setHWDecoderEnabled(true,false);engine.setMedia(media);}finally{media.release();}
+                            try{if(endpoint!=null)localLogin(endpoint,session,engine,media);media.setHWDecoderEnabled(true,false);engine.setMedia(media);}finally{media.release();}
                             if(mutedForRestore)engine.setVolume(0);engine.play();main.postDelayed(timer,1000);
                         }catch(Exception|LinkageError failure){state(State.ERROR,"播放器启动失败，请重新连接或更换资源。");release();}
-                    });pending=null;pendingSession=null;
-                }catch(Exception failure){if(pending!=null)pending.close();if(pendingSession!=null)pendingSession.close();main.post(()->{if(session==generation&&!disposed&&!attempt.cancelled())state(State.ERROR,"媒体源连接失败，请检查网络、登录状态及所选文件夹后重试。");});}
+                    });pending=null;pendingSession=null;pendingHls=null;
+                }catch(Exception failure){if(pending!=null)pending.close();if(pendingSession!=null)pendingSession.close();if(pendingHls!=null)pendingHls.close();main.post(()->{if(session==generation&&!disposed&&!attempt.cancelled())state(State.ERROR,"媒体源连接失败，请检查网络、登录状态及所选文件夹后重试。");});}
             });
         }catch(Exception|LinkageError failure){state(State.ERROR,"播放器初始化失败，该设备可能不兼容。");release();}
     }
@@ -90,7 +91,7 @@ final class PlaybackController implements Closeable {
             if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
         }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
         else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();state(State.PAUSED,"");}
-        else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
+        else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=hlsRelay!=null?hlsRelay.error():relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
         else if(event.type==MediaPlayer.Event.EndReached){wantPaused=true;restoreAt=-1;position=0;duration=Math.max(duration,engine.getLength());state(State.ENDED,"播放完毕");listener.progress(0,duration);}
     }
 
@@ -115,9 +116,11 @@ final class PlaybackController implements Closeable {
     boolean seek(long delta){
         if(player==null||!player.isSeekable())return false;sample();long target=Math.max(0,position+delta);if(duration>0)target=Math.min(target,Math.max(0,duration-1000));player.setTime(target);return true;
     }
-    private void localLogin(MediaSources.Lease endpoint,int session,MediaPlayer engine){
+    private void localLogin(MediaSources.Lease endpoint,int session,MediaPlayer engine,Media media){
         if(!endpoint.url.host().equals("127.0.0.1")||!endpoint.url.scheme().equals("http"))throw new IllegalArgumentException("Local endpoint required");
         String decoded=new String(Base64.decode(endpoint.headers.get("Authorization").substring(6),Base64.NO_WRAP),StandardCharsets.UTF_8);int colon=decoded.indexOf(':');String username=decoded.substring(0,colon),password=decoded.substring(colon+1);
+        if(hlsRelay!=null){media.addOption(":http-user="+username);media.addOption(":http-pwd="+password);}
+
         VlcDialogs.claim(vlc,new Dialog.Callbacks(){
             public void onDisplay(Dialog.LoginDialog dialog){if(current(session,engine)&&++loginAttempts<=2)dialog.postLogin(username,password,false);else dialog.dismiss();}
             public void onDisplay(Dialog.ErrorMessage dialog){}
@@ -135,7 +138,7 @@ final class PlaybackController implements Closeable {
     }
     private void release(){
         generation++;main.removeCallbacks(timer);if(network!=null){network.close();network=null;}if(connecting!=null){connecting.cancel(true);connecting=null;}
-        if(davSession!=null){davSession.close();davSession=null;}if(relay!=null){relay.close();relay=null;}if(vlc!=null)VlcDialogs.release(vlc);
+        if(hlsRelay!=null){hlsRelay.close();hlsRelay=null;}if(davSession!=null){davSession.close();davSession=null;}if(relay!=null){relay.close();relay=null;}if(vlc!=null)VlcDialogs.release(vlc);
         if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}
         if(vlc!=null){vlc.release();vlc=null;}loaded=false;
     }

@@ -19,13 +19,27 @@ final class QuarkCloudVersions {
             this.quality=quality;this.protocol=protocol;this.codec=codec;this.audioCodec=audioCodec;this.state=state;
             this.width=width;this.height=height;this.channels=channels;this.bitrate=bitrate;this.fps=fps;
         }
+        boolean canTrial(){return protocol.equals("HLS")&&state.equals("服务端提供地址")&&!quality.equals("未标注");}
+        String selector(){return quality+"|"+width+"|"+height+"|"+codec+"|"+audioCodec+"|"+channels+"|HLS";}
         String label(){return qualityLabel()+" · "+(width>0&&height>0?width+"×"+height:"尺寸未标注")+" · "+state;}
         private String qualityLabel(){switch(quality){case "low":return "低清档";case "normal":return "标清档";case "high":return "高清档";case "super":return "超清档";case "2k":return "2K档";case "4k":return "4K档";default:return "未标注档位";}}
         String details(){return "服务端标称资料（尚未实际解码）\n\n"+label()+"\n协议："+protocol+"\n视频编码："+codec+
             "\n帧率："+(fps>0?String.format(Locale.ROOT,"%.2f fps",fps):"未标注")+
             "\n视频码率："+(bitrate>0?String.format(Locale.ROOT,"%.2f Mbps",bitrate/1000000.0):"未标注")+
             "\n音频编码："+audioCodec+"\n声道："+(channels>0?String.valueOf(channels):"未标注")+
-            "\n\n当前仅检查可用版本，尚未开放云端版本播放切换。云端版本可能降低清晰度，音轨、字幕及HDR也可能与原文件不同。原文件播放入口保留。";}
+            "\n\n仅支持手动试播完整点播HLS，其他协议尚未开放。云端版本可能降低清晰度，音轨、字幕及HDR也可能与原文件不同。试播进度在本机单独保存，暂不纳入备份，不更改原文件进度。";}
+    }
+    static HttpUrl selectHls(JSONObject response,String selector){
+        if(selector==null||selector.length()>256)throw new IllegalArgumentException("云端版本标识无效。");
+        JSONArray rows=Json.array(response.optJSONObject("data"),"video_list");if(rows.length()>200)throw new IllegalStateException("云端版本数量异常。");HttpUrl selected=null;
+        for(int i=0;i<rows.length();i++){
+            JSONObject row=rows.optJSONObject(i);if(row==null)continue;JSONObject data=new JSONObject(),one=new JSONObject();Json.put(data,"video_list",new JSONArray().put(row));Json.put(one,"data",data);
+            List<Version> versions=parse(one);if(versions.isEmpty()||!versions.get(0).canTrial()||!versions.get(0).selector().equals(selector))continue;
+            HttpUrl url=HttpUrl.parse(Json.text(row.optJSONObject("video_info"),"url"));
+            if(url==null||url.toString().length()>8192||url.port()!=443||!url.host().contains(".")||url.host().matches("[0-9.]+")||url.host().contains(":")||url.host().endsWith(".local"))throw new IllegalStateException("云端地址不适合安全试播。");
+            if(selected!=null&&!selected.equals(url))throw new IllegalStateException("云端版本存在歧义，请重新检查。");selected=url;
+        }
+        if(selected==null)throw new IllegalStateException("所选HLS版本未就绪或已变化，请重新检查。");return selected;
     }
     private static double number(JSONObject object,String key,double max){Object raw=object.opt(key);if(!(raw instanceof Number))return 0;double value=((Number)raw).doubleValue();return !Double.isNaN(value)&&!Double.isInfinite(value)&&value>0&&value<=max?value:0;}
     private static int integer(JSONObject object,String key,int max){double value=number(object,key,max);return value==Math.floor(value)?(int)value:0;}

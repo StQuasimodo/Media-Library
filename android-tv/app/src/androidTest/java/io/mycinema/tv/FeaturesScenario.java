@@ -49,6 +49,7 @@ final class FeaturesScenario {
     private void features()throws Exception{
         checks.addAll(QuarkTransportPolicyTest.run());
         checks.addAll(CloudVersionPolicyTest.run());
+        checks.addAll(HlsPlaylistPolicyTest.run());
         allocationAndRelations();
         String envelope,cert;try(InputStream input=test.getContext().getAssets().open("tv-preview.json")){envelope=new String(TmdbClient.read(input,65536),StandardCharsets.UTF_8);}try(InputStream input=context.getAssets().open("update-signing.json")){cert=Json.object(new String(TmdbClient.read(input,16384),StandardCharsets.UTF_8)).getString("certificatePem");}
         check(TvUpdates.verify(envelope,"preview",cert).getString("platform").equals("tv"),"real released feed signature verifies with bundled certificate on API22");

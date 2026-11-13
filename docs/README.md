@@ -25,6 +25,7 @@
 | [QUARK-VALIDATION.md](QUARK-VALIDATION.md) | 独立运行诊断、真实授权、目录完整性与收藏关联的验收步骤 | 验证夸克连接是否真的可用 |
 | [QUARK-WEB-CHECK.md](QUARK-WEB-CHECK.md) | 应用内网页登录、预览下载、目录验收与早期独立工具记录 | 验证不依赖Skill的网页登录路线 |
 | [REQUIREMENTS.md](REQUIREMENTS.md) | 产品范围、功能要求、数据与安全要求、体验要求、验收标准（含状态标记） | 判断某个功能该不该做、是否已完成 |
+| [DUAL-UI-MOTION.md](DUAL-UI-MOTION.md) | 双端页面/导航动效、详情滚动背景与文件夹显示修复 | 查看本轮实现与实际验证边界 |
 | [DESIGN.md](DESIGN.md) | 视觉令牌、排版规则、PS5 式聚焦交互、动效、可访问性、组件约定 | 改界面之前 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 分层、IPC 清单、数据库结构与迁移、备份恢复、安全模型、目录树 | 改数据层/主进程之前 |
 | [VERIFICATION.md](VERIFICATION.md) | 构建与测试命令、用例与需求的对应关系、截图清单、已知限制 | 交付前、排查回归 |

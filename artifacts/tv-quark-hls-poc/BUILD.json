@@ -1,0 +1,21 @@
+{
+  "version": "0.3.0-alpha.7",
+  "developmentBuild": true,
+  "minSdk": 21,
+  "targetSdk": 35,
+  "v1SignatureVerified": true,
+  "nativeLibraries": true,
+  "cpuAbiIndependent": false,
+  "nativeAbis": [
+    "armeabi-v7a",
+    "x86"
+  ],
+  "player": "LibVLC 3.7.7",
+  "source": "1b1ad730ce1af01037ec1f51f727c0868ed62abb",
+  "run": "43397867773",
+  "sha256": "aab6f12a665559889321f6cc4509b1095ea5f73a2eed37f437e85fb1957f3504",
+  "bytes": 48817733,
+  "actualTelevisionVerified": false,
+  "signerSha256": "be6ca6625b1cc4457d0e016fe8c7b300cd0285cf2cee0ae9ac9e8ed79a8249ad",
+  "pinnedSignerVerified": true
+}

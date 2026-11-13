@@ -22,7 +22,7 @@ final class RemoteUi {
     static void button(Button button){
         button.setMinHeight(dp(button.getContext(),48));button.setFocusable(true);
         StateListDrawable states=new StateListDrawable();for(boolean focused:new boolean[]{true,false}){GradientDrawable surface=new GradientDrawable();surface.setColor(focused?0xff282f3b:0x00101216);surface.setCornerRadius(dp(button.getContext(),6));if(focused)surface.setStroke(dp(button.getContext(),2),MainActivity.ACCENT);if(!focused){GradientDrawable selected=new GradientDrawable();selected.setColor(0x40282f3b);selected.setCornerRadius(dp(button.getContext(),6));states.addState(new int[]{android.R.attr.state_selected},selected);}states.addState(focused?new int[]{android.R.attr.state_focused}:new int[]{},surface);}button.setBackground(states);
-        button.setTag(R.id.remote_focus_key,button.getText().toString().replaceAll("^(个人评分|观看状态|更新来源|自动检查更新|资料语言|类型)：.*$","$1"));button.setOnFocusChangeListener((view,focused)->{if(focused)view.post(()->view.requestRectangleOnScreen(new Rect(0,0,view.getWidth(),view.getHeight()),false));});
+        button.setTag(R.id.remote_focus_key,button.getText().toString().replaceAll("^(个人评分|观看状态|更新来源|自动检查更新|资料语言|类型)：.*$","$1"));button.setOnFocusChangeListener((view,focused)->{UiMotion.focus(view,focused);if(focused)view.post(()->view.requestRectangleOnScreen(new Rect(0,0,view.getWidth(),view.getHeight()),false));});
     }
     static void input(EditText input){
         input.setShowSoftInputOnFocus(false);input.setContentDescription("确认键打开键盘；返回键收起键盘");

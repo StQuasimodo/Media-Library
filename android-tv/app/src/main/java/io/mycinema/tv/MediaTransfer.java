@@ -16,7 +16,10 @@ import okhttp3.Response;
 
 /** Streaming policy, independent of DAV directory handling and the decoder. */
 final class MediaTransfer {
-    interface Provider {MediaSources.Lease resolve(JSONObject file,NetworkScope scope) throws Exception;}
+    interface Provider {
+        MediaSources.Lease resolve(JSONObject file,NetworkScope scope) throws Exception;
+        default MediaSources.Lease refresh(JSONObject file,MediaSources.Lease rejected,NetworkScope scope) throws Exception {return resolve(file,scope);}
+    }
     static final long SEGMENT_BYTES=4L*1024*1024;
     private final Provider provider;
     private final LinkedHashMap<String,Slot> leases=new LinkedHashMap<>(8,0.75f,true);
@@ -36,7 +39,10 @@ final class MediaTransfer {
         // Resolve under a per-file lock, never while holding the whole cache lock.
         // A concurrent 403 for the same rejected lease reuses an already-refreshed address.
         try{synchronized(slot){scope.check();if(closed)throw new IOException("Transport stopped");
-            if(slot.lease==null||slot.lease==rejected){MediaSources.Lease fresh=provider.resolve(file,scope);scope.check();if(closed)throw new IOException("Transport stopped");slot.lease=fresh;}
+            if(slot.lease==null||slot.lease==rejected||slot.lease.expired()){
+                MediaSources.Lease fresh=slot.lease==null?provider.resolve(file,scope):provider.refresh(file,slot.lease,scope);
+                scope.check();if(closed)throw new IOException("Transport stopped");slot.lease=fresh;
+            }
             return slot.lease;
         }}finally{synchronized(this){slot.users--;trim();}}
     }
@@ -56,7 +62,7 @@ final class MediaTransfer {
             NetworkScope.Exchange exchange=scope.open(MediaSources.HTTP,request.build());Response response=exchange.response;
             if(response.code()<300||response.code()>=400)return exchange;
             String location=response.header("Location");HttpUrl next=location==null?null:url.resolve(location);exchange.close();
-            if(next==null||(lease.url.isHttps()&&!next.isHttps())||!next.username().isEmpty()||!next.password().isEmpty())throw new IOException("Invalid media redirect");url=next;
+            if(next==null||lease.sameOriginOnly&&!MediaSources.sameOrigin(lease.url,next)||(lease.url.isHttps()&&!next.isHttps())||!next.username().isEmpty()||!next.password().isEmpty())throw new IOException("Invalid media redirect");url=next;
         }
         throw new IOException("Too many media redirects");
     }
@@ -108,7 +114,7 @@ final class MediaTransfer {
     }
 
     void serve(JSONObject file,String header,boolean head,OutputStream output,NetworkScope scope) throws IOException {
-        boolean started=false;NetworkScope.Exchange current=null;
+        boolean started=false;NetworkScope.Exchange current=null;InputStream prefetched=null;
         try{
             Range range;try{range=header.isEmpty()?null:new Range(header);}catch(IllegalArgumentException invalid){headers(output,416,0,"",null);return;}
             boolean quark=Json.text(file,"source").equals("quark");
@@ -126,6 +132,10 @@ final class MediaTransfer {
             String upstreamRange=quark?bytes(from,firstEnd):header;
             current=open(file,upstreamRange,false,scope);Response response=current.response;
             if(response.code()==416){String value=response.header("Content-Range","");if(!value.matches("bytes \\*/\\d+"))value="";started=true;headers(output,416,0,value,null);return;}
+            if(file.optBoolean("_cloudHls")){
+                String type=response.header("Content-Type","").split(";")[0].trim().toLowerCase(java.util.Locale.ROOT);
+                if(!type.isEmpty()&&!java.util.Arrays.asList("video/mp4","audio/mp4","application/mp4","video/mp2t","audio/aac","audio/mpeg","application/octet-stream","binary/octet-stream","video/iso.segment","text/vtt").contains(type))throw new IOException("Unsupported HLS resource type");
+            }
             Shape shape=new Shape(response);long end;
             if(response.code()==206){
                 long expectedEnd=Math.min(firstEnd,shape.total-1);if(!quark&&range==null)expectedEnd=shape.total-1;
@@ -136,10 +146,17 @@ final class MediaTransfer {
                 end=shape.end;
             }
             long length=end>=from?end-from+1:-1;int code=range!=null&&response.code()==206?206:200;
+            if(file.optBoolean("_cloudHls")&&from==0){
+                java.io.PushbackInputStream peek=new java.io.PushbackInputStream(response.body().byteStream(),32);byte[] prefix=new byte[32];int count=0,limit=(int)Math.min(32,shape.end>=0?shape.end+1:32);
+                while(count<limit){int n=peek.read(prefix,count,limit-count);if(n<0)break;count+=n;}
+                String magic=new String(prefix,0,count,java.nio.charset.StandardCharsets.UTF_8).replace("\ufeff","").trim();
+                if(magic.startsWith("#EXTM3U")||magic.startsWith("<html")||magic.startsWith("<!DOCTYPE")||magic.startsWith("<?xml"))throw new IOException("Playlist or error document disguised as HLS media");
+                peek.unread(prefix,0,count);prefetched=peek;
+            }
             error(file,"");started=true;headers(output,code,length,code==206?"bytes "+from+"-"+end+"/"+shape.total:"",response);
             byte[] buffer=new byte[65536];long offset=from,partEnd=shape.end;int retries=0;
             while(!scope.cancelled()){
-                InputStream input=current.response.body().byteStream();boolean dropped=false;
+                InputStream input=prefetched==null?current.response.body().byteStream():prefetched;prefetched=null;boolean dropped=false;
                 while(!scope.cancelled()){
                     int limit=partEnd>=0?(int)Math.min(buffer.length,partEnd-offset+1):buffer.length;if(limit==0)break;
                     int count;try{count=input.read(buffer,0,limit);if(count<0&&partEnd>=0&&offset<=partEnd)throw new IOException("Media ended early");}

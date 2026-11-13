@@ -1,5 +1,4 @@
-import {backdropUrl,backdropLabel} from '../lib/format';
-import {validRelatedTv} from '@shared/relatedTv';
+import {backdropUrl} from '../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { MediaResource, WatchStatus } from '@shared/types';
@@ -25,6 +24,7 @@ import {
   imageUrl,
   statusLabel,
 } from '../lib/format';
+import { useCinematicScroll } from '../lib/useCinematicScroll';
 import { prefersReducedMotion } from '../lib/motion';
 import {
   ConfirmRemoveFilmDialog,
@@ -56,6 +56,8 @@ export function FilmDetailPage() {
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const stageRef = useRef<HTMLElement | null>(null);
+  useCinematicScroll(stageRef, detail.data?.film.id);
   const resourcesRef = useRef<HTMLElement | null>(null);
 
   // Deep link from the home stage's "管理资源" action.
@@ -154,7 +156,7 @@ export function FilmDetailPage() {
 
   return (
     <div className="film-detail">
-      <section className={`film-stage${backdrop || poster ? '' : ' no-art'}`}>
+      <section ref={stageRef} className={`film-stage${backdrop || poster ? '' : ' no-art'}`}>
         <HeroBackdrop src={backdrop} />
         <div className="film-stage-scrim" />
         <Link to="/library" className="stage-back"><Icon name="chevronLeft" size={13} /> 返回影视库</Link>
@@ -177,8 +179,6 @@ export function FilmDetailPage() {
               <div className="film-original">{film.originalTitle}</div>
             ) : null}
 
-            {validRelatedTv(film.series?.relatedTv)&&film.series?.franchise===undefined?<p className="artwork-source">自动关联至《{film.series.relatedTv.title}》（由片名与演职员信息推断，可手动整理）</p>:null}
-            {backdropLabel(film)?<p className="artwork-source">{backdropLabel(film)}</p>:null}
             <div className="film-meta">
               {film.year ? <span>{film.year}</span> : null}
               {film.runtime ? <span className="meta-sep">{formatRuntime(film.runtime)}</span> : null}
@@ -194,7 +194,6 @@ export function FilmDetailPage() {
               ) : null}
             </div>
 
-            {entry.favoriteReason ? <blockquote className="film-dedication"><span className="visually-hidden">收藏理由：</span>{entry.favoriteReason}</blockquote> : null}
             <div className="film-actions">
               <button type="button" className="btn cinema-primary" onClick={() => resourcesRef.current?.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'instant' : 'smooth' })}>
                 查看资源 <Icon name="chevronRight" size={14} />

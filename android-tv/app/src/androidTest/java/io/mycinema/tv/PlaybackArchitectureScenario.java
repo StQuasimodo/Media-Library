@@ -47,6 +47,21 @@ final class PlaybackArchitectureScenario {
             check(state.optInt("expiredReplies")==2&&state.optInt("downloads")==downloads+1&&aa.length==64&&Arrays.equals(aa,bb),"simultaneous403s renew the rejected lease once");Json.put(report,"concurrentExpirySingleRefresh",true);
         }finally{pair.shutdownNow();control("none");}
 
+        // Execute production MediaTransfer: expiry refreshes before any 401/403 is needed.
+        MediaSources leaseBackend=new MediaSources(context);java.util.concurrent.atomic.AtomicInteger resolutions=new java.util.concurrent.atomic.AtomicInteger();
+        MediaTransfer expiring=new MediaTransfer((target,scope)->{
+            MediaSources.Lease lease=leaseBackend.withScope(scope).resolve(target);
+            return resolutions.incrementAndGet()==1?new MediaSources.Lease(lease.url,lease.headers,lease::requestHeaders,LeaseLifetime.quark("0",System.currentTimeMillis(),System.nanoTime())):lease;
+        });
+        try(NetworkScope owned=new NetworkScope()){
+            java.io.ByteArrayOutputStream first=new java.io.ByteArrayOutputStream(),second=new java.io.ByteArrayOutputStream(),third=new java.io.ByteArrayOutputStream();
+            expiring.serve(entry.json(),"bytes=1000-1063",false,first,owned);
+            expiring.serve(entry.json(),"bytes=1000-1063",false,second,owned);
+            expiring.serve(entry.json(),"bytes=1000-1063",false,third,owned);
+            check(resolutions.get()==2&&Arrays.equals(first.toByteArray(),second.toByteArray())&&Arrays.equals(second.toByteArray(),third.toByteArray()),"expired lease refreshed proactively once; valid replacement reused with byte-exact output");
+            Json.put(report,"proactiveLeaseRefreshByteExact",true);
+        }finally{expiring.close();}
+
         // Use a fresh transport to force its lease API call to block, then stop the real server.
         MediaSources backend=new MediaSources(context);QuarkDavTree tree=new QuarkDavTree("tv-root","取消验证",(id,scope)->backend.withScope(scope).rawQuarkList(id));
         PlaybackRelay server=new PlaybackRelay(backend,tree);ExecutorService reader=Executors.newSingleThreadExecutor();

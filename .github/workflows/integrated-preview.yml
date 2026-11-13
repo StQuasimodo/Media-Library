@@ -1,6 +1,11 @@
 name: Integrated Quark preview
 on:
   workflow_dispatch:
+    inputs:
+      probe_live_quark:
+        description: Also probe the external Quark login page (requires service availability)
+        type: boolean
+        default: true
 permissions:
   contents: read
 jobs:
@@ -28,7 +33,15 @@ jobs:
           pnpm test
           pnpm build
       - name: Check actual application and integrated Quark login
-        run: pnpm test:desktop --quark-fixture --quark-web-probe
+        env:
+          PROBE_LIVE_QUARK: ${{ inputs.probe_live_quark }}
+        run: |
+          if ($env:PROBE_LIVE_QUARK -eq 'true') {
+            pnpm test:desktop --quark-fixture --quark-web-probe
+          } else {
+            Write-Host "UI regression with controlled Quark data; external login availability is not tested."
+            pnpm test:desktop --quark-fixture
+          }
       - name: Check controlled Quark scan, matching, resource details and incremental updates
         run: pnpm test:desktop --quark-sync-fixture
       - name: Preserve real Windows credentials through an application upgrade

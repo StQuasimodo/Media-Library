@@ -45,10 +45,10 @@ final class PlaybackRelay implements Closeable {
     String password(){return password;}
     String authorization(){return "Basic "+Base64.encodeToString((username()+":"+password).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);}
     final class Session implements Closeable {
-        final MediaSources.Lease endpoint;final String fileId,auth;private final boolean directory;
+        final MediaSources.Lease endpoint;final String fileId,auth;private final boolean directory;private volatile boolean background;
         private final Set<NetworkScope> owned=new HashSet<>();private boolean ended;
         private Session(String fileId,HttpUrl url,boolean directory){this.fileId=fileId;this.directory=directory;auth="Basic "+Base64.encodeToString(((directory?"listing:":"playback:")+UUID.randomUUID()).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",auth);endpoint=new MediaSources.Lease(url,headers);}
-        private synchronized void attach(NetworkScope scope) throws IOException {if(ended)throw new IOException("Playback session ended");owned.add(scope);}
+        private synchronized void attach(NetworkScope scope) throws IOException {if(ended)throw new IOException("Playback session ended");if(background)scope.background();owned.add(scope);}
         private synchronized void detach(NetworkScope scope){owned.remove(scope);}
         @Override public void close(){
             synchronized(sessions){sessions.remove(auth);}
@@ -61,6 +61,7 @@ final class PlaybackRelay implements Closeable {
     Session openDirectorySession(String folderId,HttpUrl endpoint) throws IOException {
         return openSession(folderId,endpoint,true);
     }
+    Session openDirectorySession(String folderId,HttpUrl endpoint,boolean background) throws IOException {Session session=openSession(folderId,endpoint,true);session.background=background;return session;}
     private Session openSession(String fileId,HttpUrl endpoint,boolean directory) throws IOException {
         synchronized(sessions){if(closed||sessions.size()>=4)throw new IOException("Playback session unavailable");Session session=new Session(fileId,endpoint,directory);sessions.put(session.auth,session);return session;}
     }

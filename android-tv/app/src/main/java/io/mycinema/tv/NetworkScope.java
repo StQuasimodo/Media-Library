@@ -15,6 +15,9 @@ final class NetworkScope implements Closeable {
     private final Set<Call> calls=new HashSet<>();
     private final Set<Closeable> resources=new HashSet<>();
     private boolean closed;
+    private volatile int quarkPriority=QuarkRequestGate.INTERACTIVE;
+    int quarkPriority(){return quarkPriority;}
+    NetworkScope background(){quarkPriority=QuarkRequestGate.BACKGROUND;return this;}
 
     synchronized void check() throws IOException {
         if(closed||Thread.currentThread().isInterrupted())throw new IOException("Request cancelled");

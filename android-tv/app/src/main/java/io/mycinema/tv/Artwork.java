@@ -61,20 +61,48 @@ final class Artwork {
             Json.put(result,kind+"Path",path);
         }return result;
     }
-    void load(ImageView target,String path,int width,int height){
-        String key=path+":"+width+":"+height;target.setTag(key);target.setImageDrawable(null);
-        if(closed||path.isEmpty())return;Bitmap cached=bitmaps.get(key);if(cached!=null){target.setImageBitmap(cached);return;}
+    void load(ImageView target,String path,int width,int height){load(target,path,width,height,false,false);}
+    private void display(ImageView target,Bitmap bitmap,boolean fade){
+        android.graphics.drawable.Drawable old=target.getDrawable();
+        if(fade&&old!=null&&UiMotion.enabled(target.getContext())){
+            if(old instanceof android.graphics.drawable.TransitionDrawable){android.graphics.drawable.TransitionDrawable transition=(android.graphics.drawable.TransitionDrawable)old;old=transition.getDrawable(transition.getNumberOfLayers()-1);}
+            android.graphics.drawable.TransitionDrawable transition=new android.graphics.drawable.TransitionDrawable(new android.graphics.drawable.Drawable[]{old,new android.graphics.drawable.BitmapDrawable(target.getResources(),bitmap)});transition.setCrossFadeEnabled(true);target.setImageDrawable(transition);transition.startTransition(320);
+        }else target.setImageBitmap(bitmap);
+    }
+    private void load(ImageView target,String path,int width,int height,boolean blur,boolean fade){
+        String key=path+(blur?":blur":"")+":"+width+":"+height;if(key.equals(target.getTag())&&target.getDrawable()!=null)return;target.setTag(key);if(!fade||path.isEmpty())target.setImageDrawable(null);
+        if(closed||path.isEmpty())return;Bitmap cached=bitmaps.get(key);if(cached!=null){display(target,cached,fade);return;}
         workers.execute(()->{
-            if(closed||!key.equals(target.getTag()))return;File file=resolve(path);if(file==null||!file.isFile())return;
-            BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeFile(file.getPath(),options);
-            options.inSampleSize=1;while(options.outWidth/options.inSampleSize>width*2||options.outHeight/options.inSampleSize>height*2)options.inSampleSize*=2;
-            options.inJustDecodeBounds=false;options.inPreferredConfig=Bitmap.Config.RGB_565;Bitmap bitmap=BitmapFactory.decodeFile(file.getPath(),options);
-            if(bitmap==null)return;if(closed){bitmap.recycle();return;}bitmaps.put(key,bitmap);
-            main.post(()->{if(!closed&&key.equals(target.getTag()))target.setImageBitmap(bitmap);});
+            if(closed||!key.equals(target.getTag()))return;File file=resolve(path);Bitmap bitmap=null;
+            if(file!=null&&file.isFile()){
+                BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeFile(file.getPath(),options);
+                options.inSampleSize=1;while(options.outWidth/options.inSampleSize>width*2||options.outHeight/options.inSampleSize>height*2)options.inSampleSize*=2;
+                options.inJustDecodeBounds=false;options.inPreferredConfig=Bitmap.Config.RGB_565;bitmap=BitmapFactory.decodeFile(file.getPath(),options);
+                if(bitmap!=null&&blur){Bitmap softened=softened(bitmap);bitmap.recycle();bitmap=softened;}
+            }
+            if(closed){if(bitmap!=null)bitmap.recycle();return;}final Bitmap ready=bitmap;if(ready!=null)bitmaps.put(key,ready);
+            main.post(()->{if(!closed&&key.equals(target.getTag())){if(ready==null)target.setImageDrawable(null);else display(target,ready,fade);}});
         });
     }
+    static Bitmap softened(Bitmap source){
+        float ratio=Math.min(160f/source.getWidth(),90f/source.getHeight());int width=Math.max(1,Math.round(source.getWidth()*ratio)),height=Math.max(1,Math.round(source.getHeight()*ratio));Bitmap small=Bitmap.createScaledBitmap(source,width,height,false);int[] pixels=new int[width*height],temp=new int[pixels.length];small.getPixels(pixels,0,width,0,0,width,height);if(small!=source)small.recycle();
+        for(int pass=0;pass<2;pass++)for(int axis=0;axis<2;axis++){
+            int length=axis==0?width:height,lines=axis==0?height:width;
+            for(int line=0;line<lines;line++){
+                int red=0,green=0,blue=0;
+                for(int offset=-3;offset<=3;offset++){int point=Math.max(0,Math.min(length-1,offset)),color=pixels[axis==0?line*width+point:point*width+line];red+=(color>>16)&255;green+=(color>>8)&255;blue+=color&255;}
+                for(int point=0;point<length;point++){
+                    temp[axis==0?line*width+point:point*width+line]=0xff000000|(red/7<<16)|(green/7<<8)|blue/7;
+                    int left=Math.max(0,point-3),right=Math.min(length-1,point+4),remove=pixels[axis==0?line*width+left:left*width+line],add=pixels[axis==0?line*width+right:right*width+line];red+=((add>>16)&255)-((remove>>16)&255);green+=((add>>8)&255)-((remove>>8)&255);blue+=(add&255)-(remove&255);
+                }
+            }
+            int[] swap=pixels;pixels=temp;temp=swap;
+        }
+        return Bitmap.createBitmap(pixels,width,height,Bitmap.Config.RGB_565);
+    }
     static String backgroundPath(JSONObject film){String path=Json.text(film,"backdropPath"),external=Json.text(film,"externalId");if(!path.startsWith("backdrop/"))return "";if(external.matches("[0-9]+:season:[0-9]+")){String[] id=external.split(":");if(!path.startsWith("backdrop/manual/")&&!path.startsWith("backdrop/season/"+id[0]+"-"+id[2]+"/")&&!path.startsWith("backdrop/series/"+id[0]+"/"))return "";}return path;}
-    void background(ImageView view,JSONObject film){view.setAlpha(1f);load(view,backgroundPath(film),960,540);}
+    void background(ImageView view,JSONObject film){view.setAlpha(1f);load(view,backgroundPath(film),960,540,false,true);}
+    void blurredBackground(ImageView view,JSONObject film){load(view,backgroundPath(film),160,90,true,false);}
     void preview(ImageView view,String address,int width,int height){
         view.setImageDrawable(null);String key="preview:"+address;view.setTag(key);if(closed||address.isEmpty())return;
         workers.execute(()->{if(closed||!key.equals(view.getTag()))return;try{String path=store(address,"poster");main.post(()->{if(!closed&&key.equals(view.getTag()))load(view,path,width,height);});}catch(Exception ignored){}});

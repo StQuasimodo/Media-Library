@@ -3,6 +3,7 @@ import argparse
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import re
 from pathlib import Path
 import ssl
 import struct
@@ -44,6 +45,7 @@ def serve(root, log):
              'slowListStarts': 0, 'slowDavStarts': 0}
     lock = threading.Lock()
     expired_pair = threading.Barrier(2)
+    cloud_expired_pair = threading.Barrier(2)
     log.parent.mkdir(parents=True, exist_ok=True)
 
     class Handler(BaseHTTPRequestHandler):
@@ -79,6 +81,30 @@ def serve(root, log):
             self.wfile.write(xml)
 
         def do_POST(self):
+            if urlparse(self.path).path == '/1/clouddrive/file/v2/play/project':
+                if '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
+                    self.reply({},401)
+                    return
+                body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
+                if body.get('fid') != 'movie-file' or body.get('supports') != 'fmp4_av,m3u8':
+                    self.reply({},400)
+                    return
+                with lock:
+                    state['cloudQueries']=state.get('cloudQueries',0)+1
+                    state['cloudLeases']=state.get('cloudLeases',0)+1
+                    cloud_lease=state['cloudLeases']
+                    cloud=state.get('cloudMode','normal')
+                if cloud=='denied':
+                    self.reply({'status':403,'code':403,'message':'fixture entitlement refusal'})
+                    return
+                if cloud=='empty':
+                    self.reply({'status':200,'code':0,'data':{'video_list':[]}})
+                    return
+                def version(res,fmt,w,h,**flags):
+                    return {'resolution':res,'video_info':{'format':fmt,'width':w,'height':h,'codec':'h264','fps':24,'bitrate':3500000,'audio':{'codec':'aac','channels':2},'url':'https://drive-pc.quark.cn/cloud/'+('master.m3u8' if fmt=='m3u8' else 'video.mp4')+'?token=cloud-fixture-private&Signature='+str(cloud_lease)+'&Expires='+str(int(time.time())+3600),'success':True,'finish':True,**flags}}
+                rows=[version('4k','m3u8',1920,1080),version('high','fmp4_av',1280,720),version('2k','m3u8',2560,1440,finish=False),{**version('super','mp4',1920,1080),'accessable':False}]
+                self.reply({'status':200,'code':0,'data':{'video_list':rows}})
+                return
             if urlparse(self.path).path == '/1/clouddrive/file/download':
                 if '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
                     self.reply({},401)
@@ -100,6 +126,88 @@ def serve(root, log):
                 self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+filename+'?lease='+str(number)}]})
             else:
                 self.reply({},404)
+
+        def cloud_media(self, uri, head=False):
+            query=parse_qs(uri.query)
+            try:signature=int(query.get('Signature',['-1'])[0])
+            except ValueError:signature=-1
+            with lock:
+                state['cloudGets']=state.get('cloudGets',0)+1
+                expired=signature==state.get('expiredCloudLease',-2)
+                if expired:state['cloudExpiredReplies']=state.get('cloudExpiredReplies',0)+1
+            if self.headers.get('Authorization') or '__puus=tv-playback-fixture' not in self.headers.get('Cookie','') or self.headers.get('Referer')!='https://pan.quark.cn/' or not self.headers.get('User-Agent'):
+                with lock:state['cloudHeaderErrors']=state.get('cloudHeaderErrors',0)+1
+                self.reply({},401)
+                return
+            if signature<0 or expired:
+                if expired and state['fault']=='cloud_expire_pair':
+                    try:cloud_expired_pair.wait(timeout=5)
+                    except threading.BrokenBarrierError:pass
+                self.reply({},403)
+                return
+            filename=uri.path[len('/cloud/'):]
+            if '/' in filename or filename in ('','..'):
+                self.reply({},404)
+                return
+            resource_fault=state.get('cloudResourceFault','normal')
+            if filename=='init.mp4' and resource_fault=='redirect':
+                self.send_response(302);self.send_header('Location','https://example.invalid/forbidden.mp4');self.send_header('Content-Length','0');self.end_headers();return
+            suffix='?Signature='+str(signature)+'&Expires='+str(int(time.time())+3600)
+            if filename=='master.m3u8':
+                body=('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=4000000,RESOLUTION=1920x1080,CODECS="avc1.42c028,mp4a.40.2"\nmedia.m3u8'+suffix+'\n').encode()
+            elif filename=='media.m3u8':
+                text=(root/'cloud/media.m3u8').read_text()
+                lines=[]
+                for line in text.splitlines():
+                    if 'URI="init.mp4"' in line:line=line.replace('URI="init.mp4"','URI="init.mp4'+suffix+'"')
+                    elif line and not line.startswith('#'):line+=suffix
+                    lines.append(line)
+                body=('\n'.join(lines)+'\n').encode()
+            else:
+                file=root/'cloud'/filename
+                if not file.is_file() or file.suffix not in ('.mp4','.m4s'):
+                    self.reply({},404)
+                    return
+                body=file.read_bytes()
+                if filename=='init.mp4' and resource_fault=='disguised':body=b'#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nhttps://example.invalid/forbidden.mp4\n'
+            if filename.endswith('.m3u8'):
+                if filename=='media.m3u8' and state.get('cloudShape','normal')=='changed':body=body.replace(b'#EXTINF:',b'#EXT-X-DISCONTINUITY\n#EXTINF:',1)
+                self.send_response(200);self.send_header('Content-Type','application/vnd.apple.mpegurl');self.send_header('Content-Length',str(len(body)));self.end_headers()
+                slow=filename=='media.m3u8' and state['fault']=='cloud_slow_manifest'
+                if slow:
+                    with lock:state['cloudSlowManifestStarts']=state.get('cloudSlowManifestStarts',0)+1
+                    time.sleep(10)
+                if not head:
+                    try:self.wfile.write(body)
+                    except (BrokenPipeError,ConnectionResetError,ssl.SSLEOFError):pass
+                return
+            start,end=0,len(body)-1;status=200
+            range_value=self.headers.get('Range')
+            if range_value:
+                match=re.fullmatch(r'bytes=(\d*)-(\d*)',range_value)
+                if not match or not any(match.groups()):self.reply({},416);return
+                if not match[1]:start=max(0,len(body)-int(match[2]))
+                else:start=int(match[1]);end=min(end,int(match[2])) if match[2] else end
+                if start>=len(body) or end<start:self.reply({},416);return
+                status=206
+            with lock:
+                state['cloudBinaryGets']=state.get('cloudBinaryGets',0)+1
+                if not range_value or not re.fullmatch(r'bytes=\d+-\d+',range_value):state['cloudUnboundedGets']=state.get('cloudUnboundedGets',0)+1
+                state['maxCloudRangeBytes']=max(state.get('maxCloudRangeBytes',0),end-start+1)
+                target=state.get('cloudDropSegment')
+                drop=not head and filename.endswith('.m4s') and (not target or filename==target) and end-start+1>65536 and state['fault']=='cloud_drop_expire' and state.get('cloudDrops',0)==0
+                if drop:
+                    state['cloudDrops']=1
+                    state['expiredCloudLease']=signature
+            self.send_response(status);self.send_header('Content-Type','video/mp4');self.send_header('Content-Length',str(end-start+1));self.send_header('Accept-Ranges','bytes');self.send_header('ETag','"cloud-static-v1"')
+            if status==206:self.send_header('Content-Range','bytes '+str(start)+'-'+str(end)+'/'+str(len(body)))
+            self.end_headers()
+            if not head:
+                try:
+                    if drop:
+                        self.wfile.write(body[start:start+65536]);self.wfile.flush();self.close_connection=True;return
+                    self.wfile.write(body[start:end+1])
+                except (BrokenPipeError,ConnectionResetError,ssl.SSLEOFError):pass
 
         def do_HEAD(self):
             self.do_GET()
@@ -189,22 +297,52 @@ def serve(root, log):
             query = parse_qs(uri.query)
             if self.server.server_port == 8765:
                 if uri.path == '/control':
+                    cloud=query.get('cloud',[state.get('cloudMode','normal')])[0]
+                    if cloud not in ['normal','empty','denied']:
+                        self.reply({'error':'invalid cloud fixture mode'},400)
+                        return
+                    shape=query.get('cloudShape',[state.get('cloudShape','normal')])[0]
+                    resource=query.get('cloudResource',[state.get('cloudResourceFault','normal')])[0]
+                    if shape not in ['normal','changed'] or resource not in ['normal','disguised','redirect']:
+                        self.reply({},400);return
+                    state['cloudShape']=shape;state['cloudResourceFault']=resource
+                    state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
+                    target=None
+                    if 'cloudDropAtMs' in query:
+                        try:target_time=int(query['cloudDropAtMs'][0])/1000
+                        except ValueError:self.reply({},400);return
+                        if not 0<=target_time<180:self.reply({},400);return
+                        position=0.0;duration=0.0
+                        for line in (root/'cloud/media.m3u8').read_text().splitlines():
+                            if line.startswith('#EXTINF:'):duration=float(line.split(':',1)[1].split(',',1)[0])
+                            elif line and not line.startswith('#'):
+                                if position<=target_time<position+duration:target=line;break
+                                position+=duration
+                        if target is None:self.reply({},400);return
                     with lock:
                         state['mode'] = mode
                         state['fault']=fault
                         state['drops']=0
                         state['expiredLease']=state['downloads'] if fault=='expire_concurrent' else -1
                         state['expiredReplies']=0
+                        state['expiredCloudLease']=state.get('cloudLeases',-1) if fault in ['cloud_expire','cloud_expire_pair'] else -2
+                        state['cloudExpiredReplies']=0
+                        state['cloudDrops']=0
+                        state['cloudDropSegment']=target
                         state['quarkGets']=0
                         state['unboundedQuarkGets']=0
                         state['maxQuarkRangeBytes']=0
                         if fault=='expire_concurrent':expired_pair.reset()
+                        if fault=='cloud_expire_pair':cloud_expired_pair.reset()
                 self.reply(dict(state))
+                return
+            if uri.path.startswith('/cloud/'):
+                self.cloud_media(uri, self.command=='HEAD')
                 return
             if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/'):
                 self.media(uri)

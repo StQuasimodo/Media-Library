@@ -120,6 +120,3 @@ export function backdropUrl(film:import('@shared/types').Film):string|null {
   if(id&&path&&!path.startsWith('backdrop/manual/')&&!path.startsWith(`backdrop/season/${id[1]}-${id[2]}/`)&&!path.startsWith(`backdrop/series/${id[1]}/`))return null;
   return imageUrl(path);
 }
-export function backdropLabel(film:import('@shared/types').Film):string|null {
-  return backdropUrl(film)&&film.backdropPath?.startsWith('backdrop/series/')?'全剧图库按季分配 · 季份未标注':null;
-}

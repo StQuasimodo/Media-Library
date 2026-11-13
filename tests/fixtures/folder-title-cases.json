@@ -1,0 +1,38 @@
+[
+  {
+    "input": "哈利·波特（系列）",
+    "expected": "哈利·波特"
+  },
+  {
+    "input": "The Matrix (Collection)",
+    "expected": "The Matrix"
+  },
+  {
+    "input": "Doctor Who (2005) (Series)",
+    "expected": "Doctor Who 2005"
+  },
+  {
+    "input": "剧集（欧美）",
+    "expected": "剧集 欧美"
+  },
+  {
+    "input": "Batman (1989) (3 films)",
+    "expected": "Batman 1989"
+  },
+  {
+    "input": "手动专题",
+    "expected": "手动专题"
+  },
+  {
+    "input": "(500) Days of Summer",
+    "expected": "(500) Days of Summer"
+  },
+  {
+    "input": "某（特别）电影",
+    "expected": "某（特别）电影"
+  },
+  {
+    "input": "Foo（共3部作品）",
+    "expected": "Foo"
+  }
+]

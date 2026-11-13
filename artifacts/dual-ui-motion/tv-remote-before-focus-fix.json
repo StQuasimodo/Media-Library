@@ -1,0 +1,20 @@
+{
+  "result": "failed",
+  "error": "java.lang.AssertionError: quick rating contains no editable keyboard field",
+  "checks": [
+    "DPAD traverses real poster grid",
+    "confirm opens selected film",
+    "back restores exact selected poster and focus",
+    "menu search offers remote choices without keyboard",
+    "existing-title collection search needs no text input",
+    "single-result grid reached from toolbar",
+    "one confirm opens the single filtered result",
+    "search reset reachable through DPAD menu"
+  ],
+  "remoteKeyEvents": 21,
+  "buildRun": "43450943633",
+  "apiLevel": 22,
+  "textInputUsedForQuickActions": false,
+  "physicalRemoteVerified": false,
+  "voiceServiceVerified": false
+}

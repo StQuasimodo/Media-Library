@@ -12,6 +12,8 @@ export function AppShell({
   onOpenImport: () => void;
 }) {
   const location = useLocation();
+  const navRef = useRef<HTMLElement | null>(null);
+  const cursorRef = useRef<HTMLSpanElement | null>(null);
   const pageRef = useRef<HTMLElement | null>(null);
   const [pageScrolled, setPageScrolled] = useState(false);
   const title = resolveTitle(location.pathname);
@@ -25,6 +27,28 @@ export function AppShell({
     setPageScrolled(false);
   }, [location.pathname]);
 
+  useLayoutEffect(() => {
+    const nav = navRef.current, cursor = cursorRef.current;
+    if (!nav || !cursor) return;
+    let live = true, frame = 0;
+    const place = () => {
+      if (!live) return;
+      const active = nav.querySelector<HTMLElement>('[aria-current="page"], [data-context="true"]');
+      cursor.style.opacity = active ? '1' : '0';
+      if (active) {
+        cursor.style.width = `${active.offsetWidth + 24}px`;
+        cursor.style.transform = `translate3d(${active.offsetLeft - 12}px, -50%, 0)`;
+      }
+      frame = requestAnimationFrame(() => cursor.dataset.ready = 'true');
+    };
+    const observer = new ResizeObserver(place);
+    observer.observe(nav);
+    for (const item of nav.children) if (item !== cursor) observer.observe(item);
+    void document.fonts.ready.then(place);
+    place();
+    return () => { live = false; cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [location.pathname]);
+
   useEffect(() => { document.title = `${title} · My Cinema`; }, [title]);
 
   return (
@@ -34,7 +58,8 @@ export function AppShell({
           <NavLink to="/" className="cinema-brand" aria-label="My Cinema 首页">
             <span>My Cinema</span><span className="cinema-brand-sub">私人电影收藏</span>
           </NavLink>
-          <nav className="cinema-nav" aria-label="主导航">
+          <nav ref={navRef} className="cinema-nav" aria-label="主导航">
+            <span ref={cursorRef} className="cinema-nav-cursor" aria-hidden="true" />
             {NAV_ITEMS.filter((item) => item.to !== '/settings').map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className="cinema-nav-link"
                 data-context={filmMode && item.to === '/library'}
@@ -50,7 +75,7 @@ export function AppShell({
           </div>
         </header>
         <main className="page" ref={pageRef} onScroll={(event) => setPageScrolled(event.currentTarget.scrollTop > 64)}>
-          <div className="page-inner" data-wide={immersive}><Outlet /></div>
+          <div key={location.pathname} className="page-inner" data-wide={immersive}><Outlet /></div>
         </main>
       </div>
     </div>

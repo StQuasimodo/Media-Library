@@ -27,7 +27,14 @@ final class FeaturesScenario {
     private void upgrade()throws Exception{
         check(context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionCode==BuildConfig.VERSION_CODE&&BuildConfig.VERSION_CODE>8,"actual same-signer published code8 to current version upgrade");
         JSONObject before=Json.object(read(new File(context.getFilesDir(),"upgrade-baseline.json"))),after=new TvBackup(context).snapshot();before.remove("createdAt");after.remove("createdAt");
-        check(canonical(before).equals(canonical(after)),"all collection, association and progress backup data preserved byte-for-value");
+        JSONObject previousFormat=Json.copy(after);previousFormat.remove("cloudProgress");Json.put(previousFormat,"formatVersion",2);
+        check(canonical(before).equals(canonical(previousFormat)),"all collection, association and progress backup data preserved byte-for-value");
+        check(after.optInt("formatVersion")==3&&after.getJSONArray("cloudProgress").length()==2,"upgrade produces v3 backup with both legacy cloud timelines");
+        String selector="high|1920|1080|h264|aac|2|HLS",hash=CloudProgressData.key("quark:upgrade-preserved-file",selector);
+        android.content.SharedPreferences legacy=context.getSharedPreferences("cloud-hls-progress-v1",Context.MODE_PRIVATE);
+        try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){check(cloud.position("quark:upgrade-preserved-file",selector)==45555&&cloud.position("quark:upgrade-preserved-file","normal|1280|720|h264|aac|2|HLS")==22222,"legacy cloud progress migrates without merging distinct variants or original progress");}
+        check(legacy.getLong(hash+"-p",0)==45555&&legacy.getString("legacy-private-note","").equals("upgrade-private-cloud-fixture"),"legacy preference data remains intact after transactional import");
+        check(legacy.edit().putLong(hash+"-p",55555).commit()&&legacy.getLong(hash+"-p",0)==55555,"legacy preference mutation is durable before one-time import check");try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){check(cloud.position("quark:upgrade-preserved-file",selector)==45555,"reopening never reimports stale legacy preferences over SQLite progress");}finally{legacy.edit().putLong(hash+"-p",45555).commit();}
         check(new SecretStore(context).read().equals("upgrade-metadata-fixture"),"Android Keystore TMDB credential survives APK replacement");
         check(new SecretStore(context,"quark","夸克").read().equals("__puus=upgrade-account-fixture"),"encrypted Quark account survives APK replacement");
         check(new SecretStore(context,"webdav","WebDAV").read().equals("upgrade-webdav-fixture"),"encrypted WebDAV credential survives APK replacement");
@@ -47,6 +54,11 @@ final class FeaturesScenario {
         Library.Item unrelated=new Library.Item(film("神偷奶爸2","999999","movie","tmdb:collection:999999",1),new JSONObject());check(folders.universe(unrelated)==null,"similar title does not invent a spin-off relation");Json.put(spinoff.film.getJSONObject("series"),"franchise",null);check(folders.universe(spinoff)==null,"manual exclusion overrides collection relation");
     }
     private void features()throws Exception{
+        checks.addAll(QuarkTransportPolicyTest.run());
+        checks.addAll(CloudVersionPolicyTest.run());
+        checks.addAll(HlsPlaylistPolicyTest.run());
+        checks.addAll(PausedRestorePolicyTest.run());
+        checks.addAll(CloudProgressPolicyTest.run());
         allocationAndRelations();
         String envelope,cert;try(InputStream input=test.getContext().getAssets().open("tv-preview.json")){envelope=new String(TmdbClient.read(input,65536),StandardCharsets.UTF_8);}try(InputStream input=context.getAssets().open("update-signing.json")){cert=Json.object(new String(TmdbClient.read(input,16384),StandardCharsets.UTF_8)).getString("certificatePem");}
         check(TvUpdates.verify(envelope,"preview",cert).getString("platform").equals("tv"),"real released feed signature verifies with bundled certificate on API22");
@@ -67,6 +79,7 @@ final class FeaturesScenario {
             context.getSharedPreferences("MainActivity",Context.MODE_PRIVATE).edit().putBoolean("folderView",true).commit();
             MainActivity activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));test.waitForIdleSync();test.runOnMainSync(()->activity.findViewById(R.id.nav_library).performClick());test.waitForIdleSync();Thread.sleep(600);check(label(activity.getWindow().getDecorView(),"切换海报墙")!=null,"native library folder view visible and remote-focusable");Bitmap shot=test.getUiAutomation().takeScreenshot();try(FileOutputStream output=new FileOutputStream(new File(context.getFilesDir(),"features-folders.png"))){shot.compress(Bitmap.CompressFormat.PNG,100,output);}shot.recycle();test.runOnMainSync(activity::finish);test.waitForIdleSync();
         }finally{try(Library library=new Library(context)){library.restore(preserved);}context.getSharedPreferences("MainActivity",Context.MODE_PRIVATE).edit().putBoolean("folderView",false).commit();}
+        checks.addAll(new MotionScenario(test).run());
     }
-    void run(String phase,String buildRun){Bundle result=new Bundle();context=test.getTargetContext();JSONObject report=new JSONObject();try{if(phase.equals("upgrade"))upgrade();else features();Json.put(report,"result","passed");result.putString("result","passed");}catch(Throwable error){Json.put(report,"result","failed");Json.put(report,"error",error.toString());result.putString("result","failed");result.putString("error",error.toString());}Json.put(report,"checks",new JSONArray(checks));Json.put(report,"apiLevel",android.os.Build.VERSION.SDK_INT);Json.put(report,"buildRun",buildRun);Json.put(report,"phase",phase);Json.put(report,"physicalTelevisionVerified",false);try(FileOutputStream output=new FileOutputStream(new File(context.getFilesDir(),"features-"+phase+".json"))){output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));}catch(Exception error){result.putString("result","failed");}test.finish("passed".equals(result.getString("result"))?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);}
+    void run(String phase,String buildRun){Bundle result=new Bundle();context=test.getTargetContext();JSONObject report=new JSONObject();try{if(phase.equals("upgrade")){upgrade();Json.put(report,"legacyCloudProgressMigrationVerified",true);}else features();Json.put(report,"result","passed");result.putString("result","passed");}catch(Throwable error){Json.put(report,"result","failed");Json.put(report,"error",error.toString());result.putString("result","failed");result.putString("error",error.toString());}Json.put(report,"checks",new JSONArray(checks));Json.put(report,"apiLevel",android.os.Build.VERSION.SDK_INT);Json.put(report,"buildRun",buildRun);Json.put(report,"phase",phase);Json.put(report,"physicalTelevisionVerified",false);try(FileOutputStream output=new FileOutputStream(new File(context.getFilesDir(),"features-"+phase+".json"))){output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));}catch(Exception error){result.putString("result","failed");}test.finish("passed".equals(result.getString("result"))?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);}
 }

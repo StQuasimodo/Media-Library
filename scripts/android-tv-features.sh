@@ -6,6 +6,9 @@ out=.harness/tv-features
 mkdir -p "$out"
 collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/features-full.json > "$out/report.json" || true
+  for file in motion-report.json motion-detail-top.png motion-detail-scroll.png; do
+    timeout 10s adb exec-out run-as io.mycinema.tv cat "files/$file" > "$out/$file" || true
+  done
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/features-folders.png > "$out/folders.png" || true
 }
 trap collect EXIT
@@ -17,4 +20,6 @@ import json,os
 r=json.load(open('.harness/tv-features/report.json'))
 assert r['result']=='passed' and r['apiLevel']==22 and r['buildRun']==os.environ['GITHUB_RUN_ID'] and len(r['checks'])>=16
 assert not r['physicalTelevisionVerified']
+m=json.load(open('.harness/tv-features/motion-report.json'))
+assert m['result']=='passed' and m['apiLevel']==22 and len(m['checks'])>=20 and not m['physicalTelevisionVerified']
 PY

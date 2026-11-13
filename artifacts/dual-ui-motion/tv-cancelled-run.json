@@ -1,0 +1,9 @@
+{
+  "run": 43448402691,
+  "source": "3ad0760d4480a73c918e0d1d1d8ba72ea647b193",
+  "result": "cancelled",
+  "reason": "UI smoke did not complete after successful installation and 12 upgrade checks; code review found recursive layout requests in navigation callback. Cancelled to fix before retry, not accepted as a passing UI run.",
+  "fix": "16554fcd268b6117b27e63a1355fd378647c30bb",
+  "reference": "https://github.com/aosp-mirror/platform_frameworks_base/blob/android-5.1.1_r38/core/java/android/view/View.java",
+  "notes": "View.layout invokes layout listeners for LAYOUT_REQUIRED even when bounds are unchanged. Guard both listener and LayoutParams assignment; add idle-layout regression and bound smoke command."
+}

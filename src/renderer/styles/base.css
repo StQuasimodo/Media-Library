@@ -318,7 +318,7 @@ img {
 .page-inner {
   max-width: var(--content-max);
   margin: 0 auto;
-  animation: page-in var(--dur-page) var(--ease);
+  animation: scene-reveal 320ms var(--ease) both;
 }
 
 .page-inner[data-wide='true'] {

@@ -34,7 +34,15 @@
 - 31项浏览器渲染与交互检查通过，覆盖快速切页、动画中途减少动效、卡片稳定命中、三组窗口尺寸、详情渐变与标题移动、系统／应用内减少动效。
 - Android应用APK、instrumentation APK与lintDebug构建通过；minSdk21、ARMv7/x86配置保持不变。
 - 增强现有Windows desktop-smoke：轨道布局尺寸固定、导航布局宽度只在目的地变化、海报命中区域稳定。
-- 增加5项原生MotionScenario检查：中间位置、连续转向不瞬移、最终位置、减少动效立即定位、离开后取消。测试APK已编译，本地尚未执行这些API22 instrumentation断言。
-- 当前环境无Electron二进制与Android模拟器；本地没有新增Windows原生窗口、API22运行或长虹实机验收结论。
+- 增加5项原生MotionScenario功能检查及1项真实横向溢出前置检查。API22实际执行通过，原生动效检查从25项增至31项，完整功能检查173项通过。
+- 当前本地环境无Electron二进制与Android模拟器；本轮API22运行由GitHub Actions完成，Windows原生窗口与长虹实机仍未验收。
 
 证据、JSON与截图保存在 `/workspace/shared/mycinema-motion-fix-2026-11-14/`。原始工作区的PlayerActivity与两份播放审计文档未修改。
+
+## API22运行记录
+
+[完整回归43610443724](https://github.com/StQuasimodo/Media-Library/actions/runs/43610443724)在提交f169a278242ba09189cbf5b25e2ed7594499ba59上通过：API22 x86安装与启动、173项功能（包含31项动效）、25项备份、原文件和夸克WebDAV播放、12项主回归、进程与模拟器重启均通过。后续修改只涉及桌面视图与文档，Android源码与该验证提交一致。
+
+首次新增轨道检查曾失败：夹具使用的裸View没有保证在HorizontalScrollView的UNSPECIFIED测量下形成横向溢出。补充内容最小宽度和布局前置断言后重新执行，保留了中间状态与连续转向断言，没有跳过运行验证。首次失败记录：[43609925355](https://github.com/StQuasimodo/Media-Library/actions/runs/43609925355)。
+
+验证工作流同时补齐了隐藏.harness目录中原生动效JSON与截图的归档，未上传本地构建签名密钥。

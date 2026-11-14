@@ -244,6 +244,8 @@
 @keyframes scene-reveal { from { opacity:0; } to { opacity:1; } }
 @keyframes scene-copy-in { from { transform:translateY(12px); } to { transform:none; } }
 .page-inner .gallery-heading,.page-inner .collection-stage-inner,.page-inner .film-stage-inner { animation:scene-copy-in 360ms var(--ease) both; }
+/* View changes get feedback after arrival; initial page entry fades only once. */
+.is-view-entering { animation:scene-reveal var(--dur-base) var(--ease) both; }
 .film-detail { position:relative; isolation:isolate; }
 .film-stage { min-height:max(620px,92svh); background:transparent; overflow:visible; --detail-focus:0; --detail-art-shift:0px; --detail-title-shift:0px; }
 .film-stage .hero-layers { position:fixed; inset:-3% -2%; z-index:-2; transform:translate3d(0,var(--detail-art-shift),0); will-change:transform; }

@@ -169,13 +169,13 @@ public final class MainActivity extends Activity {
         LinearLayout layout=column();body.addView(layout,new FrameLayout.LayoutParams(-1,-1));LinearLayout hero=column();hero.setGravity(Gravity.CENTER_VERTICAL);hero.setPadding(dp(8),dp(20),dp(8),dp(10));
         TextView title=text("",34,PRIMARY);title.setId(R.id.hero_title);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);title.setMaxLines(2);
         TextView metadata=text("",14,SECONDARY),overview=text("",16,PRIMARY);overview.setMaxLines(2);hero.addView(text("YOUR PRIVATE CINEMA",11,SECONDARY));hero.addView(title);hero.addView(metadata);hero.addView(overview);layout.addView(hero,new LinearLayout.LayoutParams(-1,0,1));
-        HorizontalScrollView rail=new HorizontalScrollView(this);rail.setId(R.id.home_rail);rail.setClipToPadding(false);LinearLayout posters=row();posters.setPadding(dp(6),dp(10),dp(6),dp(10));rail.addView(posters);layout.addView(rail,new LinearLayout.LayoutParams(-1,dp(205)));
+        HorizontalScrollView rail=new HorizontalScrollView(this);rail.setId(R.id.home_rail);rail.setClipToPadding(false);LinearLayout posters=row();posters.setPadding(dp(6),dp(10),dp(6),dp(10));rail.addView(posters);layout.addView(rail,new LinearLayout.LayoutParams(-1,dp(205)));final UiMotion.FocusScroll focusScroll=new UiMotion.FocusScroll(rail);
         Library.Item initial=items.get(0);for(Library.Item item:items)if(item.id().equals(focusedFilm))initial=item;
         final Library.Item selected=initial;
         Done<Library.Item> focus=item->{focusedFilm=item.id();title.setText(item.title());metadata.setText(meta(item)+"  ·  "+statusLabel(item.status()));overview.setText(Json.text(item.film,"overview"));artwork.background(backdrop,item.film);};focus.run(initial);
         for(int i=0;i<Math.min(items.size(),24);i++){Library.Item item=items.get(i);FrameLayout card=poster(item,116);card.setFocusable(true);card.setFocusableInTouchMode(true);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(116),dp(174));lp.setMargins(dp(6),0,dp(6),0);posters.addView(card,lp);
             StateListDrawable outline=new StateListDrawable();outline.addState(new int[]{android.R.attr.state_focused},surface(Color.TRANSPARENT,ACCENT));outline.addState(new int[]{},surface(Color.TRANSPARENT,0));card.setForeground(outline);
-            card.setOnFocusChangeListener((view,hasFocus)->{UiMotion.focus(view,hasFocus);if(hasFocus){focus.run(item);rail.smoothScrollTo(Math.max(0,view.getLeft()-dp(170)),0);}});card.setOnClickListener(v->push("film",item.id()));
+            card.setOnFocusChangeListener((view,hasFocus)->{UiMotion.focus(view,hasFocus);if(hasFocus){focus.run(item);focusScroll.to(view.getLeft()-dp(170));}});card.setOnClickListener(v->push("film",item.id()));
             if(item.id().equals(selected.id()))card.post(card::requestFocus);
         }
     }

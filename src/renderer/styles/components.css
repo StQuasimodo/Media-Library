@@ -217,7 +217,6 @@
   position: relative;
   display: block;
   border-radius: var(--r-md);
-  transition: transform var(--dur-base) var(--ease);
 }
 
 .poster-frame {
@@ -230,12 +229,11 @@
   box-shadow: var(--shadow-poster);
   transition: transform var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease),
     border-color var(--dur-base) var(--ease);
-  will-change: transform;
 }
 
 .poster-card:hover .poster-frame,
 .poster-card:focus-visible .poster-frame {
-  transform: scale(1.02);
+  transform: translateY(-5px) scale(1.02);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   border-color: rgba(138, 180, 255, 0.26);
 }

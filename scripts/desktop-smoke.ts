@@ -138,6 +138,13 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Right' });
   await waitFor(`document.querySelector('.hero-title')?.textContent === ${JSON.stringify(data.films[0].film.title)}`);
   checks.push('keyboard rail changes hero');
+  const railWidths = await js(`new Promise(resolve => {
+    const widths=[],start=performance.now();
+    const sample=()=>{widths.push(document.querySelector('.rail-item[aria-current="true"] .rail-art').offsetWidth);
+      if(performance.now()-start<240)requestAnimationFrame(sample);else resolve(widths);};sample();
+  })`);
+  assert.equal(new Set(railWidths).size,1,'rail focus scales artwork without resizing its layout box');
+  checks.push('focus rail keeps a stable layout box during animation');
   assert.equal(await js("document.querySelector('.page').scrollTop"), 0, 'rail selection must not scroll the page vertically');
   await delay(550);
   await shot('02-home-focus');
@@ -155,14 +162,21 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   const motionSamples=await js(`new Promise(resolve=>{
     const samples=[],start=performance.now();document.documentElement.dataset.motion='full';location.hash='#/library';
     const frame=()=>{const page=document.querySelector('.page-inner'),cursor=document.querySelector('.cinema-nav-cursor');
-      samples.push({x:cursor.getBoundingClientRect().x,opacity:Number(getComputedStyle(page).opacity)});
+      samples.push({x:cursor.getBoundingClientRect().x,width:cursor.offsetWidth,opacity:Number(getComputedStyle(page).opacity)});
       if(performance.now()-start<600)requestAnimationFrame(frame);else resolve(samples);};requestAnimationFrame(frame);
   })`);
   assert.ok(motionSamples.some((s:any)=>s.opacity>.01&&s.opacity<.99),'library entry has intermediate opacity');
   const navStart=motionSamples[0].x,navEnd=motionSamples.at(-1).x;
   assert.ok(Math.abs(navEnd-navStart)>20&&motionSamples.some((s:any)=>s.x>Math.min(navStart,navEnd)+2&&s.x<Math.max(navStart,navEnd)-2),'persistent top navigation moves through intermediate positions');
+  assert.ok(new Set(motionSamples.map((s:any)=>s.width)).size<=2,'navigation changes layout width only at its destinations');
   await waitFor("!!document.querySelector('.poster-grid')");
   checks.push('actual rendered library entry and persistent top navigation have intermediate animation frames');
+  const posterHitbox = await js(`(()=>{const r=document.querySelector('.poster-card').getBoundingClientRect();return{x:r.x,y:r.y,bottom:r.bottom,width:r.width}})()`);
+  win.webContents.sendInputEvent({type:'mouseMove',x:Math.round(posterHitbox.x+posterHitbox.width/2),y:Math.floor(posterHitbox.bottom-1)});
+  await delay(260);
+  assert.ok(Math.abs(await js("document.querySelector('.poster-card').getBoundingClientRect().y")-posterHitbox.y)<.1,'poster hover keeps its pointer target stationary');
+  win.webContents.sendInputEvent({type:'mouseMove',x:5,y:5});
+  checks.push('poster edge hover has a stable hit target');
   assert.equal(await js("document.querySelector('.page').scrollTop"), 0);
   checks.push('route change resets page scroll');
   await shot('03-library');
@@ -226,12 +240,12 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   const detailOpening=await js(`({hero:document.querySelector('.film-stage').getBoundingClientRect().height,title:document.querySelector('.film-title').getBoundingClientRect().top,height:innerHeight,scroll:document.querySelector('.page').scrollTop})`);
   assert.ok(detailOpening.hero>=detailOpening.height*.9&&detailOpening.title>detailOpening.height*.45&&detailOpening.scroll===0,'detail preserves most of first viewport for artwork');
   await js("document.querySelector('.page').scrollTo({top:320,behavior:'instant'})");await delay(150);
-  const detailScroll=await js(`({progress:Number(getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-focus')),title:document.querySelector('.film-copy').getBoundingClientRect().top,shift:getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-title-shift'),blur:getComputedStyle(document.querySelector('.film-stage .hero-layer'),'::after').filter})`);
+  const detailScroll=await js(`({progress:Number(getComputedStyle(document.querySelector('.film-stage .hero-layers')).getPropertyValue('--detail-focus')),title:document.querySelector('.film-copy').getBoundingClientRect().top,shift:getComputedStyle(document.querySelector('.film-copy')).getPropertyValue('--detail-title-shift'),blur:getComputedStyle(document.querySelector('.film-stage .hero-layer'),'::after').filter})`);
   assert.ok(detailScroll.progress>.3&&parseFloat(detailScroll.shift)>0&&detailScroll.blur==='blur(12px)','scroll blends an actual blurred layer and offsets title');
   await shot('30-detail-scroll');
   await js("document.documentElement.dataset.motion='reduce';document.querySelector('.page').scrollTo({top:360,behavior:'instant'})");await delay(80);
-  assert.equal(await js("getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-title-shift')"),'0px');
-  assert.equal(await js("getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-art-shift')"),'0px');
+  assert.equal(await js("getComputedStyle(document.querySelector('.film-copy')).getPropertyValue('--detail-title-shift')"),'0px');
+  assert.equal(await js("getComputedStyle(document.querySelector('.film-stage .hero-layers')).getPropertyValue('--detail-art-shift')"),'0px');
   await js("delete document.documentElement.dataset.motion;document.querySelector('.page').scrollTo({top:0,behavior:'instant'})");await delay(80);
   checks.push('large detail hero, progressive blur/title scroll and explicit reduced-motion preference verified in actual renderer');
   await js("document.querySelector('.film-tools summary').click()");

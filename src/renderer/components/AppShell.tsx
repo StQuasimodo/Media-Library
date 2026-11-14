@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Icon } from './icons';
 import { NAV_ITEMS } from './navigation';
+import { prefersReducedMotion } from '../lib/motion';
 
 export function AppShell({
   onOpenPalette,
@@ -14,6 +15,8 @@ export function AppShell({
   const location = useLocation();
   const navRef = useRef<HTMLElement | null>(null);
   const cursorRef = useRef<HTMLSpanElement | null>(null);
+  const cursorAnimation = useRef<Animation | null>(null);
+  const cursorTarget = useRef<{ left: number; width: number } | null>(null);
   const pageRef = useRef<HTMLElement | null>(null);
   const [pageScrolled, setPageScrolled] = useState(false);
   const title = resolveTitle(location.pathname);
@@ -32,22 +35,59 @@ export function AppShell({
     if (!nav || !cursor) return;
     let live = true, frame = 0;
     const place = () => {
+      frame = 0;
       if (!live) return;
       const active = nav.querySelector<HTMLElement>('[aria-current="page"], [data-context="true"]');
-      cursor.style.opacity = active ? '1' : '0';
-      if (active) {
-        cursor.style.width = `${active.offsetWidth + 24}px`;
-        cursor.style.transform = `translate3d(${active.offsetLeft - 12}px, -50%, 0)`;
+      if (!active) {
+        cursor.style.opacity = '0';
+        cursorAnimation.current?.cancel();
+        cursorTarget.current = null;
+        return;
       }
-      frame = requestAnimationFrame(() => cursor.dataset.ready = 'true');
+      const target = { left: active.offsetLeft - 12, width: active.offsetWidth + 24 };
+      const reduce = prefersReducedMotion();
+      if (reduce) cursorAnimation.current?.cancel();
+      // ResizeObserver and font readiness can report the same target. Do not
+      // restart an in-flight transition, especially during rapid navigation.
+      if (cursorTarget.current?.left === target.left && cursorTarget.current.width === target.width) return;
+      const previous = cursor.getBoundingClientRect();
+      const previousLeft = previous.left - nav.getBoundingClientRect().left;
+      const animate = cursor.dataset.ready === 'true' && previous.width > 0 && !reduce;
+      cursorAnimation.current?.cancel();
+      cursorTarget.current = target;
+      // Set the final width once. FLIP carries the visual size change on the
+      // compositor instead of requesting layout on every animation frame.
+      cursor.style.width = `${target.width}px`;
+      cursor.style.transform = `translate3d(${target.left}px, -50%, 0)`;
+      cursor.style.opacity = '1';
+      cursor.dataset.ready = 'true';
+      if (animate) {
+        cursorAnimation.current = cursor.animate([
+          { transform: `translate3d(${previousLeft}px, -50%, 0) scaleX(${previous.width / target.width})` },
+          { transform: `translate3d(${target.left}px, -50%, 0) scaleX(1)` },
+        ], { duration: 360, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' });
+      }
     };
-    const observer = new ResizeObserver(place);
+    const schedule = () => { if (live && !frame) frame = requestAnimationFrame(place); };
+    const observer = new ResizeObserver(schedule);
     observer.observe(nav);
     for (const item of nav.children) if (item !== cursor) observer.observe(item);
-    void document.fonts.ready.then(place);
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    media.addEventListener('change', schedule);
+    const preference = new MutationObserver(schedule);
+    preference.observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion'] });
+    void document.fonts.ready.then(schedule);
     place();
-    return () => { live = false; cancelAnimationFrame(frame); observer.disconnect(); };
+    return () => {
+      live = false;
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      preference.disconnect();
+      media.removeEventListener('change', schedule);
+    };
   }, [location.pathname]);
+
+  useEffect(() => () => cursorAnimation.current?.cancel(), []);
 
   useEffect(() => { document.title = `${title} · My Cinema`; }, [title]);
 

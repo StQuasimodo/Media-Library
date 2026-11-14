@@ -52,9 +52,10 @@
   padding: 10px 6px;
 }
 .home .rail-item { position: relative; flex: 0 0 108px; height: 184px; }
-.home .rail-art {
-  width: 76px;
-  height: 114px;
+.home .rail-item .rail-art {
+  /* Keep the full-size layout box stable; only the artwork is scaled. */
+  width: 104px;
+  height: 156px;
   aspect-ratio: auto;
   border-radius: 5px;
   outline-width: 1px;
@@ -62,13 +63,12 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
   opacity: .56;
   filter: saturate(.7);
-  transition: width 180ms var(--ease), height 180ms var(--ease), opacity 180ms var(--ease), transform 180ms var(--ease), outline-color 180ms var(--ease);
+  transform-origin: top left;
+  transform: scale(.730769);
+  transition: opacity 180ms var(--ease), transform 180ms var(--ease), outline-color 180ms var(--ease);
 }
-.home .rail-item:hover .rail-art, .home .rail-item:focus-visible .rail-art { transform: none; }
 .home .rail-item[data-active='true'] .rail-art {
-  width: 104px;
-  height: 156px;
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1);
   outline-color: rgba(245, 244, 241, .88);
   opacity: 1;
   filter: none;
@@ -162,8 +162,8 @@
   .home .hero-stage-inner { padding-top: 96px; padding-bottom: 64px; gap: 8px; }
   .home .focus-rail { height: 156px; }
   .home .rail-item { flex-basis: 90px; height: 136px; }
-  .home .rail-art { width: 56px; height: 84px; }
-  .home .rail-item[data-active='true'] .rail-art { width: 80px; height: 120px; }
+  .home .rail-item .rail-art { width: 80px; height: 120px; transform: scale(.7); }
+  .home .rail-item[data-active='true'] .rail-art { transform: translateY(-4px) scale(1); }
   .home .rail-caption { top: 126px; }
   .home .hero-copy { padding-top: 8px; }
   .home .hero-title { font-size: clamp(36px, 4vw, 56px); }

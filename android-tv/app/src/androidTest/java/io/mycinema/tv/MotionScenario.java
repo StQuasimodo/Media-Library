@@ -41,6 +41,22 @@ final class MotionScenario {
             String id;try(Library library=new Library(context)){JSONObject candidate=new JSONObject();Json.put(candidate,"title","动效验收");Json.put(candidate,"mediaType","tv");StringBuilder overview=new StringBuilder();for(int n=0;n<10;n++)overview.append("这是一份独立的遥控器与滚动验收资料。保留收藏、播放和媒体源的原始数据。\n\n");Json.put(candidate,"overview",overview.toString());Json.put(candidate,"series",TmdbClient.series("manual:motion","动效验收（系列）",1));Library.Item item=library.saveCandidate(candidate);id=item.id();library.setArtwork(id,"backdrop","backdrop/manual/motion-fixture.png.img");}
             prefs.edit().putBoolean("folderView",false).commit();scale(1);
             activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));test.waitForIdleSync();Thread.sleep(450);
+            final android.widget.HorizontalScrollView[] rail={null};final UiMotion.FocusScroll[] focusScroll={null};
+            ui(()->{
+                rail[0]=new android.widget.HorizontalScrollView(activity);View content=new View(activity);
+                // HorizontalScrollView measures its child with UNSPECIFIED
+                // width. A bare View needs a minimum size to actually overflow.
+                content.setMinimumWidth(RemoteUi.dp(context,1600));
+                content.setMinimumHeight(RemoteUi.dp(context,80));
+                rail[0].addView(content,new android.view.ViewGroup.LayoutParams(RemoteUi.dp(context,1600),RemoteUi.dp(context,80)));
+                ((ViewGroup)view(R.id.scene_body)).addView(rail[0],new android.widget.FrameLayout.LayoutParams(RemoteUi.dp(context,320),RemoteUi.dp(context,100)));
+                focusScroll[0]=new UiMotion.FocusScroll(rail[0]);
+            });test.waitForIdleSync();
+            final boolean[] overflow={false};for(int n=0;n<60;n++){ui(()->overflow[0]=rail[0].getWidth()>0&&rail[0].getChildAt(0).getWidth()>rail[0].getWidth()+800);if(overflow[0])break;Thread.sleep(16);}check(overflow[0],"focus scroll fixture is laid out with real horizontal overflow");
+            ui(()->focusScroll[0].to(400));final int[] position={0};boolean middle=false;for(int n=0;n<45;n++){ui(()->position[0]=rail[0].getScrollX());if(position[0]>0&&position[0]<400){middle=true;break;}Thread.sleep(8);}check(middle,"focus rail has intermediate scroll positions");
+            final boolean[] continuous={false};ui(()->{int before=rail[0].getScrollX();focusScroll[0].to(800);continuous[0]=rail[0].getScrollX()==before;});check(continuous[0],"rapid DPAD retarget does not snap the rail");Thread.sleep(300);ui(()->position[0]=rail[0].getScrollX());check(position[0]==800,"focus rail settles on latest target");
+            scale(0);ui(()->focusScroll[0].to(200));ui(()->position[0]=rail[0].getScrollX());check(position[0]==200,"reduced-motion rail scroll is immediate");scale(1);
+            ui(()->{focusScroll[0].to(900);((ViewGroup)rail[0].getParent()).removeView(rail[0]);position[0]=rail[0].getScrollX();});Thread.sleep(260);ui(()->continuous[0]=rail[0].getScrollX()==position[0]);check(continuous[0],"detached rail stops its animation");
             final java.util.concurrent.atomic.AtomicInteger layouts=new java.util.concurrent.atomic.AtomicInteger();ui(()->((View)view(R.id.nav_cursor).getParent()).addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->layouts.incrementAndGet()));Thread.sleep(200);check(layouts.get()<3,"idle navigation does not request continuous layouts");
             float start=state()[1];ui(()->view(R.id.nav_library).performClick());boolean pageMiddle=false,navMiddle=false;float target=RemoteUi.dp(context,236);
             for(int n=0;n<45;n++){float[] s=state();pageMiddle|=s[0]>0&&s[0]<.99f;navMiddle|=s[1]>start+.5f&&s[1]<target-.5f;if(pageMiddle&&navMiddle)break;Thread.sleep(8);}

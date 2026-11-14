@@ -44,11 +44,16 @@ final class MotionScenario {
             final android.widget.HorizontalScrollView[] rail={null};final UiMotion.FocusScroll[] focusScroll={null};
             ui(()->{
                 rail[0]=new android.widget.HorizontalScrollView(activity);View content=new View(activity);
+                // HorizontalScrollView measures its child with UNSPECIFIED
+                // width. A bare View needs a minimum size to actually overflow.
+                content.setMinimumWidth(RemoteUi.dp(context,1600));
+                content.setMinimumHeight(RemoteUi.dp(context,80));
                 rail[0].addView(content,new android.view.ViewGroup.LayoutParams(RemoteUi.dp(context,1600),RemoteUi.dp(context,80)));
                 ((ViewGroup)view(R.id.scene_body)).addView(rail[0],new android.widget.FrameLayout.LayoutParams(RemoteUi.dp(context,320),RemoteUi.dp(context,100)));
                 focusScroll[0]=new UiMotion.FocusScroll(rail[0]);
             });test.waitForIdleSync();
-            ui(()->focusScroll[0].to(400));Thread.sleep(60);final int[] position={0};ui(()->position[0]=rail[0].getScrollX());check(position[0]>0&&position[0]<400,"focus rail has intermediate scroll positions");
+            final boolean[] overflow={false};for(int n=0;n<60;n++){ui(()->overflow[0]=rail[0].getWidth()>0&&rail[0].getChildAt(0).getWidth()>rail[0].getWidth()+800);if(overflow[0])break;Thread.sleep(16);}check(overflow[0],"focus scroll fixture is laid out with real horizontal overflow");
+            ui(()->focusScroll[0].to(400));final int[] position={0};boolean middle=false;for(int n=0;n<45;n++){ui(()->position[0]=rail[0].getScrollX());if(position[0]>0&&position[0]<400){middle=true;break;}Thread.sleep(8);}check(middle,"focus rail has intermediate scroll positions");
             final boolean[] continuous={false};ui(()->{int before=rail[0].getScrollX();focusScroll[0].to(800);continuous[0]=rail[0].getScrollX()==before;});check(continuous[0],"rapid DPAD retarget does not snap the rail");Thread.sleep(300);ui(()->position[0]=rail[0].getScrollX());check(position[0]==800,"focus rail settles on latest target");
             scale(0);ui(()->focusScroll[0].to(200));ui(()->position[0]=rail[0].getScrollX());check(position[0]==200,"reduced-motion rail scroll is immediate");scale(1);
             ui(()->{focusScroll[0].to(900);((ViewGroup)rail[0].getParent()).removeView(rail[0]);position[0]=rail[0].getScrollX();});Thread.sleep(260);ui(()->continuous[0]=rail[0].getScrollX()==position[0]);check(continuous[0],"detached rail stops its animation");

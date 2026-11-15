@@ -494,7 +494,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     for(const n of [1,2,3]){const film=imported.find((entry:any)=>entry.film.externalId===`1396:season:${n}`).film;await route(`/film/${film.id}`,"!!document.querySelector('.film-title')");await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(film.backdropPath)})`);await shot(`23-${n}-allocated-landscape`);}
     checks.push('three seasons without own backgrounds use three distinct actual landscape bitmaps; gallery order and single import do not choose one shared first image');
     const peakyTv=await js("window.cinema.metadata.candidate('60574','tv').then(c=>window.cinema.library.importCandidate(c))");const peakyMovie=await js("window.cinema.metadata.candidate('900001','movie').then(c=>window.cinema.library.importCandidate(c))");extraFilmIds.push(peakyTv.film.id,peakyMovie.film.id);
-    await route('/library',"!!document.querySelector('.library-toolbar')");await waitFor(`window.cinema.library.list({}).then(rows=>rows.some(e=>e.film.id===${JSON.stringify(peakyMovie.film.id)} && e.film.series?.relatedTv?.tvId==='60574'))`);
+    await route('/library',"!!document.querySelector('[aria-label=搜索影视库]')");await waitFor(`window.cinema.library.list({}).then(rows=>rows.some(e=>e.film.id===${JSON.stringify(peakyMovie.film.id)} && e.film.series?.relatedTv?.tvId==='60574'))`);
     await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='系列文件夹').click()");await waitFor("[...document.querySelectorAll('.series-folder-card')].some(b=>b.textContent.includes('浴血黑帮') && b.textContent.includes('2 部'))");await shot('28-inferred-tv-film-folder');
     await route(`/film/${peakyMovie.film.id}`,"!!document.querySelector('.film-title')");assert.equal(await js("document.querySelectorAll('.artwork-source').length"),0);await shot('29-inferred-film-clean-detail');
     checks.push('Peaky Blinders TV plus independently imported film grouped through TMDB credits/keyword evidence in real UI/IPC, without a hardcoded franchise rule');
@@ -515,7 +515,7 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await waitFor("document.querySelectorAll('.artwork-gallery img').length>0");await delay(300);await shot('24-online-stills');
     await js("document.querySelector('.modal [aria-label=关闭]').click()");await waitFor("!document.querySelector('.modal')");
     await js(`window.cinema.library.assignFranchise(${JSON.stringify([tv.id,second.id,movieGroup.id])},'关联剧集与衍生电影（系列）')`);
-    await route('/library',"!!document.querySelector('.library-toolbar')");
+    await route('/library',"!!document.querySelector('[aria-label=搜索影视库]')");
     await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='系列文件夹').click()");
     await waitFor("!!document.querySelector('.series-folder-card')");await shot('25-universe-folders');
     assert.equal(await js("[...document.querySelectorAll('.series-folder-card strong')].find(n=>n.textContent.includes('关联剧集与衍生电影'))?.textContent"),'关联剧集与衍生电影');

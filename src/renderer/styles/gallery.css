@@ -97,9 +97,7 @@
 .gallery-description { margin-top:8px;color:var(--text-secondary);font-size:14px; line-height: 1.8; }
 .gallery-heading-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; flex: none; padding-bottom: 4px; }
 .gallery-heading .btn-secondary { border-color: var(--line-soft); background: transparent; font-size: 12px; }
-.library-toolbar { padding: 18px 0; margin-bottom: 32px; border-top: 1px solid var(--line-soft); }
-.library-toolbar .select, .gallery-heading .select { background-color: transparent; border-color: transparent; font-size: 12px; }
-.library-toolbar .search-field .input { background: transparent; border-color: transparent; border-radius: 0; border-bottom-color: var(--line-soft); }
+.gallery-heading .select { background-color: transparent; border-color: transparent; font-size: 12px; }
 .library-refresh-notice { margin: -12px 0 24px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
 .library-refresh-notice p { margin: 8px 0 0; overflow-wrap: anywhere; }
 .library-refresh-notice progress { width: 160px; height: 5px; accent-color: var(--accent); }
@@ -195,11 +193,11 @@
 .row-poster { position: relative; display: block; }
 .watchlist-list .row-poster { width: 72px; border-radius: 4px; }
 .watchlist-list .row-title { font-family: var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: -.015em; }
-.watchlist-list .row-sub { font-size: 11px; margin-top: 8px; }
+.watchlist-list .row-sub { font-size: 12.5px; margin-top: 8px; }
 .watchlist-list .row-actions .btn { background: transparent; border-color: transparent; font-size: 12px; }
 .watchlist-list .poster-fallback { padding: 8px; }
 .watchlist-list .poster-fallback-year { display: none; }
-.watchlist-list .poster-fallback-title { font-size: 10px; }
+.watchlist-list .poster-fallback-title { font-size: 12px; }
 .settings-layout { grid-template-columns: 180px minmax(0,1fr); gap: 64px; max-width: 1220px; }
 .settings-layout .section-card { background: transparent; padding: 28px 0; border-top: 1px solid var(--line-soft); border-radius: 0; }
 .settings-layout .section-card-title { font-family: var(--font-display); font-size: 20px; font-weight: 500; }

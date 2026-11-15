@@ -7,6 +7,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { releaseNotesForVersion } from './release-notes.mjs';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const argument = name => {
   const index = process.argv.indexOf(name);
@@ -15,6 +16,16 @@ const argument = name => {
   return process.argv[index + 1];
 };
 const gh = args => execFileSync('gh', args, { encoding: 'utf8' }).trim();
+async function retryRead(read) {
+  let failure;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try { return read(); } catch (error) {
+      failure = error;
+      if (attempt < 9) await delay(1000);
+    }
+  }
+  throw failure;
+}
 const source = argument('--source') || process.env.RELEASE_SOURCE_SHA || process.env.GITHUB_SHA || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 assert.match(source, /^[a-f0-9]{40}$/);
 const manifest = JSON.parse(execFileSync('git', ['show', `${source}:package.json`], { encoding: 'utf8' }));
@@ -91,7 +102,11 @@ try {
     gh(['release', 'create', tag, '--repo', repo, '--verify-tag', '--draft',
       '--title', `My Cinema v${version}`, '--notes-file', notes,
       ...(version.includes('-') ? ['--prerelease'] : []), '--latest=false']);
-    release = JSON.parse(gh(['api', `repos/${repo}/releases?per_page=100`])).find(row => row.tag_name === tag);
+    release = await retryRead(() => {
+      const created = JSON.parse(gh(['api', `repos/${repo}/releases?per_page=100`])).find(row => row.tag_name === tag);
+      assert.ok(created, 'The newly created draft is not visible yet.');
+      return created;
+    });
   }
   assert.ok(release?.draft, 'Only an unpublished draft can be resumed; never replace a public release.');
   const identity = name => { const data=readFileSync(join(directory,name)); return {digest:'sha256:'+createHash('sha256').update(data).digest('hex'),size:data.length}; };
@@ -101,9 +116,12 @@ try {
   }
   const missing=delivery.filter(name=>!release.assets.some(asset=>asset.name===name));
   if(missing.length) gh(['release','upload',tag,'--repo',repo,...missing.map(name=>join(directory,name))]);
-  const uploaded=JSON.parse(gh(['api',`repos/${repo}/releases/${release.id}`]));
-  assert.equal(uploaded.assets.length,delivery.length);
-  for(const name of delivery){const asset=uploaded.assets.find(asset=>asset.name===name),expected=identity(name);assert.ok(asset);assert.equal(asset.digest,expected.digest);assert.equal(asset.size,expected.size);}
+  const uploaded=await retryRead(()=>{
+    const current=JSON.parse(gh(['api',`repos/${repo}/releases/${release.id}`]));
+    assert.equal(current.assets.length,delivery.length);
+    for(const name of delivery){const asset=current.assets.find(asset=>asset.name===name),expected=identity(name);assert.ok(asset);assert.equal(asset.digest,expected.digest);assert.equal(asset.size,expected.size);}
+    return current;
+  });
   gh(['release','edit',tag,'--repo',repo,'--title',`My Cinema v${version}`,'--notes-file',notes,
     '--draft=false',...(version.includes('-')?['--prerelease']:[]),'--latest=false']);
   console.log(uploaded.html_url);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FilmCollection } from '@shared/types';
-import { api, describeError } from '../lib/api';
+import { api, describeError, errorCode } from '../lib/api';
 import { useAppState } from '../lib/appState';
 import { useToast } from '../lib/toast';
 import { useAsyncData } from '../lib/useAsync';
@@ -19,24 +19,26 @@ export function CollectionsPage({ onOpenImport }: { onOpenImport: () => void }) 
   const [form, setForm] = useState({ name: '', description: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError,setNameError]=useState<string|null>(null);
   const [deleting, setDeleting] = useState<FilmCollection | null>(null);
   const [deletingBusy, setDeletingBusy] = useState(false);
 
   const openCreate = () => {
     setEditing(null);
     setForm({ name: '', description: '' });
-    setError(null);
+    setError(null);setNameError(null);
     setDialogOpen(true);
   };
 
   const openEdit = (collection: FilmCollection) => {
     setEditing(collection);
     setForm({ name: collection.name, description: collection.description ?? '' });
-    setError(null);
+    setError(null);setNameError(null);
     setDialogOpen(true);
   };
 
   const save = async () => {
+    if(!form.name.trim()){setNameError('请输入专题名称。');document.getElementById('collection-name')?.focus();return;}
     setSaving(true);
     setError(null);
     try {
@@ -56,7 +58,7 @@ export function CollectionsPage({ onOpenImport }: { onOpenImport: () => void }) 
       invalidate();
       setDialogOpen(false);
     } catch (cause) {
-      setError(describeError(cause));
+      if(errorCode(cause)==='DUPLICATE'){setNameError(describeError(cause));document.getElementById('collection-name')?.focus();}else setError(describeError(cause));
     } finally {
       setSaving(false);
     }
@@ -81,7 +83,7 @@ export function CollectionsPage({ onOpenImport }: { onOpenImport: () => void }) 
 
   return (
     <>
-      <PageHeading title="我的专题" eyebrow="PERSONAL EDITIONS" description="沿着导演、情绪或一段记忆，重新编排收藏。">
+      <PageHeading title="我的专题" description="沿着导演、情绪或一段记忆，重新编排收藏。">
         <button type="button" className="btn btn-secondary" onClick={openCreate}><Icon name="plus" size={14} /> 新建专题</button>
       </PageHeading>
 
@@ -144,12 +146,12 @@ export function CollectionsPage({ onOpenImport }: { onOpenImport: () => void }) 
         }
       >
         <div className="stack gap-4">
-          <Field label="专题名称" htmlFor="collection-name">
+          <Field label="专题名称" htmlFor="collection-name" error={nameError}>
             <input
               id="collection-name"
               className="input"
               value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              onChange={(event) => {setNameError(null);setForm({ ...form, name: event.target.value });}}
               placeholder="例如：华语新浪潮"
               autoFocus
             />
@@ -163,7 +165,7 @@ export function CollectionsPage({ onOpenImport }: { onOpenImport: () => void }) 
               placeholder="这个专题想收集什么？"
             />
           </Field>
-          {error ? <p className="field-error">{error}</p> : null}
+          {error ? <p role="alert" className="field-error">{error}</p> : null}
         </div>
       </Modal>
 

@@ -1,20 +1,4 @@
 import type { ReactNode } from 'react';
-
-/** A consistent editorial opening for the collection and utility pages. */
-export function PageHeading({ title, eyebrow, description, children }: {
-  title: string;
-  eyebrow: string;
-  description: string;
-  children?: ReactNode;
-}) {
-  return (
-    <header className="gallery-heading">
-      <div className="gallery-heading-copy">
-        <p className="gallery-eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        <p className="gallery-description">{description}</p>
-      </div>
-      {children ? <div className="gallery-heading-actions">{children}</div> : null}
-    </header>
-  );
+export function PageHeading({ title, description, children, className = '' }: {title: string;description?: ReactNode;children?: ReactNode;className?: string}) {
+  return <header className={`gallery-heading ${className}`}><div className="gallery-heading-copy"><h1 tabIndex={-1}>{title}</h1>{description ? <p className="gallery-description">{description}</p> : null}</div>{children ? <div className="gallery-heading-actions">{children}</div> : null}</header>;
 }

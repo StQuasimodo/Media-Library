@@ -25,6 +25,7 @@ import {
   statusLabel,
 } from '../lib/format';
 import { useCinematicScroll } from '../lib/useCinematicScroll';
+import { useBrowseBack } from '../components/BrowseLink';
 import { prefersReducedMotion } from '../lib/motion';
 import {
   ConfirmRemoveFilmDialog,
@@ -36,6 +37,7 @@ import {
 } from '../components/FilmDialogs';
 
 export function FilmDetailPage() {
+  const back=useBrowseBack('/library','返回影视库');
   const { filmId } = useParams<{ filmId: string }>();
   const [searchParams] = useSearchParams();
   const { version, invalidate } = useAppState();
@@ -159,7 +161,7 @@ export function FilmDetailPage() {
       <section ref={stageRef} className={`film-stage${backdrop || poster ? '' : ' no-art'}`}>
         <HeroBackdrop src={backdrop} />
         <div className="film-stage-scrim" />
-        <Link to="/library" className="stage-back"><Icon name="chevronLeft" size={13} /> 返回影视库</Link>
+        <Link to={back.to} onClick={back.onClick} className="stage-back"><Icon name="chevronLeft" size={13} /> {back.label}</Link>
 
         <div className="film-stage-inner">
           <div className="film-poster">

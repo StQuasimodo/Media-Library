@@ -180,6 +180,8 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   assert.equal(await js("document.querySelector('.page').scrollTop"), 0);
   checks.push('route change resets page scroll');
   await shot('03-library');
+  await js("document.querySelector('[aria-controls=library-filters]').click()");
+  await waitFor("!!document.querySelector('[aria-label=按观看状态筛选]')");
   const picker=await js(`(() => {
     const select=document.querySelector('[aria-label="按观看状态筛选"]');
     const rect=select.getBoundingClientRect();
@@ -265,6 +267,19 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   win.setContentSize(1440, 900);
   await route('/collections', "!!document.querySelector('.collection-grid')");
   await shot('05-collections');
+  await js("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('新建专题')).focus();document.activeElement.click()");
+  await waitFor("!!document.querySelector('#collection-desc')");
+  await js("document.querySelector('#collection-desc').focus()");
+  for(const text of ['连','续','输入']) {await win.webContents.insertText(text);await delay(40);}
+  assert.equal(await js("document.activeElement.id==='collection-desc' && document.querySelector('#collection-desc').value==='连续输入'"),true,'editing a controlled field must not reset focus on rerender');
+  await js("[...document.querySelectorAll('.modal button')].find(b=>b.textContent.trim()==='创建').click()");
+  await waitFor("document.querySelector('#collection-name')?.getAttribute('aria-invalid')==='true'");
+  assert.equal(await js("document.activeElement.id"),'collection-name');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});
+  win.webContents.sendInputEvent({type:'keyUp',keyCode:'Escape'});
+  await waitFor("!document.querySelector('.modal')");
+  assert.equal(await js("document.activeElement.textContent.includes('新建专题')"),true,'modal close must restore its trigger');
+  checks.push('native text input, associated validation and modal return focus');
   await js("document.querySelector('.collection-actions button').click()");
   await waitFor("!!document.querySelector('.modal')");
   assert.equal(await js("location.hash"), '#/collections', 'edition edit must not follow the cover link');
@@ -296,7 +311,8 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   await js("document.querySelector('.watchlist-list .row-actions button').click()");
   await waitFor("document.querySelectorAll('.watchlist-list .row-card').length === 2");
   assert.equal(await js(`window.cinema.library.list({watchStatus:'watching'}).then(items=>items.some(e=>e.film.title===${JSON.stringify(markedEntry)}))`), true);
-  checks.push('watchlist status update persists through real IPC');
+  await waitFor("!!document.activeElement?.dataset.browseKey?.startsWith('watch:')");
+  checks.push('watchlist status update persists through real IPC and keeps keyboard focus');
   await route('/settings', "!!document.querySelector('.settings-layout')");
   await shot('13-settings');
   await route('/settings#quark', "!!document.querySelector('#quark')");

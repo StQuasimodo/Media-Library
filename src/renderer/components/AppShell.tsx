@@ -1,6 +1,7 @@
 import {UpdateNotice} from './UpdatePanel';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigationType } from 'react-router-dom';
+import { browseMemory } from '../lib/browseMemory';
 import { Icon } from './icons';
 import { NAV_ITEMS } from './navigation';
 import { prefersReducedMotion } from '../lib/motion';
@@ -13,6 +14,8 @@ export function AppShell({
   onOpenImport: () => void;
 }) {
   const location = useLocation();
+  const navigationType=useNavigationType();
+  const restoringKey=useRef<string|null>(null);
   const navRef = useRef<HTMLElement | null>(null);
   const cursorRef = useRef<HTMLSpanElement | null>(null);
   const cursorAnimation = useRef<Animation | null>(null);
@@ -24,11 +27,17 @@ export function AppShell({
   const filmMode = location.pathname.startsWith('/film/');
   const immersive = homeMode || filmMode || location.pathname.startsWith('/collections/');
 
-  // Reset before child effects handle query-only section links.
+  // POP returns wait for asynchronously loaded cards, then restore location and focus.
   useLayoutEffect(() => {
-    pageRef.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    setPageScrolled(false);
-  }, [location.pathname]);
+    const page=pageRef.current;if(!page)return;
+    const saved=navigationType==='POP'?browseMemory.read(location.key):undefined;
+    let frame=0,timer=0,stopped=false;restoringKey.current=location.key;
+    const finish=()=>{stopped=true;restoringKey.current=null;cancelAnimationFrame(frame);clearTimeout(timer);observer.disconnect();resize.disconnect();setPageScrolled(page.scrollTop>64);};
+    const restore=()=>{frame=0;if(stopped)return;page.scrollTo({top:saved?.scrollTop??0,left:0,behavior:'instant'});const target=saved?.focusKey?page.querySelector<HTMLElement>(`[data-browse-key="${CSS.escape(saved.focusKey)}"]`):null;if(target)target.focus({preventScroll:true});if((!saved?.focusKey||target)&&Math.abs(page.scrollTop-(saved?.scrollTop??0))<2)finish();};
+    const schedule=()=>{if(!stopped&&!frame)frame=requestAnimationFrame(restore);};
+    const observer=new MutationObserver(schedule),resize=new ResizeObserver(schedule);observer.observe(page,{childList:true,subtree:true});if(page.firstElementChild)resize.observe(page.firstElementChild);timer=window.setTimeout(finish,1800);page.addEventListener('pointerdown',finish,{once:true});page.addEventListener('keydown',finish,{once:true});restore();
+    return()=>{stopped=true;restoringKey.current=null;cancelAnimationFrame(frame);clearTimeout(timer);observer.disconnect();resize.disconnect();page.removeEventListener('pointerdown',finish);page.removeEventListener('keydown',finish);};
+  },[location.key,navigationType]);
 
   useLayoutEffect(() => {
     const nav = navRef.current, cursor = cursorRef.current;
@@ -114,7 +123,10 @@ export function AppShell({
             <NavLink to="/settings" className="cinema-icon-button" aria-label="设置" title="设置"><Icon name="settings" size={18} /></NavLink>
           </div>
         </header>
-        <main className="page" ref={pageRef} onScroll={(event) => setPageScrolled(event.currentTarget.scrollTop > 64)}>
+        <main className="page" ref={pageRef}
+          onScroll={event=>{const scrollTop=event.currentTarget.scrollTop;setPageScrolled(scrollTop>64);if(restoringKey.current!==location.key)browseMemory.remember(location.key,{scrollTop});}}
+          onFocusCapture={event=>{const focusKey=(event.target as HTMLElement).closest<HTMLElement>('[data-browse-key]')?.dataset.browseKey;if(focusKey)browseMemory.remember(location.key,{focusKey});}}
+          onClickCapture={event=>{const focusKey=(event.target as HTMLElement).closest<HTMLElement>('[data-browse-key]')?.dataset.browseKey;if(focusKey&&pageRef.current)browseMemory.remember(location.key,{focusKey,scrollTop:pageRef.current.scrollTop});}}>
           <div key={location.pathname} className="page-inner" data-wide={immersive}><Outlet /></div>
         </main>
       </div>

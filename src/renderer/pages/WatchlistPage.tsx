@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState,useLayoutEffect,useRef } from 'react';
+import { useBrowseState } from '../lib/useBrowseState';
+import { FilmLink } from '../components/BrowseLink';
 import { Link } from 'react-router-dom';
 import type { LibrarySort, WatchStatus } from '@shared/types';
 import { api, describeError } from '../lib/api';
@@ -22,32 +24,35 @@ const SORT_OPTIONS: Array<{ value: LibrarySort; label: string }> = [
 export function WatchlistPage() {
   const { version, invalidate } = useAppState();
   const toast = useToast();
-  const [sort, setSort] = useState<LibrarySort>('collected_desc');
+  const [sort, setSort] = useBrowseState<LibrarySort>('watchlist.sort','collected_desc');
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const pendingFocus=useRef<string|null>(null);
   const entries = useAsyncData(
     () => api.library.list({ watchStatus: 'want', sort }),
     [version, sort],
   );
 
   const setStatus = async (entryId: string, status: WatchStatus, title: string) => {
+    const current=entries.data??[],index=current.findIndex(entry=>entry.id===entryId),next=current[index+1]??current[index-1];pendingFocus.current=next?`watch:${next.id}:${status}`:'watch:empty';
     setBusyId(entryId);
     try {
       await api.library.updateEntry(entryId, { watchStatus: status });
       invalidate();
       toast.push(`《${title}》已标记为「${statusLabel(status)}」`);
     } catch (cause) {
-      toast.error(describeError(cause));
+      pendingFocus.current=null;toast.error(describeError(cause));
     } finally {
       setBusyId(null);
     }
   };
 
   const list = entries.data ?? [];
+  useLayoutEffect(()=>{const key=pendingFocus.current;if(!key||list.some(entry=>entry.id===busyId))return;const target=document.querySelector<HTMLElement>(`[data-browse-key="${CSS.escape(key)}"]`);if(target){target.focus({preventScroll:true});pendingFocus.current=null;}},[entries.data,busyId]);
 
   return (
     <>
-      <PageHeading title="想看清单" eyebrow="THE WATCHLIST" description={entries.loading ? '正在读取想看清单…' : entries.error ? '清单暂时无法读取。' : `${list.length} 部作品，留给下一次观影。`}>
+      <PageHeading title="想看清单" description={entries.loading ? '正在读取想看清单…' : entries.error ? '清单暂时无法读取。' : `${list.length} 部作品，留给下一次观影。`}>
         <select
           className="select"
           style={{ width: 'auto' }}
@@ -73,7 +78,7 @@ export function WatchlistPage() {
           title="没有想看的作品"
           text="把收藏中的作品标记为「想看」，它们就会出现在这里，方便你安排下一次观影。"
         >
-          <Link to="/library" className="btn btn-secondary btn-sm">
+          <Link to="/library" className="btn btn-secondary btn-sm" data-browse-key="watch:empty">
             去影视库标记
           </Link>
         </EmptyState>
@@ -82,13 +87,13 @@ export function WatchlistPage() {
           {list.map((entry, index) => (
             <div key={entry.id} className="row-card">
               <span className="watchlist-number">{String(index + 1).padStart(2, '0')}</span>
-              <Link to={`/film/${entry.film.id}`} className="row-poster">
+              <FilmLink film={entry.film} className="row-poster" tabIndex={-1} aria-label={`查看 ${entry.film.title}`} data-browse-key={`film:${entry.film.id}:poster`}>
                 <PosterImage film={entry.film} />
-              </Link>
+              </FilmLink>
               <div className="row-main">
-                <Link to={`/film/${entry.film.id}`} className="row-title">
+                <FilmLink film={entry.film} className="row-title">
                   {entry.film.title}
-                </Link>
+                </FilmLink>
                 <div className="row-sub">
                   {[
                     entry.film.year,
@@ -96,7 +101,7 @@ export function WatchlistPage() {
                     `收藏于 ${formatDate(entry.collectedAt)}`,
                   ]
                     .filter(Boolean)
-                    .join(' · ')}
+                    .map((value,index)=><span key={index} className={index?'meta-sep':undefined}>{value}</span>)}
                 </div>
               </div>
               <div className="row-actions">
@@ -105,7 +110,7 @@ export function WatchlistPage() {
                   type="button"
                   className="btn btn-secondary btn-sm"
                   disabled={busyId === entry.id}
-                  onClick={() => void setStatus(entry.id, 'watching', entry.film.title)}
+                  data-browse-key={`watch:${entry.id}:watching`} onClick={() => void setStatus(entry.id, 'watching', entry.film.title)}
                 >
                   标记在看
                 </button>
@@ -113,7 +118,7 @@ export function WatchlistPage() {
                   type="button"
                   className="btn btn-secondary btn-sm"
                   disabled={busyId === entry.id}
-                  onClick={() => void setStatus(entry.id, 'watched', entry.film.title)}
+                  data-browse-key={`watch:${entry.id}:watched`} onClick={() => void setStatus(entry.id, 'watched', entry.film.title)}
                 >
                   <Icon name="check" size={13} />
                   已看完

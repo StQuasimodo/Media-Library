@@ -1,7 +1,8 @@
 import {backdropUrl} from '../lib/format';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CollectionEntry } from '@shared/types';
+import { useBrowseState } from '../lib/useBrowseState';
 import { api } from '../lib/api';
 import { useAppState } from '../lib/appState';
 import { useAsyncData } from '../lib/useAsync';
@@ -18,7 +19,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
   const { version } = useAppState();
   const navigate = useNavigate();
   const { data, error, loading, reload } = useAsyncData(() => api.library.home(), [version]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useBrowseState<string | null>('home.activeId',null);
   const curationRef = useRef<HTMLDivElement | null>(null);
   const railEntries = data?.recent ?? [];
   const selectedIndex = railEntries.findIndex((entry) => entry.id === activeId);
@@ -52,7 +53,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
 
   const { stats, collections } = data;
   const isEmpty = stats.totalFilms === 0;
-  const openEntry = (entry: CollectionEntry) => navigate(`/film/${entry.film.id}`);
+  const openEntry = (entry: CollectionEntry) => navigate(`/film/${entry.film.id}`,{state:{browseFrom:'/'}});
   const wantEntries = data.wantEntries;
   const hasArtwork = Boolean(
     focused && backdropUrl(focused.film),
@@ -135,7 +136,7 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
                 <button
                   type="button"
                   className="link-button hero-resource-link"
-                  onClick={() => navigate(`/film/${focused.film.id}?panel=resources`)}
+                  onClick={() => navigate(`/film/${focused.film.id}?panel=resources`,{state:{browseFrom:'/'}})}
                 >
                   <Icon name="database" size={15} />
                   夸克资源
@@ -242,8 +243,8 @@ export function HomePage({ onOpenImport }: { onOpenImport: () => void }) {
                   <li key={entry.id} className="queue-item">
                     <button
                       type="button"
-                      className="queue-link"
-                      onClick={() => navigate(`/film/${entry.film.id}`)}
+                      className="queue-link" data-browse-key={`queue:${entry.film.id}`}
+                      onClick={() => navigate(`/film/${entry.film.id}`,{state:{browseFrom:'/'}})}
                     >
                       <span className="queue-index">{String(index + 1).padStart(2, '0')}</span>
                       <span className="queue-thumb">

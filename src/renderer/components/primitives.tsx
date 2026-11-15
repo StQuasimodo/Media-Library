@@ -1,11 +1,16 @@
 import {
+  Children,
+  cloneElement,
+  isValidElement,
   useEffect,
+  useLayoutEffect,
   useId,
   useRef,
   type ReactNode,
+  type InputHTMLAttributes,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { FilmLink } from './BrowseLink';
 import type { CollectionEntry } from '@shared/types';
 import { Icon, type IconName } from './icons';
 import { PosterImage } from './PosterImage';
@@ -40,31 +45,46 @@ export function Modal({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const fallbackId = useId();
   const titleId = labelledBy ?? fallbackId;
-
+  const returnFocus = useRef<HTMLElement | null>(document.activeElement as HTMLElement | null);
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => { closeRef.current = onClose; }, [onClose]);
   useEffect(() => {
+    if (open) return;
+    const remember = (event: FocusEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('[data-modal-id]')?.getAttribute('data-modal-id') !== fallbackId) returnFocus.current = target;
+    };
+    document.addEventListener('focusin', remember, true);
+    return () => document.removeEventListener('focusin', remember, true);
+  }, [open, fallbackId]);
+
+  useLayoutEffect(() => {
     if (!open) return;
-    const previous = document.activeElement as HTMLElement | null;
+    const previous = returnFocus.current;
     const panel = panelRef.current;
 
     // Prefer the first text field so typing can start immediately, otherwise
     // the first focusable control. Re-queried on every Tab because dialog
     // content loads asynchronously.
     const collect = () =>
-      panel ? Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)) : [];
+      panel ? Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(node => node.tabIndex >= 0 && !node.closest('[hidden], [inert]') && !node.matches('input[type=hidden]') && getComputedStyle(node).display !== 'none' && getComputedStyle(node).visibility !== 'hidden') : [];
     const initial = collect();
     const preferred =
       initial.find((node) => node.matches('input, textarea, select')) ?? initial[0] ?? panel;
     preferred?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      const dialogs = document.querySelectorAll<HTMLElement>('[role=dialog][aria-modal=true]');
+      if (dialogs[dialogs.length - 1] !== panel) return;
       if (event.key === 'Escape') {
-        event.stopPropagation();
-        onClose();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        closeRef.current();
         return;
       }
       if (event.key !== 'Tab') return;
       const focusable = collect();
-      if (focusable.length === 0) return;
+      if (focusable.length === 0) { event.preventDefault(); panel?.focus(); return; }
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) {
@@ -73,15 +93,19 @@ export function Modal({
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault();
         first.focus();
+      } else if (!panel?.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
       }
     };
 
     document.addEventListener('keydown', onKeyDown, true);
     return () => {
       document.removeEventListener('keydown', onKeyDown, true);
-      previous?.focus();
+      if (previous?.isConnected && previous !== document.body) previous.focus({ preventScroll: true });
+      else document.querySelector<HTMLElement>('.page h1')?.focus({ preventScroll: true });
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -97,6 +121,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        data-modal-id={fallbackId}
         ref={panelRef}
         tabIndex={-1}
       >
@@ -107,7 +132,7 @@ export function Modal({
             </h2>
             {subtitle ? <p className="modal-subtitle">{subtitle}</p> : null}
           </div>
-          <button type="button" className="btn btn-icon" onClick={onClose} aria-label="关闭">
+          <button type="button" className="btn btn-icon" onClick={onClose} aria-label="关闭" title="关闭">
             <Icon name="close" size={17} />
           </button>
         </header>
@@ -188,15 +213,22 @@ export function Field({
   children: ReactNode;
   optional?: boolean;
 }) {
+  const fieldId = useId();
+  const controlId = htmlFor ?? fieldId;
+  const descriptionId = `${controlId}-${error ? 'error' : 'hint'}`;
+  const controls = Children.map(children, child => {
+    if (!isValidElement<InputHTMLAttributes<HTMLInputElement>>(child) || typeof child.type !== 'string' || !['input', 'textarea', 'select'].includes(child.type)) return child;
+    return cloneElement(child, { id: child.props.id ?? controlId, 'aria-invalid': error ? true : child.props['aria-invalid'], 'aria-describedby': [child.props['aria-describedby'], error || hint ? descriptionId : null].filter(Boolean).join(' ') || undefined });
+  });
   return (
     <div className="field">
-      <label className="field-label" htmlFor={htmlFor}>
+      <label className="field-label" htmlFor={controlId}>
         {label}
         {optional ? <span className="dim">（可选）</span> : null}
       </label>
-      {children}
-      {error ? <span className="field-error">{error}</span> : null}
-      {!error && hint ? <span className="field-hint">{hint}</span> : null}
+      {controls}
+      {error ? <span id={descriptionId} role="alert" className="field-error">{error}</span> : null}
+      {!error && hint ? <span id={descriptionId} className="field-hint">{hint}</span> : null}
     </div>
   );
 }
@@ -369,39 +401,32 @@ export function PosterCard({
   showStatus?: boolean;
 }) {
   return (
-    <Link
-      to={`/film/${entry.film.id}`}
+    <FilmLink
+      film={entry.film}
+      title={entry.film.title}
       className="poster-card"
       aria-label={`${entry.film.title}${entry.film.year ? `（${entry.film.year}）` : ''}`}
     >
       <div className="poster-frame">
         <PosterImage film={entry.film} />
-        <span className="poster-badge">
-          {entry.film.mediaType === 'tv' ? '剧集' : '电影'}
-        </span>
+        {entry.film.mediaType === 'tv' ? <span className="poster-badge">剧集</span> : null}
         {showStatus ? (
           <div className="poster-overlay">
             <span className={`status-chip status-${entry.watchStatus}`}>
               <span className="chip-dot" />
               {statusLabel(entry.watchStatus)}
             </span>
-            {entry.personalRating != null ? (
-              <span className="rating">
-                <span className="rating-value">{formatRating(entry.personalRating)}</span>
-              </span>
-            ) : null}
+
           </div>
         ) : null}
       </div>
       <div className="poster-caption">
-        <div className="poster-title">{entry.film.title}</div>
+        <div className="poster-caption-heading"><div className="poster-title">{entry.film.title}</div>{entry.personalRating != null ? <span className="poster-personal-rating" aria-label={`个人评分 ${formatRating(entry.personalRating)} 分`}><Icon name="star" size={12} />{formatRating(entry.personalRating)}</span> : null}</div>
         <div className="poster-sub">
-          {[entry.film.year, compact ? null : entry.film.originalTitle]
-            .filter(Boolean)
-            .join(' · ') || '—'}
+          <span>{entry.film.year ?? '—'}</span>{!compact && entry.film.originalTitle ? <span className="meta-sep">{entry.film.originalTitle}</span> : null}
         </div>
       </div>
-    </Link>
+    </FilmLink>
   );
 }
 

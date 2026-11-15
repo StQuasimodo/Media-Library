@@ -155,7 +155,7 @@ export function SettingsPage() {
 
   return (
     <>
-    <PageHeading title="放映室设置" eyebrow="THE STUDIO" description="元数据、夸克目录与本机收藏。" />
+    <PageHeading title="放映室设置" description="元数据、夸克目录与本机收藏。" />
     <div className="settings-layout">
       <nav className="settings-nav" aria-label="设置分类">
         <Link to="/settings#metadata">影视元数据</Link>

@@ -6,7 +6,7 @@ out=.harness/tv-features
 mkdir -p "$out"
 collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/features-full.json > "$out/report.json" || true
-  for file in motion-report.json motion-detail-top.png motion-detail-scroll.png; do
+  for file in motion-report.json motion-detail-top.png motion-detail-scroll.png frontend-report.json frontend-home.png frontend-library.png frontend-collections.png frontend-watchlist.png frontend-settings.png; do
     timeout 10s adb exec-out run-as io.mycinema.tv cat "files/$file" > "$out/$file" || true
   done
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/features-folders.png > "$out/folders.png" || true

@@ -1235,7 +1235,7 @@ a.tag:hover {
 
 .settings-nav {
   position: sticky;
-  top: 0;
+  top: 104px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1259,7 +1259,7 @@ a.tag:hover {
   background: rgba(255, 255, 255, 0.018);
   padding: 20px 22px;
   margin-bottom: 14px;
-  scroll-margin-top: 16px;
+  scroll-margin-top: 112px;
 }
 
 .section-card-head {

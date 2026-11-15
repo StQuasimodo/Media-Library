@@ -83,6 +83,7 @@ jobs:
             .harness/tv-playback/quark-dav-report.json
             .harness/tv-playback/instrumentation.txt
             .harness/tv-playback/logcat.txt
+            .harness/tv-playback/*.png
             .harness/android-tv-package/report.json
             .harness/tv-regression/*.json
             .harness/tv-features/*.json

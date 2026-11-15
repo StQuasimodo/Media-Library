@@ -433,7 +433,9 @@
   display: flex;
   gap: 18px;
   overflow-x: auto;
-  padding: 6px 2px 12px;
+  margin-inline: -6px;
+  padding: 6px 6px 12px;
+  scroll-padding-inline: 6px;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
 }

@@ -88,7 +88,16 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     throw new Error(`Readiness timed out: ${code}`);
   }
   async function route(path: string, ready: string) {
-    await js(`location.hash = ${JSON.stringify('#' + path)};`);
+    await js(`(() => {
+      const target=${JSON.stringify('#' + path)};
+      const link=[...document.querySelectorAll('.cinema-nav a,.topbar-actions a')].find(a=>a.getAttribute('href')===target);
+      if(link){link.click();return;}
+      // A raw location.hash assignment copies the previous entry's state/key.
+      // Use a distinct history entry for controlled deep links, just as the
+      // router does, so saved filters are not accidentally reused by the test.
+      history.pushState({usr:null,key:crypto.randomUUID(),idx:(history.state?.idx??0)+1},'',target);
+      dispatchEvent(new PopStateEvent('popstate',{state:history.state}));
+    })()`);
     await waitFor(ready);
     // Let layout, decoded artwork and CSS transitions settle before capture.
     await delay(550);

@@ -1,3 +1,26 @@
+# My Cinema v1.3.0-beta.6
+
+更专注于电影，也更顺手地整理收藏。这个版本重新梳理影视库的空间与操作，让海报、评分和观影记忆成为浏览的中心。
+
+## 本次更新
+
+- **更多电影进入首屏**：收紧页题和工具栏，筛选按需展开；海报尺寸保持不变，首排向上移动约200px。
+- **统一的收藏陈列**：系列文件夹与单片海报对齐，长片名支持两行，个人评分直接可见。
+- **连续的浏览体验**：从详情返回时恢复原先的筛选、排序、滚动位置与焦点；支持方向键、Home和End浏览海报墙。
+- **更平滑的切换**：优化顶部导航、海报悬停与快速反向滚动；详情背景保留渐进模糊和标题移动，减少动态效果设置同步生效。
+- **更可靠的编辑**：修复连续输入时焦点跳转、嵌套弹窗关闭、重复名称提示，以及想看条目移除后丢失焦点的问题。
+- **更清晰的细节**：调整辅助字级、专题背景遮罩和设置区块定位。
+
+## 安装与更新
+
+- Windows 10 / 11 x64：[下载安装版](https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/My-Cinema-1.3.0-beta.6-Setup.exe) · [下载免安装版](https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/My-Cinema-1.3.0-beta.6-portable-win64.zip)。
+- 已使用1.3预览版，可在「设置 → 应用更新」选择预览渠道后检查更新。
+- 沿用原有收藏数据库与凭据格式。建议更新前在设置中创建备份；文件校验与构建来源见Release附件。
+
+这是预览版本。Windows原生界面、夸克受控同步及凭据保留已通过自动化验证；电视实机和高级播放器能力不属于本Windows包的交付范围。[界面预览](https://github.com/StQuasimodo/Media-Library/blob/main/docs/GALLERY.md) · [完整验证记录](https://github.com/StQuasimodo/Media-Library/blob/main/docs/FRONTEND-OPTIMIZATION-2026-11-15.md)。
+
+---
+
 # My Cinema v1.3.0-beta.5
 
 ## 界面与交互

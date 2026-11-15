@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { releaseNotesForVersion } from './release-notes.mjs';
 
 const argument = name => {
   const index = process.argv.indexOf(name);
@@ -73,7 +74,8 @@ try {
   assert.equal(ref.object.sha, source, 'Release tag must point to the original build.');
   const notes = join(temporary, 'notes.md');
   const notesFile = argument('--notes-file');
-  writeFileSync(notes, notesFile ? readFileSync(resolve(notesFile)) : execFileSync('git', ['show', `${source}:docs/RELEASE-NOTES.md`]));
+  const changelog = notesFile ? readFileSync(resolve(notesFile), 'utf8') : execFileSync('git', ['show', `${source}:docs/RELEASE-NOTES.md`], { encoding: 'utf8' });
+  writeFileSync(notes, releaseNotesForVersion(changelog, version));
   const buildFile = join(directory, 'BUILD.json');
   if (!existsSync(buildFile)) writeFileSync(buildFile, JSON.stringify({ version, source,
     buildRun: retainedRun ? String(retainedRun.id) : process.env.GITHUB_RUN_ID || null,

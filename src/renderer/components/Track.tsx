@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon } from './icons';
+import { prefersReducedMotion } from '../lib/motion';
 
 /**
  * Horizontally scrolling content track with quiet scroll affordances.
@@ -45,7 +46,7 @@ export function Track({
   const scrollBy = (direction: 1 | -1) => {
     const node = scroller.current;
     if (!node) return;
-    node.scrollBy({ left: direction * Math.max(320, node.clientWidth * 0.8), behavior: 'smooth' });
+    node.scrollBy({ left: direction * Math.max(320, node.clientWidth * 0.8), behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
   };
 
   return (

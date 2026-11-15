@@ -88,7 +88,16 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     throw new Error(`Readiness timed out: ${code}`);
   }
   async function route(path: string, ready: string) {
-    await js(`location.hash = ${JSON.stringify('#' + path)};`);
+    await js(`(() => {
+      const target=${JSON.stringify('#' + path)};
+      const link=[...document.querySelectorAll('.cinema-nav a,.topbar-actions a')].find(a=>a.getAttribute('href')===target);
+      if(link){link.click();return;}
+      // A raw location.hash assignment copies the previous entry's state/key.
+      // Use a distinct history entry for controlled deep links, just as the
+      // router does, so saved filters are not accidentally reused by the test.
+      history.pushState({usr:null,key:crypto.randomUUID(),idx:(history.state?.idx??0)+1},'',target);
+      dispatchEvent(new PopStateEvent('popstate',{state:history.state}));
+    })()`);
     await waitFor(ready);
     // Let layout, decoded artwork and CSS transitions settle before capture.
     await delay(550);
@@ -138,6 +147,13 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Right' });
   await waitFor(`document.querySelector('.hero-title')?.textContent === ${JSON.stringify(data.films[0].film.title)}`);
   checks.push('keyboard rail changes hero');
+  const railWidths = await js(`new Promise(resolve => {
+    const widths=[],start=performance.now();
+    const sample=()=>{widths.push(document.querySelector('.rail-item[aria-current="true"] .rail-art').offsetWidth);
+      if(performance.now()-start<240)requestAnimationFrame(sample);else resolve(widths);};sample();
+  })`);
+  assert.equal(new Set(railWidths).size,1,'rail focus scales artwork without resizing its layout box');
+  checks.push('focus rail keeps a stable layout box during animation');
   assert.equal(await js("document.querySelector('.page').scrollTop"), 0, 'rail selection must not scroll the page vertically');
   await delay(550);
   await shot('02-home-focus');
@@ -155,17 +171,26 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   const motionSamples=await js(`new Promise(resolve=>{
     const samples=[],start=performance.now();document.documentElement.dataset.motion='full';location.hash='#/library';
     const frame=()=>{const page=document.querySelector('.page-inner'),cursor=document.querySelector('.cinema-nav-cursor');
-      samples.push({x:cursor.getBoundingClientRect().x,opacity:Number(getComputedStyle(page).opacity)});
+      samples.push({x:cursor.getBoundingClientRect().x,width:cursor.offsetWidth,opacity:Number(getComputedStyle(page).opacity)});
       if(performance.now()-start<600)requestAnimationFrame(frame);else resolve(samples);};requestAnimationFrame(frame);
   })`);
   assert.ok(motionSamples.some((s:any)=>s.opacity>.01&&s.opacity<.99),'library entry has intermediate opacity');
   const navStart=motionSamples[0].x,navEnd=motionSamples.at(-1).x;
   assert.ok(Math.abs(navEnd-navStart)>20&&motionSamples.some((s:any)=>s.x>Math.min(navStart,navEnd)+2&&s.x<Math.max(navStart,navEnd)-2),'persistent top navigation moves through intermediate positions');
+  assert.ok(new Set(motionSamples.map((s:any)=>s.width)).size<=2,'navigation changes layout width only at its destinations');
   await waitFor("!!document.querySelector('.poster-grid')");
   checks.push('actual rendered library entry and persistent top navigation have intermediate animation frames');
+  const posterHitbox = await js(`(()=>{const r=document.querySelector('.poster-card').getBoundingClientRect();return{x:r.x,y:r.y,bottom:r.bottom,width:r.width}})()`);
+  win.webContents.sendInputEvent({type:'mouseMove',x:Math.round(posterHitbox.x+posterHitbox.width/2),y:Math.floor(posterHitbox.bottom-1)});
+  await delay(260);
+  assert.ok(Math.abs(await js("document.querySelector('.poster-card').getBoundingClientRect().y")-posterHitbox.y)<.1,'poster hover keeps its pointer target stationary');
+  win.webContents.sendInputEvent({type:'mouseMove',x:5,y:5});
+  checks.push('poster edge hover has a stable hit target');
   assert.equal(await js("document.querySelector('.page').scrollTop"), 0);
   checks.push('route change resets page scroll');
   await shot('03-library');
+  await js("document.querySelector('[aria-controls=library-filters]').click()");
+  await waitFor("!!document.querySelector('[aria-label=按观看状态筛选]')");
   const picker=await js(`(() => {
     const select=document.querySelector('[aria-label="按观看状态筛选"]');
     const rect=select.getBoundingClientRect();
@@ -226,12 +251,12 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   const detailOpening=await js(`({hero:document.querySelector('.film-stage').getBoundingClientRect().height,title:document.querySelector('.film-title').getBoundingClientRect().top,height:innerHeight,scroll:document.querySelector('.page').scrollTop})`);
   assert.ok(detailOpening.hero>=detailOpening.height*.9&&detailOpening.title>detailOpening.height*.45&&detailOpening.scroll===0,'detail preserves most of first viewport for artwork');
   await js("document.querySelector('.page').scrollTo({top:320,behavior:'instant'})");await delay(150);
-  const detailScroll=await js(`({progress:Number(getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-focus')),title:document.querySelector('.film-copy').getBoundingClientRect().top,shift:getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-title-shift'),blur:getComputedStyle(document.querySelector('.film-stage .hero-layer'),'::after').filter})`);
+  const detailScroll=await js(`({progress:Number(getComputedStyle(document.querySelector('.film-stage .hero-layers')).getPropertyValue('--detail-focus')),title:document.querySelector('.film-copy').getBoundingClientRect().top,shift:getComputedStyle(document.querySelector('.film-copy')).getPropertyValue('--detail-title-shift'),blur:getComputedStyle(document.querySelector('.film-stage .hero-layer'),'::after').filter})`);
   assert.ok(detailScroll.progress>.3&&parseFloat(detailScroll.shift)>0&&detailScroll.blur==='blur(12px)','scroll blends an actual blurred layer and offsets title');
   await shot('30-detail-scroll');
   await js("document.documentElement.dataset.motion='reduce';document.querySelector('.page').scrollTo({top:360,behavior:'instant'})");await delay(80);
-  assert.equal(await js("getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-title-shift')"),'0px');
-  assert.equal(await js("getComputedStyle(document.querySelector('.film-stage')).getPropertyValue('--detail-art-shift')"),'0px');
+  assert.equal(await js("getComputedStyle(document.querySelector('.film-copy')).getPropertyValue('--detail-title-shift')"),'0px');
+  assert.equal(await js("getComputedStyle(document.querySelector('.film-stage .hero-layers')).getPropertyValue('--detail-art-shift')"),'0px');
   await js("delete document.documentElement.dataset.motion;document.querySelector('.page').scrollTo({top:0,behavior:'instant'})");await delay(80);
   checks.push('large detail hero, progressive blur/title scroll and explicit reduced-motion preference verified in actual renderer');
   await js("document.querySelector('.film-tools summary').click()");
@@ -251,6 +276,19 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   win.setContentSize(1440, 900);
   await route('/collections', "!!document.querySelector('.collection-grid')");
   await shot('05-collections');
+  await js("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('新建专题')).focus();document.activeElement.click()");
+  await waitFor("!!document.querySelector('#collection-desc')");
+  await js("document.querySelector('#collection-desc').focus()");
+  for(const text of ['连','续','输入']) {await win.webContents.insertText(text);await delay(40);}
+  assert.equal(await js("document.activeElement.id==='collection-desc' && document.querySelector('#collection-desc').value==='连续输入'"),true,'editing a controlled field must not reset focus on rerender');
+  await js("[...document.querySelectorAll('.modal button')].find(b=>b.textContent.trim()==='创建').click()");
+  await waitFor("document.querySelector('#collection-name')?.getAttribute('aria-invalid')==='true'");
+  assert.equal(await js("document.activeElement.id"),'collection-name');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});
+  win.webContents.sendInputEvent({type:'keyUp',keyCode:'Escape'});
+  await waitFor("!document.querySelector('.modal')");
+  assert.equal(await js("document.activeElement.textContent.includes('新建专题')"),true,'modal close must restore its trigger');
+  checks.push('native text input, associated validation and modal return focus');
   await js("document.querySelector('.collection-actions button').click()");
   await waitFor("!!document.querySelector('.modal')");
   assert.equal(await js("location.hash"), '#/collections', 'edition edit must not follow the cover link');
@@ -282,7 +320,8 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
   await js("document.querySelector('.watchlist-list .row-actions button').click()");
   await waitFor("document.querySelectorAll('.watchlist-list .row-card').length === 2");
   assert.equal(await js(`window.cinema.library.list({watchStatus:'watching'}).then(items=>items.some(e=>e.film.title===${JSON.stringify(markedEntry)}))`), true);
-  checks.push('watchlist status update persists through real IPC');
+  await waitFor("!!document.activeElement?.dataset.browseKey?.startsWith('watch:')");
+  checks.push('watchlist status update persists through real IPC and keeps keyboard focus');
   await route('/settings', "!!document.querySelector('.settings-layout')");
   await shot('13-settings');
   await route('/settings#quark', "!!document.querySelector('#quark')");
@@ -464,8 +503,8 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     for(const n of [1,2,3]){const film=imported.find((entry:any)=>entry.film.externalId===`1396:season:${n}`).film;await route(`/film/${film.id}`,"!!document.querySelector('.film-title')");await waitFor(`document.querySelector('.hero-layer:last-child')?.style.backgroundImage.includes(${JSON.stringify(film.backdropPath)})`);await shot(`23-${n}-allocated-landscape`);}
     checks.push('three seasons without own backgrounds use three distinct actual landscape bitmaps; gallery order and single import do not choose one shared first image');
     const peakyTv=await js("window.cinema.metadata.candidate('60574','tv').then(c=>window.cinema.library.importCandidate(c))");const peakyMovie=await js("window.cinema.metadata.candidate('900001','movie').then(c=>window.cinema.library.importCandidate(c))");extraFilmIds.push(peakyTv.film.id,peakyMovie.film.id);
-    await route('/library',"!!document.querySelector('.library-toolbar')");await waitFor(`window.cinema.library.list({}).then(rows=>rows.some(e=>e.film.id===${JSON.stringify(peakyMovie.film.id)} && e.film.series?.relatedTv?.tvId==='60574'))`);
-    await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='系列文件夹').click()");await waitFor("[...document.querySelectorAll('.series-folder-card')].some(b=>b.textContent.includes('浴血黑帮') && b.textContent.includes('2 部'))");await shot('28-inferred-tv-film-folder');
+    await route('/library',"!!document.querySelector('[aria-label=搜索影视库]')");await waitFor(`window.cinema.library.list({}).then(rows=>rows.some(e=>e.film.id===${JSON.stringify(peakyMovie.film.id)} && e.film.series?.relatedTv?.tvId==='60574'))`);
+    await js("[...document.querySelectorAll('[aria-label=影视库视图] button')].find(b=>b.textContent.trim()==='系列文件夹').click()");await waitFor("[...document.querySelectorAll('.series-folder-card')].some(b=>b.textContent.includes('浴血黑帮') && b.textContent.includes('2 部'))");await shot('28-inferred-tv-film-folder');
     await route(`/film/${peakyMovie.film.id}`,"!!document.querySelector('.film-title')");assert.equal(await js("document.querySelectorAll('.artwork-source').length"),0);await shot('29-inferred-film-clean-detail');
     checks.push('Peaky Blinders TV plus independently imported film grouped through TMDB credits/keyword evidence in real UI/IPC, without a hardcoded franchise rule');
     assert.ok(noStill.backdropPath.startsWith('backdrop/series/1396/'));assert.ok(noStill.posterPath);
@@ -485,14 +524,14 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await waitFor("document.querySelectorAll('.artwork-gallery img').length>0");await delay(300);await shot('24-online-stills');
     await js("document.querySelector('.modal [aria-label=关闭]').click()");await waitFor("!document.querySelector('.modal')");
     await js(`window.cinema.library.assignFranchise(${JSON.stringify([tv.id,second.id,movieGroup.id])},'关联剧集与衍生电影（系列）')`);
-    await route('/library',"!!document.querySelector('.library-toolbar')");
-    await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='系列文件夹').click()");
+    await route('/library',"!!document.querySelector('[aria-label=搜索影视库]')");
+    await js("[...document.querySelectorAll('[aria-label=影视库视图] button')].find(b=>b.textContent.trim()==='系列文件夹').click()");
     await waitFor("!!document.querySelector('.series-folder-card')");await shot('25-universe-folders');
     assert.equal(await js("[...document.querySelectorAll('.series-folder-card strong')].find(n=>n.textContent.includes('关联剧集与衍生电影'))?.textContent"),'关联剧集与衍生电影');
     assert.equal((await js(`window.cinema.library.detail(${JSON.stringify(tv.id)})`)).film.series.franchise.title,'关联剧集与衍生电影（系列）');
     await js("[...document.querySelectorAll('.series-folder-card')].find(b=>b.textContent.includes('关联剧集与衍生电影')).click()");
     await waitFor("document.querySelectorAll('.poster-title').length===3");await shot('26-universe-contents');
-    await js("[...document.querySelectorAll('.library-view-tools button')].find(b=>b.textContent.trim()==='海报墙').click()");
+    await js("[...document.querySelectorAll('[aria-label=影视库视图] button')].find(b=>b.textContent.trim()==='海报墙').click()");
     await route('/settings',"!!document.querySelector('#updates')");assert.equal((await js('window.cinema.updates.status()')).preferences.automatic,true);
     assert.equal((await js('window.cinema.updates.status()')).preferences.mirror,'auto');
     const timedOut=await js('window.cinema.updates.check()');assert.equal(timedOut.phase,'error');assert.ok(timedOut.error.includes('检查更新连接超时'),timedOut.error);
@@ -516,14 +555,18 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     for(const title of ['影墙排序10','影墙排序2','影墙排序']) {
       const entry=await js(`window.cinema.library.createManual({title:${JSON.stringify(title)},mediaType:'movie'})`);extraFilmIds.push(entry.film.id);
     }
-    await route('/library',"!!document.querySelector('[aria-label=按系列筛选]')");
+    await route('/library',"!!document.querySelector('[aria-label=搜索影视库]')");
+    await js("(()=>{const toggle=document.querySelector('[aria-controls=library-filters]');if(toggle.getAttribute('aria-expanded')!=='true')toggle.click();})()");
+    await waitFor("!!document.querySelector('[aria-label=按系列筛选]')");
     await waitFor("[...document.querySelectorAll('[aria-label=按系列筛选] option')].some(o=>o.textContent==='影墙排序')");
     await js("(()=>{const input=document.querySelector('[aria-label=按系列筛选]');input.value=[...input.options].find(o=>o.textContent==='影墙排序').value;input.dispatchEvent(new Event('change',{bubbles:true}));})()");
     await waitFor("document.querySelector('.result-count')?.textContent==='3 部'");
     assert.deepEqual(await js("[...document.querySelectorAll('.poster-title')].map(n=>n.textContent)"),['影墙排序','影墙排序2','影墙排序10']);
     await shot('19-series-wall');
+    await js("document.querySelector('.library-organize summary').click()");
     await js("document.querySelector('[aria-label=同系列聚合]').click()");
     await js("document.querySelector('[aria-label=同系列聚合]').click()");
+    await js("document.querySelector('.library-organize summary').click()");
 
     await js("[...document.querySelectorAll('.poster-title')].find(node=>node.textContent==='影墙排序2').closest('a').click()");
     await waitFor("!!document.querySelector('.film-title')");
@@ -532,7 +575,9 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
     await js("(()=>{for(const [id,value] of [['film-series','影墙自定义组'],['film-series-order','2']]){const input=document.getElementById(id);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}})()");
     await js("[...document.querySelectorAll('.modal-footer button')].find(button=>button.textContent.trim()==='保存').click()");
     await waitFor("!document.querySelector('.modal')");
-    await route('/library',"!!document.querySelector('[aria-label=按系列筛选]')");
+    await route('/library',"!!document.querySelector('[aria-label=搜索影视库]')");
+    await js("(()=>{const toggle=document.querySelector('[aria-controls=library-filters]');if(toggle.getAttribute('aria-expanded')!=='true')toggle.click();})()");
+    await waitFor("!!document.querySelector('[aria-label=按系列筛选]')");
     await waitFor("[...document.querySelectorAll('[aria-label=按系列筛选] option')].some(option=>option.textContent==='影墙自定义组')");
     await js("(()=>{const input=document.querySelector('[aria-label=按系列筛选]');input.value=[...input.options].find(option=>option.textContent==='影墙自定义组').value;input.dispatchEvent(new Event('change',{bubbles:true}));})()");
     await waitFor("document.querySelector('.result-count')?.textContent==='1 部'");

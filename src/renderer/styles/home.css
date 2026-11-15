@@ -32,18 +32,20 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 12px;
-  color: rgba(233, 236, 242, .55);
-  font-size: 10px;
+  color:var(--text-primary);
+  font-size:12.5px;
+  padding:6px 10px;
+  background:linear-gradient(90deg,rgba(8,10,13,.76),rgba(8,10,13,.55) 60%,rgba(8,10,13,.78));
   letter-spacing: .12em;
 }
-.cinema-rail-position { font-family: var(--font-mono); font-size: 10px; opacity: .75; }
+.cinema-rail-position { font-family: var(--font-mono); font-size:12px;opacity:1; }
 .cinema-rail-heading .link-button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-left: auto;
-  color: rgba(233, 236, 242, .6);
-  font-size: 11px;
+  color:var(--text-primary);
+  font-size:12.5px;
 }
 .home .focus-rail {
   height: 204px;
@@ -52,9 +54,10 @@
   padding: 10px 6px;
 }
 .home .rail-item { position: relative; flex: 0 0 108px; height: 184px; }
-.home .rail-art {
-  width: 76px;
-  height: 114px;
+.home .rail-item .rail-art {
+  /* Keep the full-size layout box stable; only the artwork is scaled. */
+  width: 104px;
+  height: 156px;
   aspect-ratio: auto;
   border-radius: 5px;
   outline-width: 1px;
@@ -62,13 +65,12 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
   opacity: .56;
   filter: saturate(.7);
-  transition: width 180ms var(--ease), height 180ms var(--ease), opacity 180ms var(--ease), transform 180ms var(--ease), outline-color 180ms var(--ease);
+  transform-origin: top left;
+  transform: scale(.730769);
+  transition: opacity 180ms var(--ease), transform 180ms var(--ease), outline-color 180ms var(--ease);
 }
-.home .rail-item:hover .rail-art, .home .rail-item:focus-visible .rail-art { transform: none; }
 .home .rail-item[data-active='true'] .rail-art {
-  width: 104px;
-  height: 156px;
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1);
   outline-color: rgba(245, 244, 241, .88);
   opacity: 1;
   filter: none;
@@ -82,9 +84,9 @@
   opacity: 0;
   pointer-events: none;
 }
-.home .rail-item[data-active='true'] .rail-caption { opacity: .65; }
+.home .rail-item[data-active='true'] .rail-caption {opacity:1;text-shadow:0 1px 8px #000;}
 .home .rail-title { display: none; }
-.home .rail-meta { color: #dededc; font-size: 10px; }
+.home .rail-meta {color:#e9ecf2;font-size:12px;}
 .home .rail-status { display: none; }
 .home .hero-copy { max-width: 780px; margin-top: auto; padding-top: 24px; }
 .home .hero-eyebrow { margin-bottom: 16px; color: rgba(233, 236, 242, .62); font-size: 11px; }
@@ -102,9 +104,9 @@
   margin-top: 16px;
   font-family: var(--font-sans);
   font-style: normal;
-  font-size: 11px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+  font-size:12.5px;
+  letter-spacing:.04em;
+  text-transform:none;
   color: rgba(233, 236, 242, .6);
 }
 .home .hero-meta { margin-top: 20px; gap: 12px; font-size: 12px; color: rgba(233, 236, 242, .68); }
@@ -131,8 +133,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: rgba(233, 236, 242, .4);
-  font-size: 10px;
+  color:#c6ccd6;
+  font-size:12.5px;
   letter-spacing: .1em;
 }
 .cinema-stage-bottom .link-button { display: flex; align-items: center; gap: 10px; font-size: 11px; color: rgba(233, 236, 242, .65); }
@@ -147,7 +149,7 @@
 .home-curation .collection-cover { height: 208px; }
 .home-curation .collection-body { padding: 18px 0 8px; }
 .home-curation .collection-name { font-size: 18px; font-weight: 600; }
-.home-curation .collection-count { margin-top: 16px; font-size: 10px; letter-spacing: .1em; }
+.home-curation .collection-count { margin-top:12px;font-size:12.5px; letter-spacing: .1em; }
 .home .hero-stage.is-empty .hero-stage-inner { padding-bottom: 88px; }
 .home .hero-empty-title { max-width: 900px; font-family: var(--font-display); font-size: clamp(38px, 4.4vw, 68px); font-weight: 500; line-height: 1.4; }
 .home .hero-copy-empty { margin: auto 0; }
@@ -162,8 +164,8 @@
   .home .hero-stage-inner { padding-top: 96px; padding-bottom: 64px; gap: 8px; }
   .home .focus-rail { height: 156px; }
   .home .rail-item { flex-basis: 90px; height: 136px; }
-  .home .rail-art { width: 56px; height: 84px; }
-  .home .rail-item[data-active='true'] .rail-art { width: 80px; height: 120px; }
+  .home .rail-item .rail-art { width: 80px; height: 120px; transform: scale(.7); }
+  .home .rail-item[data-active='true'] .rail-art { transform: translateY(-4px) scale(1); }
   .home .rail-caption { top: 126px; }
   .home .hero-copy { padding-top: 8px; }
   .home .hero-title { font-size: clamp(36px, 4vw, 56px); }

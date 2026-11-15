@@ -71,3 +71,6 @@ Windows1.3预览与TV0.3预览开始使用`updates/{platform}-{channel}.json`。
 同日Windows镜像保存/超时状态及横图修复递增为`1.3.0-beta.3`，TV横图修复递增为`0.3.0-alpha.3`/code11；不覆盖旧资产或换签。安装包验证与源码身份另见[beta.3记录](../artifacts/releases/v1.3.0-beta.3/validation.json)和[TV原构建](../artifacts/releases/tv-v0.3.0-alpha.3/BUILD.json)。
 
 同日通用衍生关联及分季横图分配使用Windows`1.3.0-beta.4`和TV`0.3.0-alpha.4`/code12；两端实际构建源码均为335a73b，固定签名/数据库版本保持。[来源、验证和发布记录](SERIES-RELATIONSHIPS.md#本轮交付2026-11-11)。
+
+
+2026-11-15：双端前端优化发布递增为Windows `1.3.0-beta.6` 与TV `0.3.0-alpha.11` / code19。TV源码此前已为alpha.10/code18，因此继续递增，不复用开发构建编号；沿用固定签名及数据库。面向使用者的Release只显示对应版本说明，历史记录保留在文档，不拼入每次发布正文。

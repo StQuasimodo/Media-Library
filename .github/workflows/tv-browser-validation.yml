@@ -77,13 +77,18 @@ jobs:
         with:
           name: tv-${{ env.TV_TEST_SUITE }}-evidence
           if-no-files-found: warn
+          include-hidden-files: true
           path: |
             .harness/tv-playback/report.json
             .harness/tv-playback/quark-dav-report.json
             .harness/tv-playback/instrumentation.txt
             .harness/tv-playback/logcat.txt
+            .harness/tv-playback/*.png
             .harness/android-tv-package/report.json
             .harness/tv-regression/*.json
+            .harness/tv-features/*.json
+            .harness/tv-features/*.png
+            .harness/tv-features/*.txt
             .harness/tv-resource-names/*
             .harness/tv-backup/*
             .harness/android-tv-emulator/report.json

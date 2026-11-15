@@ -6,6 +6,8 @@ export type IconName =
   | 'layers'
   | 'clock'
   | 'settings'
+  | 'filter'
+  | 'more'
   | 'search'
   | 'plus'
   | 'close'
@@ -30,6 +32,8 @@ export type IconName =
   | 'tv';
 
 const PATHS: Record<IconName, ReactNode> = {
+  filter:<path d="M4 5h16l-6 7v6l-4 2v-8z"/>,
+  more:<><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
   home: <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" />,
   library: (
     <>

@@ -1,3 +1,4 @@
+import { handlePosterNavigation } from '../lib/posterNavigation';
 import {folderTitle} from '@shared/folderTitle';
 import {seriesFolders} from '@shared/franchises';
 import {SeriesFolderDialog} from '../components/SeriesFolderDialog';
@@ -6,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { LibrarySort, WatchStatus } from '@shared/types';
 import { groupSeriesEntries,identifySeries } from '@shared/series';
 import { useResolveSeries } from '../lib/useSeries';
+import { useBrowseState } from '../lib/useBrowseState';
 import { api } from '../lib/api';
 import { useAppState } from '../lib/appState';
 import { useAsyncData, useDebounced } from '../lib/useAsync';
@@ -27,23 +29,24 @@ const SORT_OPTIONS: Array<{ value: LibrarySort; label: string }> = [
 
 export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
   const { version, settings, info } = useAppState();
-  const [view,setView]=useState(()=>{try{return localStorage.getItem('mycinema.libraryView')??'wall';}catch{return 'wall';}});
-  const [folderKey,setFolderKey]=useState('');
+  const [view,setView]=useBrowseState('library.view', ()=>{try{return localStorage.getItem('mycinema.libraryView')??'wall';}catch{return 'wall';}});
+  const [viewTransition,setViewTransition]=useState(false);
+  const [folderKey,setFolderKey]=useBrowseState('library.folderKey', '');
+  const [filtersOpen,setFiltersOpen]=useBrowseState('library.filtersOpen',false);
   const [folderDialog,setFolderDialog]=useState(false);
-  const [seriesKey,setSeriesKey]=useState('');
-  const [seriesAnchor,setSeriesAnchor]=useState('');
-  const [grouped,setGrouped]=useState(()=>{try{return localStorage.getItem('mycinema.groupSeries')!=='false';}catch{return true;}});
-  const [search, setSearch] = useState('');
-  const [year, setYear] = useState('');
-  const [status, setStatus] = useState<WatchStatus | 'all'>('all');
-  const [collectionId, setCollectionId] = useState('');
-  const [sort, setSort] = useState<LibrarySort>(settings.defaultSort);
+  const [seriesKey,setSeriesKey]=useBrowseState('library.seriesKey', '');
+  const [seriesAnchor,setSeriesAnchor]=useBrowseState('library.seriesAnchor', '');
+  const [grouped,setGrouped]=useBrowseState('library.grouped', ()=>{try{return localStorage.getItem('mycinema.groupSeries')!=='false';}catch{return true;}});
+  const [search, setSearch] = useBrowseState('library.search', '');
+  const [year, setYear] = useBrowseState('library.year', '');
+  const [status, setStatus] = useBrowseState<WatchStatus | 'all'>('library.status', 'all');
+  const [collectionId, setCollectionId] = useBrowseState('library.collectionId', '');
+  const [sort, setSort] = useBrowseState<LibrarySort>('library.sort', settings.defaultSort);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const debouncedSearch = useDebounced(search, 250);
 
-  useEffect(() => {
-    setSort(settings.defaultSort);
-  }, [settings.defaultSort]);
+  const previousDefaultSort=useRef(settings.defaultSort);
+  useEffect(()=>{if(previousDefaultSort.current!==settings.defaultSort)setSort(settings.defaultSort);previousDefaultSort.current=settings.defaultSort;},[settings.defaultSort]);
 
   // Ctrl+F lands here; the flag survives the route change.
   useEffect(() => {
@@ -95,92 +98,23 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
 
   return (
     <>
-      <PageHeading title="全部收藏" eyebrow="THE COLLECTION" description="电影、剧集，以及留给自己的观影记录。">
-        <button type="button" className="btn btn-secondary" onClick={onOpenImport}><Icon name="plus" size={14} /> 添加作品</button>
-      </PageHeading>
-      <div className="toolbar library-toolbar">
-        <div className="search-field">
-          <span className="search-icon">
-            <Icon name="search" size={15} />
-          </span>
-          <input
-            ref={searchRef}
-            className="input"
-            placeholder="搜索标题、原名、简介或笔记…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            aria-label="搜索影视库"
-          />
-        </div>
-
-        <select
-          className="select"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as WatchStatus | 'all')}
-          aria-label="按观看状态筛选"
-        >
-          <option value="all">全部状态</option>
-          <option value="want">想看</option>
-          <option value="watching">观看中</option>
-          <option value="watched">已看完</option>
-          <option value="dropped">暂不观看</option>
-        </select>
-
-        <select
-          className="select"
-          value={year}
-          onChange={(event) => setYear(event.target.value)}
-          aria-label="按年份筛选"
-        >
-          <option value="">全部年份</option>
-          {(years.data ?? []).map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="select"
-          value={collectionId}
-          onChange={(event) => setCollectionId(event.target.value)}
-          aria-label="按专题筛选"
-        >
-          <option value="">全部专题</option>
-          {(collections.data ?? []).map((collection) => (
-            <option key={collection.id} value={collection.id}>
-              {collection.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="select"
-          value={sort}
-          onChange={(event) => setSort(event.target.value as LibrarySort)}
-          aria-label="排序方式"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <select className="select" aria-label="按系列筛选" value={effectiveSeriesKey} onChange={event=>{const key=event.target.value;setSeriesKey(key);setSeriesAnchor(source.find(entry=>identities.get(entry.id)?.key===key)?.id ?? '');}}><option value="">全部系列</option>{seriesOptions.map(series=><option key={series.key} value={series.key}>{series.title}</option>)}</select>
-        <label className="setting-help row gap-2"><input type="checkbox" aria-label="同系列聚合" checked={grouped} onChange={event=>{setGrouped(event.target.checked);try{localStorage.setItem('mycinema.groupSeries',String(event.target.checked));}catch{}}}/> 同系列聚合</label>
-        <span className="toolbar-spacer" />
-        <LibraryRefreshButton />
-        <span className="result-count">{entries.loading ? '…' : `${list.length} 部`}</span>
-
+      <PageHeading className="library-heading" title="全部收藏" description={<span className="result-count">{entries.loading?'…':`${list.length} 部`}</span>}><button type="button" className="btn btn-secondary" onClick={onOpenImport}><Icon name="plus" size={14}/>添加作品</button></PageHeading>
+      <div className="library-controls" aria-label="影视库浏览工具">
+        <div className="search-field"><span className="search-icon"><Icon name="search" size={15}/></span><input ref={searchRef} className="input" placeholder="搜索标题、原名、简介或笔记…" value={search} onChange={event=>setSearch(event.target.value)} aria-label="搜索影视库"/></div>
+        <div className="segmented" role="group" aria-label="影视库视图">{[['wall','海报墙'],['folders','系列文件夹']].map(([key,label])=><button type="button" key={key} aria-pressed={view===key} onClick={()=>{setViewTransition(true);setView(key);setFolderKey('');try{localStorage.setItem('mycinema.libraryView',key);}catch{}}}>{label}</button>)}</div>
+        <select className="select library-sort" value={sort} onChange={event=>setSort(event.target.value as LibrarySort)} aria-label="排序方式">{SORT_OPTIONS.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select>
+        <button type="button" className="btn btn-secondary btn-sm" aria-expanded={filtersOpen} aria-controls="library-filters" onClick={()=>setFiltersOpen(!filtersOpen)}><Icon name="filter" size={14}/>筛选{hasFilters?<span className="filter-indicator" aria-label="已应用筛选"/>:null}</button><LibraryRefreshButton/>
+        <details className="library-organize"><summary className="btn btn-icon" aria-label="整理选项" title="整理选项"><Icon name="more" size={18}/></summary><div className="library-organize-menu"><button type="button" className="btn btn-ghost" onClick={event=>{setFolderDialog(true);event.currentTarget.closest('details')?.removeAttribute('open');}}>整理系列文件夹</button><label className="row gap-2"><input type="checkbox" aria-label="同系列聚合" checked={grouped} onChange={event=>{setGrouped(event.target.checked);try{localStorage.setItem('mycinema.groupSeries',String(event.target.checked));}catch{}}}/>同系列聚合</label></div></details>
       </div>
-      <LibraryRefreshNotice />
-      <div className="library-view-tools"><div className="segmented" aria-label="影视库视图">{[['wall','海报墙'],['folders','系列文件夹']].map(([key,label])=><button type="button" key={key} aria-pressed={view===key} className={view===key?'is-active':''} onClick={()=>{setView(key);setFolderKey('');try{localStorage.setItem('mycinema.libraryView',key);}catch{}}}>{label}</button>)}</div><button className="btn btn-secondary btn-sm" onClick={()=>setFolderDialog(true)}>整理系列文件夹</button></div>
-      {folderDialog?<SeriesFolderDialog entries={source} onClose={()=>setFolderDialog(false)}/>:null}
-      {view==='folders'&&currentFolder?<div className="folder-breadcrumb"><button className="link-button" onClick={()=>setFolderKey('')}>全部文件夹</button><span> / {folderTitle(currentFolder.title)} · {currentFolder.entries.length} 部</span></div>:null}
-
-      <p className="setting-help">{resolvingSeries ? '正在补充已有电影的系列信息…' : grouped ? '同系列相邻，系列内部按序号升序；系列之间沿用所选排序。' : '可按系列筛选收藏，或开启同系列聚合。'}</p>
-
+      {filtersOpen?<div className="library-filter-panel" id="library-filters" aria-label="收藏筛选条件">
+        <label>观看状态<select className="select" value={status} onChange={event=>setStatus(event.target.value as WatchStatus|'all')} aria-label="按观看状态筛选"><option value="all">全部状态</option><option value="want">想看</option><option value="watching">观看中</option><option value="watched">已看完</option><option value="dropped">暂不观看</option></select></label>
+        <label>年份<select className="select" value={year} onChange={event=>setYear(event.target.value)} aria-label="按年份筛选"><option value="">全部年份</option>{(years.data??[]).map(value=><option key={value} value={value}>{value}</option>)}</select></label>
+        <label>专题<select className="select" value={collectionId} onChange={event=>setCollectionId(event.target.value)} aria-label="按专题筛选"><option value="">全部专题</option>{(collections.data??[]).map(collection=><option key={collection.id} value={collection.id}>{collection.name}</option>)}</select></label>
+        <label>系列<select className="select" aria-label="按系列筛选" value={effectiveSeriesKey} onChange={event=>{const key=event.target.value;setSeriesKey(key);setSeriesAnchor(source.find(entry=>identities.get(entry.id)?.key===key)?.id??'');}}><option value="">全部系列</option>{seriesOptions.map(series=><option key={series.key} value={series.key}>{series.title}</option>)}</select></label>
+      </div>:null}
+      <LibraryRefreshNotice/>{folderDialog?<SeriesFolderDialog entries={source} onClose={()=>setFolderDialog(false)}/>:null}
+      {view==='folders'&&currentFolder?<div className="folder-breadcrumb"><button className="link-button" onClick={()=>{setViewTransition(true);setFolderKey('');}}>全部文件夹</button><span className="meta-sep">{folderTitle(currentFolder.title)}</span><span className="meta-sep">{currentFolder.entries.length} 部</span></div>:null}
+      {resolvingSeries?<p className="setting-help" role="status">正在补充已有电影的系列信息…</p>:null}
       {hasFilters ? (
         <div className="active-filters">
           {seriesKey ? <span className="chip is-active">系列：{seriesOptions.find(series=>series.key===effectiveSeriesKey)?.title ?? '当前系列'}</span> : null}
@@ -243,11 +177,11 @@ export function LibraryPage({ onOpenImport }: { onOpenImport: () => void }) {
           </EmptyState>
         )
       ) : view==='folders'&&!currentFolder ? (
-        <div className="series-folder-grid">{folders.map(folder=>folder.standalone?<PosterCard key={folder.key} entry={folder.entries[0]} compact={compact}/>:<button className="series-folder-card" key={folder.key} onClick={()=>setFolderKey(folder.key)}>
-          <div className="series-folder-art">{folder.entries.slice(0,3).reverse().map((entry,index)=><div key={entry.id} className={`folder-poster folder-poster-${index}`}><PosterImage film={entry.film}/></div>)}</div><strong>{folderTitle(folder.title)}</strong><span>{folder.entries.length} 部作品 · 打开文件夹</span>
+        <div key={`${view}:${folderKey}`} onKeyDown={handlePosterNavigation} className={`series-folder-grid${viewTransition ? ' is-view-entering' : ''}`}>{folders.map(folder=>folder.standalone?<PosterCard key={folder.key} entry={folder.entries[0]} compact={compact}/>:<button className="series-folder-card" data-browse-key={`folder:${folder.key}`} key={folder.key} onClick={()=>{setViewTransition(true);setFolderKey(folder.key);}}>
+          <div className="series-folder-art">{folder.entries.slice(0,3).reverse().map((entry,index)=><div key={entry.id} className={`folder-poster folder-poster-${index}`}><PosterImage film={entry.film}/></div>)}</div><strong>{folderTitle(folder.title)}</strong><span className="folder-count">{folder.entries.length} 部作品</span>
         </button>)}</div>
       ) : (
-        <div className={`poster-grid${compact ? ' is-compact' : ''}`}>
+        <div key={`${view}:${folderKey}`} onKeyDown={handlePosterNavigation} className={`poster-grid${compact ? ' is-compact' : ''}${viewTransition ? ' is-view-entering' : ''}`}>
           {visibleList.map((entry) => (
             <PosterCard key={entry.id} entry={entry} compact={compact} />
           ))}

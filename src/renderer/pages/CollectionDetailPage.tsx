@@ -1,7 +1,9 @@
+import { handlePosterNavigation } from '../lib/posterNavigation';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { CollectionEntry } from '@shared/types';
 import { groupSeriesEntries } from '@shared/series';
+import { FilmLink,useBrowseBack } from '../components/BrowseLink';
 import { useResolveSeries } from '../lib/useSeries';
 import { api, describeError } from '../lib/api';
 import { useAppState } from '../lib/appState';
@@ -16,7 +18,7 @@ export function CollectionDetailPage() {
   const { collectionId } = useParams<{ collectionId: string }>();
   const { version, invalidate } = useAppState();
   const toast = useToast();
-  const navigate = useNavigate();
+  const back=useBrowseBack('/collections','所有专题');
 
   const detail = useAsyncData(
     () => api.collections.detail(collectionId as string),
@@ -82,12 +84,10 @@ export function CollectionDetailPage() {
     <>
       <section className="collection-stage" aria-label="专题介绍">
         <HeroBackdrop src={artwork?backdropUrl(artwork):null} />
-        <div className="film-stage-scrim" />
+        <div className="collection-stage-scrim" />
         <div className="collection-stage-inner">
-          <button type="button" className="link-button collection-back" onClick={() => navigate('/collections')}>
-            <Icon name="chevronLeft" size={13} /> 所有专题
-          </button>
-          <div className="eyebrow">私人选辑 · {entries.length} 部作品</div>
+          <Link to={back.to} onClick={back.onClick} className="link-button collection-back"><Icon name="chevronLeft" size={13} /> {back.label}</Link>
+          <div className="meta-row">{entries.length} 部作品</div>
           <h1 className="collection-stage-title">{collection.name}</h1>
           {collection.description ? <p className="collection-stage-description">{collection.description}</p> : null}
           <button type="button" className="btn btn-secondary" onClick={() => setPickerOpen(true)}>
@@ -112,7 +112,7 @@ export function CollectionDetailPage() {
           </button>
         </EmptyState>
       ) : (
-        <div className="poster-grid">
+        <div className="poster-grid" onKeyDown={handlePosterNavigation}>
           {entries.map((entry) => (
             <div key={entry.id} className="collection-film">
               <PosterCard entry={entry} />
@@ -150,7 +150,7 @@ export function CollectionDetailPage() {
         <div className="search-field" style={{ maxWidth: '100%', marginBottom: 14 }}>
           <input
             className="input"
-            placeholder="筛选收藏库…"
+            placeholder="筛选收藏库…" aria-label="筛选收藏库"
             value={pickerSearch}
             onChange={(event) => setPickerSearch(event.target.value)}
             autoFocus
@@ -167,11 +167,11 @@ export function CollectionDetailPage() {
           <div className="row-list" style={{ maxHeight: 420, overflowY: 'auto' }}>
             {filtered.map((entry) => (
               <div key={entry.id} className="row-card" style={{ gridTemplateColumns: '54px 1fr auto' }}>
-                <Link to={`/film/${entry.film.id}`} className="row-poster">
+                <FilmLink film={entry.film} className="row-poster" aria-label={`查看 ${entry.film.title}`}>
                   {imageUrl(entry.film.posterPath) ? (
                     <img src={imageUrl(entry.film.posterPath) as string} alt="" loading="lazy" />
                   ) : null}
-                </Link>
+                </FilmLink>
                 <div className="row-main">
                   <div className="row-title">{entry.film.title}</div>
                   <div className="row-sub">

@@ -4,6 +4,7 @@
 
 | 文档 | 内容 | 什么时候看 |
 |---|---|---|
+| [FRONTEND-OPTIMIZATION-2026-11-15.md](FRONTEND-OPTIMIZATION-2026-11-15.md) | 双端海报浏览、焦点连续性与遥控时间轴 | 查看本次前端优化和完整回归结果 |
 | [PROJECT-PROGRESS-2026-11-10.md](PROJECT-PROGRESS-2026-11-10.md) | 主线/发布/实验进度、证据边界、阻塞项及后续里程碑 | 查看当前真实进度和下一步开发顺序 |
 | [TV-BROWSER-LIFECYCLE-2026-11-10.md](TV-BROWSER-LIFECYCLE-2026-11-10.md) | 目录请求取消、旧页面回调、独立DAV会话与API22回归 | 查看进度审计后第一批稳定性修复及签名阻塞原因 |
 | [TV-RESOURCE-NAMES-2026-11-10.md](TV-RESOURCE-NAMES-2026-11-10.md) | 数字片名、标签词边界、特别篇匹配及数据保留 | 查看命名修复与两端共享样本的API22验证 |

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { BrowseLink } from './BrowseLink';
 import type { FilmCollection } from '@shared/types';
 import { Icon } from './icons';
 import { PosterImage } from './PosterImage';
@@ -16,7 +16,7 @@ export function CollectionCard({
 
   return (
     <article className="collection-card">
-      <Link to={`/collections/${collection.id}`} className="collection-link">
+      <BrowseLink to={`/collections/${collection.id}`} className="collection-link" data-browse-key={`collection:${collection.id}`}>
         <div className="collection-cover">
           {posters.length > 0 ? (
             posters.map((path, index) => <span className="collection-cover-image" key={`${path}-${index}`}><PosterImage film={{ posterPath: path, title: collection.name, year: null }} /></span>)
@@ -32,14 +32,14 @@ export function CollectionCard({
           <div className="collection-desc">{collection.description || '尚未填写专题描述'}</div>
           <div className="collection-count">{collection.filmCount} 部作品</div>
         </div>
-      </Link>
+      </BrowseLink>
       {onEdit || onDelete ? (
         <div className="collection-actions">
           {onEdit ? (
             <button
               type="button"
               className="btn btn-icon"
-              aria-label={`编辑专题 ${collection.name}`}
+              aria-label={`编辑专题 ${collection.name}`} title="编辑专题"
               onClick={() => onEdit(collection)}
             >
               <Icon name="edit" size={14} />
@@ -49,7 +49,7 @@ export function CollectionCard({
             <button
               type="button"
               className="btn btn-icon"
-              aria-label={`删除专题 ${collection.name}`}
+              aria-label={`删除专题 ${collection.name}`} title="删除专题"
               onClick={() => onDelete(collection)}
             >
               <Icon name="trash" size={14} />

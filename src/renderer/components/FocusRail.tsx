@@ -84,7 +84,7 @@ export function FocusRail({
             ref={(node) => {
               itemRefs.current[index] = node;
             }}
-            className="rail-item"
+            className="rail-item" data-browse-key={`film:${entry.film.id}`}
             data-active={active}
             tabIndex={active ? 0 : -1}
             onMouseEnter={() => onActivate(index)}

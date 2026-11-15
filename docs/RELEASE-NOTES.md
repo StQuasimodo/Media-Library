@@ -17,7 +17,7 @@
 - 已使用1.3预览版，可在「设置 → 应用更新」选择预览渠道后检查更新。
 - 沿用原有收藏数据库与凭据格式。建议更新前在设置中创建备份；文件校验与构建来源见Release附件。
 
-这是预览版本。Windows原生界面、夸克受控同步及凭据保留已通过自动化验证；电视实机和高级播放器能力不属于本Windows包的交付范围。[界面预览](https://github.com/StQuasimodo/Media-Library/blob/main/docs/GALLERY.md) · [完整验证记录](https://github.com/StQuasimodo/Media-Library/blob/main/docs/FRONTEND-OPTIMIZATION-2026-11-15.md)。
+这是预览版本。Windows原生界面、夸克受控同步及凭据保留已通过自动化验证。[界面预览](https://github.com/StQuasimodo/Media-Library/blob/main/docs/GALLERY.md) · [完整验证记录](https://github.com/StQuasimodo/Media-Library/blob/main/docs/FRONTEND-OPTIMIZATION-2026-11-15.md)。
 
 ---
 

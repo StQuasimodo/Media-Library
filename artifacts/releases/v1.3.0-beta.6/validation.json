@@ -1,0 +1,45 @@
+{
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.6",
+  "source": "0db958fb44ccdc46ebf9914677a59b78f13407d4",
+  "assets": [
+    {
+      "name": "BUILD.json",
+      "bytes": 871,
+      "sha256": "6e5b017324ae55b1b3a02ef8cb225237496fe23d8ed415478aef07787f498501",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/BUILD.json"
+    },
+    {
+      "name": "INSTALL.cmd",
+      "bytes": 1338,
+      "sha256": "0b757e5a3a166cbbe5de8dfdaf414664b42ef58d38d63557f33d38d359864d78",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/INSTALL.cmd"
+    },
+    {
+      "name": "My-Cinema-1.3.0-beta.6-portable-win64.zip",
+      "bytes": 171302636,
+      "sha256": "e4c0d045ba8f24a8eb2ba54772419cd3767d386a027097c795d13560e78ce511",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/My-Cinema-1.3.0-beta.6-portable-win64.zip"
+    },
+    {
+      "name": "My-Cinema-1.3.0-beta.6-Setup.exe",
+      "bytes": 122957961,
+      "sha256": "50c914db5c9c6b571431ba64d9cf0a64d3ce21717b3e0e7f27a7931e03d84b00",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/My-Cinema-1.3.0-beta.6-Setup.exe"
+    },
+    {
+      "name": "RUN-PORTABLE.cmd",
+      "bytes": 976,
+      "sha256": "ba6f6b7dd354cd631c3fde53f1d202eedac81f4854db53f372f60c68ea264f17",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/RUN-PORTABLE.cmd"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 368,
+      "sha256": "720080539fb818a51e10a7c86fc89ed9c7f5c6132f6a7cf22da5318e33309293",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.6/SHA256SUMS.txt"
+    }
+  ],
+  "portableNativeSqlitePresent": true,
+  "nativeSqliteWindowsX64Verified": true,
+  "productScreenshotsBundled": false
+}

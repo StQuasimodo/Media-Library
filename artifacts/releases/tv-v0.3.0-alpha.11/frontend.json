@@ -1,0 +1,15 @@
+{
+  "result": "passed",
+  "checks": [
+    "home poster rail precedes film information",
+    "comfortable poster density uses larger covers",
+    "collections expose cover mosaics and a named remote action",
+    "watchlist renders actual wanted entries in a queue",
+    "watch queue action commits to SQLite",
+    "removing a wanted row retains useful remote focus",
+    "poster density is configurable without text entry",
+    "compact density increases the actual grid column count"
+  ],
+  "apiLevel": 22,
+  "physicalTelevisionVerified": false
+}

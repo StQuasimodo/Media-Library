@@ -9,12 +9,16 @@
 - **更少输入，更直接操作**：在想看队列直接标记在看或已看完，操作后焦点移动到相邻作品；低频整理集中在「更多操作」。
 - **可遥控的播放时间轴**：显示实际播放时间与时长，左右键定位，确认键暂停或恢复；不可定位的媒体不会显示为可拖动状态。
 - **连贯的页面动效**：优化顶部导航、连续方向键滚动、详情背景与焦点反馈，保留关闭动态效果的设置。
+- **夸克云端版本试播**：查看服务端提供的画质与编码，手动试播已就绪的HLS版本；原文件播放入口继续保留。
+- **独立续播与备份**：原文件和每个云端版本分别记录进度，本机备份及导出覆盖两类播放进度。
 
 ## 安装与更新
 
 [下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.11/My-Cinema-TV-0.3.0-alpha.11-debug.apk)。支持Android 5.0及以上、ARMv7／x86，安装包版本代码19。
 
 沿用现有固定开发签名、收藏数据库与播放进度，可覆盖使用相同签名的版本。更早的异签名版本无法直接覆盖，请先导出并确认备份有效，迁移说明见[电视端指南](https://github.com/StQuasimodo/Media-Library/blob/main/docs/ANDROID-TV.md)。
+
+云端版本是否可用取决于夸克返回结果与账号权限。
 
 这是开发预览。内置播放器仍为LibVLC，支持已有的音轨与单条内嵌字幕选择；主副双字幕和PotPlayer完整功能尚未交付。API22模拟器验证不代表长虹实机、4K原盘、HDR或硬解性能保证。[界面预览](https://github.com/StQuasimodo/Media-Library/blob/main/docs/GALLERY.md) · [验证记录](https://github.com/StQuasimodo/Media-Library/blob/main/docs/FRONTEND-OPTIMIZATION-2026-11-15.md)。
 

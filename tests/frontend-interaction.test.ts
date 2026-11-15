@@ -29,6 +29,15 @@ describe('stable modal lifecycle',()=>{
   const input=document.querySelector<HTMLInputElement>('#title')!;expect(input.getAttribute('aria-invalid')).toBe('true');expect(input.getAttribute('aria-describedby')).toBe('existing title-error');expect(document.querySelector('#title-error')?.getAttribute('role')).toBe('alert');
   render(hField({label:'专题名称',htmlFor:'title',hint:'本机唯一'},createElement('input',{id:'title'})));expect(input.hasAttribute('aria-invalid')).toBe(false);expect(input.getAttribute('aria-describedby')).toBe('title-hint');
  });
+ it('lets only the top dialog close and returns focus inside the parent dialog',()=>{
+  let outer=0,inner=0;
+  const form=(nested:boolean)=>hModal({open:true,title:'作品',onClose:()=>outer++},
+   createElement('button',{id:'nested-trigger'},'选择专题'),
+   hModal({open:nested,title:'专题',onClose:()=>inner++},createElement('input',{id:'nested-field',autoFocus:true})));
+  render(form(false));document.querySelector<HTMLButtonElement>('#nested-trigger')!.focus();render(form(true));
+  act(()=>document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
+  expect(inner).toBe(1);expect(outer).toBe(0);render(form(false));expect(document.activeElement?.id).toBe('nested-trigger');
+ });
 });
 describe('bounded history memory',()=>{
  it('keeps filters, focus and scroll together per history entry',()=>{const memory=new BrowseMemory(3);memory.value('a','search','绝命毒师');memory.remember('a',{scrollTop:400,focusKey:'film:1'});memory.value('b','search','沙丘');expect(memory.read('a')).toEqual({scrollTop:400,focusKey:'film:1',values:{search:'绝命毒师'}});expect(memory.read('b')?.values.search).toBe('沙丘');});

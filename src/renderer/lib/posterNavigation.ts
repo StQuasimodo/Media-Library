@@ -15,16 +15,29 @@ export function handlePosterNavigation(event: KeyboardEvent<HTMLElement>) {
   event.preventDefault();
   const item=items[next],grid=event.currentTarget;
   item.focus({preventScroll:true});
-  // Coalesce rapid direction reversals and cancel a previous native smooth
-  // scroll before requesting the latest destination. Otherwise focus can
-  // reach Home while a pending End scroll continues toward the bottom.
+  // Keep a single cancellable scroll per grid. Native scrollIntoView requests
+  // can race when focus changes again before the browser starts scrolling.
   const previous=pendingScroll.get(grid);
   if(previous!==undefined)cancelAnimationFrame(previous);
   pendingScroll.set(grid,requestAnimationFrame(()=>{
     pendingScroll.delete(grid);
     if(!item.isConnected)return;
     const page=grid.closest<HTMLElement>('.page');
-    page?.scrollTo({top:page.scrollTop,behavior:'instant'});
-    item.scrollIntoView({block:'nearest',inline:'nearest',behavior:prefersReducedMotion()?'instant':'smooth'});
+    if(!page)return;
+    const bounds=item.getBoundingClientRect(),viewport=page.getBoundingClientRect();
+    const start=page.scrollTop,top=viewport.top+112,bottom=viewport.bottom-24;
+    const delta=bounds.top<top?bounds.top-top:bounds.bottom>bottom?bounds.bottom-bottom:0;
+    const destination=Math.max(0,Math.min(page.scrollHeight-page.clientHeight,start+delta));
+    page.scrollTo({top:start,behavior:'instant'});
+    if(prefersReducedMotion()){page.scrollTo({top:destination,behavior:'instant'});return;}
+    const began=performance.now();
+    const advance=(now:number)=>{
+      if(!item.isConnected){pendingScroll.delete(grid);return;}
+      const progress=Math.min(1,(now-began)/240),eased=1-Math.pow(1-progress,3);
+      page.scrollTo({top:start+(destination-start)*eased,behavior:'instant'});
+      if(progress<1)pendingScroll.set(grid,requestAnimationFrame(advance));
+      else pendingScroll.delete(grid);
+    };
+    pendingScroll.set(grid,requestAnimationFrame(advance));
   }));
 }

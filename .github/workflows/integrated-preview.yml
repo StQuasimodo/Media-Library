@@ -2,6 +2,10 @@ name: Integrated Quark preview
 on:
   workflow_dispatch:
     inputs:
+      validation_only:
+        description: Run Windows interaction and upgrade checks without packaging or publishing
+        type: boolean
+        default: false
       probe_live_quark:
         description: Also probe the external Quark login page (requires service availability)
         type: boolean
@@ -20,6 +24,7 @@ jobs:
         with:
           node-version: '24'
       - name: Require an unused preview version
+        if: ${{ !inputs.validation_only }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/check-release-version.mjs --preview
@@ -47,12 +52,14 @@ jobs:
       - name: Preserve real Windows credentials through an application upgrade
         run: node scripts/check-credential-upgrade.mjs
       - name: Package preview installer and portable version
+        if: ${{ !inputs.validation_only }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           node scripts/package.mjs
           node scripts/verify-release.mjs
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.validation_only }}
         with:
           name: My-Cinema-Integrated-Quark-Preview
           if-no-files-found: error
@@ -63,6 +70,7 @@ jobs:
             release/INSTALL.cmd
             release/RUN-PORTABLE.cmd
       - name: Verify actual installer shortcut choices
+        if: ${{ !inputs.validation_only }}
         run: ./scripts/check-installer.ps1
       - uses: actions/upload-artifact@v4
         if: always()

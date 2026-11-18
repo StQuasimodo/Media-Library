@@ -156,6 +156,7 @@ export interface CinemaApi {
     chooseBackupFile(): Promise<string | null>;
     restore(path: string): Promise<RestoreResult>;
     exportJson(): Promise<ExportResult | null>;
+    exportForTv(): Promise<ExportResult | null>;
   };
 }
 

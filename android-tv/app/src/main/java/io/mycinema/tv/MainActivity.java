@@ -358,6 +358,8 @@ public final class MainActivity extends Activity {
         content.addView(button("媒体源 · 夸克 / WebDAV",this::mediaSources));
         content.addView(text("收藏与备份",19,PRIMARY));content.addView(text("备份包含收藏、媒体关联、原文件与云端播放进度，不包含图片缓存与账号登录信息。换机后需重新连接媒体源。",14,SECONDARY));
         content.addView(button("创建本机备份",()->job("备份收藏与播放记录…",()->{TvBackup backup=new TvBackup(this);backup.writeLocal("collection-backup.json",backup.snapshot());return true;},done->toast("已保存本机备份，包含媒体关联与播放进度。"))));
+        content.addView(text("电脑端“导出到电视”的迁移文件，也从下面的备份入口导入。合并前会说明范围，并保存可撤销的备份。",14,SECONDARY));
+        content.addView(button("补全收藏图片",this::fillArtwork));
         content.addView(button("导出备份文件",()->backupDocument(true)));content.addView(button("从备份文件恢复",()->backupDocument(false)));
         if(android.os.Build.VERSION.SDK_INT<=22){content.addView(button("导出到下载目录",()->job("导出备份…",()->new TvBackup(this).exportDownloads(),file->toast("已导出到 下载/MyCinema/"+file.getName()+"，可用文件管理器复制到U盘。"))));content.addView(button("从下载目录恢复",this::downloadBackups));}
         content.addView(button("恢复上次本机备份",()->restoreLocal("collection-backup.json")));content.addView(button("恢复操作前备份",()->restoreLocal("before-restore.json")));content.addView(button("恢复更新前备份",()->restoreLocal("before-update.json")));
@@ -366,6 +368,21 @@ public final class MainActivity extends Activity {
     }
     private String mirrorName(){String selected=updates.mirror();if(selected.equals("auto"))return "GitHub优先 · 自动镜像回退";if(selected.isEmpty())return "仅GitHub";JSONArray presets=TvUpdates.mirrorPresets(this);for(int i=0;i<presets.length();i++){JSONObject item=presets.optJSONObject(i);if(item!=null&&selected.equals(Json.text(item,"url")))return Json.text(item,"label");}return "自定义镜像";}
     private void chooseUpdateMirror(){List<String> names=new ArrayList<>(),values=new ArrayList<>();names.add("自动回退（推荐）");values.add("auto");names.add("仅GitHub");values.add("");JSONArray presets=TvUpdates.mirrorPresets(this);for(int i=0;i<presets.length();i++){JSONObject item=presets.optJSONObject(i);if(item!=null){names.add(Json.text(item,"label"));values.add(Json.text(item,"url"));}}names.add("自定义HTTPS镜像");choose("更新下载来源 · GitHub优先",names.toArray(new String[0]),n->{if(n==values.size())input("HTTPS镜像前缀或包含{url}的模板",updates.mirror().equals("auto")?"":updates.mirror(),value->{updates.mirror(value);show("settings","");});else{updates.mirror(values.get(n));show("settings","");}});}
+    private boolean artworkWorking;
+    private void fillArtwork(){
+        if(artworkWorking){toast("正在补全图片，请稍候。");return;}
+        if(!secrets.exists()){toast("请先配置TMDB API Key，再补全图片。");return;}
+        artworkWorking=true;final int[] processed={0};
+        job("补全缺失的海报与背景…",()->{
+            try{return TransferArtwork.fill(library,film->{
+                final int number=++processed[0];runOnUiThread(()->{if(!disposed)busy.setText("补全图片 · 正在处理第 "+number+" 部");});
+                JSONObject candidate=tmdb().candidate(Json.text(film,"externalId"),Json.text(film,"mediaType"));
+                for(String kind:new String[]{"poster","backdrop"})if(!Json.text(film,kind+"Path").isEmpty()){candidate.remove(kind+"Url");candidate.remove(kind+"Selection");}
+                return artwork.cacheMetadata(candidate,null);
+            },()->{if(disposed||Thread.currentThread().isInterrupted())throw new InterruptedException();});}
+            finally{runOnUiThread(()->artworkWorking=false);}
+        },counts->{show("settings","");toast((counts[3]>0?"补图已暂停：":"补图完成：")+counts[0]+" 部获得图片，"+counts[1]+" 部请求失败，"+counts[2]+" 部未找到新图。个人记录与匹配保留，可稍后继续补图。");});
+    }
     private void installDownloadedUpdate(java.io.File file){
         if(android.os.Build.VERSION.SDK_INT>=26&&!getPackageManager().canRequestPackageInstalls()){startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,android.net.Uri.parse("package:"+getPackageName())));toast("允许本应用安装后请返回重试。");return;}
         job("备份并校验安装包…",()->{Intent install=updates.installer(file);TvBackup backup=new TvBackup(this);backup.writeLocal("before-update.json",backup.snapshot());return install;},intent->{try{startActivity(intent);}catch(Exception error){toast("无法打开系统安装器，请检查系统安装权限。");}});
@@ -384,6 +401,11 @@ public final class MainActivity extends Activity {
         else job("读取备份…",()->new TvBackup(this).readDocument(uri),this::confirmRestore);
     }
     private void confirmRestore(JSONObject data){
+        if(DesktopTransfer.matches(data)){
+            int ignored=0;org.json.JSONArray files=Json.array(data.optJSONObject("quarkTransfer"),"files");for(int n=0;n<files.length();n++)if(files.optJSONObject(n)!=null&&files.optJSONObject(n).optBoolean("ignored"))ignored++;
+            String message="导入 "+Json.array(data,"films").length()+" 部作品、"+(files.length()-ignored)+" 个关联文件及 "+ignored+" 个忽略文件。\n\n电视已有收藏会保留；相同TMDB作品合并，资料与个人记录以电脑为准，同名专题合并。电视登录和播放进度保留。\n\n请在电视连接与电脑相同的夸克账号，并选择原影视目录，再扫描一次。迁移的匹配和忽略按目录及文件ID生效，不按相似片名套用。图片需重新获取，登录凭据不会复制。\n\n操作前会完整备份，可从“恢复操作前备份”撤回。";
+            confirm("从电脑合并收藏？",message,()->job("导入电脑收藏与匹配…",()->{new TvBackup(this).restore(data);return true;},done->{show("settings","");toast("电脑收藏已导入，连接原夸克目录并扫描即可复用匹配与忽略记录。");}));return;
+        }
         boolean media=TvBackup.includesMedia(data),cloud=TvBackup.includesCloudProgress(data);
         String message=cloud?"备份将替换当前收藏、媒体关联、原文件与云端播放进度。":media?"备份将替换当前收藏、媒体关联和原文件进度。旧备份不含云端进度，本机云端进度保留。":"旧格式仅恢复收藏，现有媒体关联、原文件与云端进度保留，部分关联可能需要重新选择。";
         confirm(media?"恢复完整备份？":"恢复旧版收藏备份？",message+"当前内容会先保存为恢复前备份，已有登录配置保留。",()->job("恢复备份…",()->{new TvBackup(this).restore(data);return true;},done->{show("settings","");toast(cloud?"收藏、媒体关联及两类播放进度已恢复。":media?"收藏、媒体关联和原文件进度已恢复，本机云端进度保留。":"旧版收藏已恢复，现有媒体关联和进度保留。");}));

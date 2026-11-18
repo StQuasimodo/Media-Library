@@ -212,6 +212,40 @@ export class BackupService {
     return { path, bytes, includesSensitiveData };
   }
 
+  /** A bounded transfer, not a copy of Windows SQLite or its login stores. */
+  exportForTv(directory: string): ExportResult {
+    const payload = this.options.getDb().transaction(() => {
+      const repo = this.options.getRepo();
+      const films = repo.listAllFilms();
+      const entries = repo.listAllEntries().map(({ film, collectionIds, ...entry }) => entry);
+      const collections = repo.listCollections().map(({ filmCount, previewPosterPaths, ...collection }) => collection);
+      const files = this.options.getDb().prepare(`SELECT f.file_id AS fileId, f.root_id AS rootId,
+        f.parent_id AS parent, f.name, COALESCE(f.size_bytes,0) AS size,
+        f.film_id AS filmId, COALESCE(c.ignored,0) AS ignored
+        FROM quark_cloud_files f LEFT JOIN quark_match_choices c
+        ON c.scope=f.scope AND c.root_id=f.root_id AND c.group_key=f.group_key
+        WHERE f.scope=(SELECT scope FROM quark_sync_source WHERE id=1)
+        AND (f.film_id IS NOT NULL OR c.ignored=1) ORDER BY f.root_id,f.file_id`)
+        .all<{fileId:string;rootId:string;parent:string;name:string;size:number;filmId:string|null;ignored:number}>()
+        .map(file => ({ ...file, filmId: file.ignored ? null : file.filmId, ignored: Boolean(file.ignored) }));
+      const resources = repo.listAllResources();
+      for (const rows of [films, entries, collections, files, resources, repo.listMemberships()]) {
+        if (rows.length > 10000) throw new AppError('VALIDATION', '迁移记录超过电视端上限（每类10000条），请先缩小迁移范围。');
+      }
+      return { format: 'my-cinema-export', formatVersion: 2,
+        application: { name: 'My Cinema', version: this.options.appVersion }, exportedAt: new Date().toISOString(),
+        films, collectionEntries: entries, collections, collectionFilms: repo.listMemberships(), mediaResources: resources,
+        quarkTransfer: { version: 1, files },
+      };
+    });
+    const bytes = Buffer.from(JSON.stringify(payload), 'utf8');
+    if (bytes.length > 8 * 1024 * 1024) throw new AppError('VALIDATION', '迁移文件超过电视端8MiB上限，尚未导出。普通JSON存档仍可使用。');
+    mkdirSync(directory, { recursive: true });
+    const path = join(directory, `My-Cinema-Transfer-${stamp()}-${randomUUID()}.json`);
+    writeFileSync(path, bytes, { flag: 'wx' });
+    return { path, bytes: bytes.length, includesSensitiveData: payload.quarkTransfer.files.length > 0 || payload.mediaResources.length > 0 };
+  }
+
   private snapshotInto(path: string): void {
     const db = this.options.getDb();
     const escaped = path.replace(/'/g, "''");

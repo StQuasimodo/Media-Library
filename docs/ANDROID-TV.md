@@ -103,3 +103,8 @@ alpha.2显式使用CI路径`~/.android/mycinema-tv-debug.keystore`，由独立�
 待长虹实机验收：原厂安装器、中文输入法、遥控器/overscan、真实Key导入与缓存、真实电视重启后的持久化，以及后续媒体解码。模拟器杀进程与内核重启检查已在alpha.2通过。测试没有连接或修改用户电视。开发签名和本机备份的限制见上文，长期beta使用前须补齐固定发布签名与可导出备份。
 
 参考：[Android TV遥控器导航](https://developer.android.com/training/tv/start/navigation)、[播放器设备与版本支持](https://developer.android.com/media/media3/exoplayer/supported-devices)。播放器依赖以接入时的具体版本及其manifest为准，不预先承诺最新版支持API21。
+
+
+## 从电脑迁移收藏与匹配
+
+Windows“导出到电视”生成的文件可以通过电视现有的备份文件／下载目录恢复入口导入。合并保留电视独有收藏和播放进度，相同作品的个人记录以电脑为准；夸克登录与原目录扫描后复用已关联和忽略文件。[迁移指南与备份兼容](DESKTOP-TV-TRANSFER.md)。

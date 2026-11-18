@@ -238,3 +238,8 @@ Windows镜像保存仍是本地原子写入，不触发网络。来源/渠道变
 TMDB详情附加`credits,keywords`，把公开人物ID和衍生标记缓存为既有`series_json`/TV系列JSON的`relationshipHints`；推断结果另存`relatedTv`，保留原电影类型、外部ID、合集ID、资源FK和用户`franchise`覆盖。`work:`仅用于独立作品的缓存载体，不显示成一个人为电影系列；整剧`tmdb:tv:<id>`的自动排序-1允许往返读取。没有数据库迁移或新框架。
 
 Windows复用后台resolveSeries入口并合并新一轮元数据变更，TV独立后台线程；仅查可能相关的本机剧集，优先缓存。名称匹配加演职员证据，未含剧名的路线需要明确衍生标记、三位共同主演和共同创作者；弱证据/歧义不归并，网络失败保留已知结果，关闭及元数据/手动决定变化拒绝过期写入。纯规则与共享测试样本见[关联算法](SERIES-RELATIONSHIPS.md)。全剧图片回退另在质量带内稳定分配真实图片，保留未标季份提示，不将视觉差异当作季归属证明。
+
+
+## 电脑到电视的迁移
+
+新增`data:exportForTv` IPC，目录选择后调用`BackupService.exportForTv`。同一SQLite事务读取收藏与当前夸克scope的已关联／忽略文件；单文件8MiB／每类10000条，凭据不参与。TV的`DesktopTransfer`校验及合并格式2迁移文件，通过既有`TvBackup`联合事务更新收藏、媒体与云端进度。待确认关联放在现有媒体JSON白名单字段`desktopMatch`，原目录实际扫描后按FID激活；忽略字段保留`associationManual`约束。含扩展匹配信息的原生TV备份使用格式4，旧格式1–3仍可读取，无SQLite schema变更。[完整规则](DESKTOP-TV-TRANSFER.md)。

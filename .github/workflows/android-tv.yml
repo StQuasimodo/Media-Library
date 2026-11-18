@@ -62,11 +62,8 @@ jobs:
       - name: Prepare full UI protocol fixture without application hooks
         timeout-minutes: 6
         run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            timeout 120s sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
-            timeout 120s sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y -qq ffmpeg
-          fi
-          ffmpeg -version
+          bash scripts/setup-test-ffmpeg.sh
+          export PATH="$PWD/.harness/ci-tools/ffmpeg/bin:$PATH"
           node scripts/prepare-tv-regression.mjs
           python3 scripts/tv-regression-server.py prepare
           timeout 120s bash scripts/prepare-tv-playback.sh

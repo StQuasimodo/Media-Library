@@ -157,6 +157,7 @@ const api: CinemaApi = {
     chooseBackupFile: () => invoke<string | null>('data:chooseBackupFile'),
     restore: (path) => invoke<RestoreResult>('data:restore', path),
     exportJson: () => invoke<ExportResult | null>('data:exportJson'),
+    exportForTv: () => invoke<ExportResult | null>('data:exportForTv'),
   },
 };
 

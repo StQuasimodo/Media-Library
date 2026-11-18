@@ -384,6 +384,11 @@ public final class MainActivity extends Activity {
         else job("读取备份…",()->new TvBackup(this).readDocument(uri),this::confirmRestore);
     }
     private void confirmRestore(JSONObject data){
+        if(DesktopTransfer.matches(data)){
+            int ignored=0;org.json.JSONArray files=Json.array(data.optJSONObject("quarkTransfer"),"files");for(int n=0;n<files.length();n++)if(files.optJSONObject(n)!=null&&files.optJSONObject(n).optBoolean("ignored"))ignored++;
+            String message="导入 "+Json.array(data,"films").length()+" 部作品、"+(files.length()-ignored)+" 个关联文件及 "+ignored+" 个忽略文件。\n\n电视已有收藏会保留；相同TMDB作品合并，电脑的评分、状态和短评优先。电视登录和播放进度保留。\n\n请在电视连接与电脑相同的夸克账号，并选择原影视目录，再扫描一次。迁移的匹配和忽略按目录及文件ID生效，不按相似片名套用。图片需重新获取，登录凭据不会复制。\n\n操作前会完整备份，可从“恢复操作前备份”撤回。";
+            confirm("从电脑合并收藏？",message,()->job("导入电脑收藏与匹配…",()->{new TvBackup(this).restore(data);return true;},done->{show("settings","");toast("电脑收藏已导入，连接原夸克目录并扫描即可复用匹配与忽略记录。");}));return;
+        }
         boolean media=TvBackup.includesMedia(data),cloud=TvBackup.includesCloudProgress(data);
         String message=cloud?"备份将替换当前收藏、媒体关联、原文件与云端播放进度。":media?"备份将替换当前收藏、媒体关联和原文件进度。旧备份不含云端进度，本机云端进度保留。":"旧格式仅恢复收藏，现有媒体关联、原文件与云端进度保留，部分关联可能需要重新选择。";
         confirm(media?"恢复完整备份？":"恢复旧版收藏备份？",message+"当前内容会先保存为恢复前备份，已有登录配置保留。",()->job("恢复备份…",()->{new TvBackup(this).restore(data);return true;},done->{show("settings","");toast(cloud?"收藏、媒体关联及两类播放进度已恢复。":media?"收藏、媒体关联和原文件进度已恢复，本机云端进度保留。":"旧版收藏已恢复，现有媒体关联和进度保留。");}));

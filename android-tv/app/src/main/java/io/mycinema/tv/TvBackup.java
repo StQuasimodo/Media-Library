@@ -51,6 +51,15 @@ final class TvBackup {
         JSONObject result=new JSONObject();Json.put(result,"source",source);Json.put(result,"fileId",id);Json.put(result,"key",key);Json.put(result,"parent",parent);Json.put(result,"name",name);Json.put(result,"size",number(row,"size"));
         Json.put(result,"filmId",text(row,"filmId",256,false));
         if(row.has("associationManual")){if(!(row.opt("associationManual") instanceof Boolean))throw invalid();Json.put(result,"associationManual",row.optBoolean("associationManual"));}
+        if(row.has("ignored")){
+            if(!(row.opt("ignored") instanceof Boolean)||row.optBoolean("ignored")&&(!Json.text(row,"filmId").isEmpty()||!row.optBoolean("associationManual")))throw invalid();
+            Json.put(result,"ignored",row.optBoolean("ignored"));
+        }
+        if(row.has("desktopMatch")){
+            JSONObject match=row.optJSONObject("desktopMatch");if(match==null||!source.equals("quark")||!(match.opt("pending") instanceof Boolean))throw invalid();
+            String root=text(match,"rootId",1024,true),target=text(match,"filmId",256,false);if(root.contains("://")||match.optBoolean("pending")&&!Json.text(row,"filmId").isEmpty())throw invalid();
+            JSONObject clean=new JSONObject();Json.put(clean,"rootId",root);Json.put(clean,"filmId",target);Json.put(clean,"pending",match.optBoolean("pending"));Json.put(result,"desktopMatch",clean);
+        }
         // Regenerate derived facts; copy neither unknown fields nor old local/CDN routing hints.
         Json.put(result,"info",ResourceName.parse(name));return result;
     }
@@ -65,9 +74,10 @@ final class TvBackup {
         }
         JSONObject result=new JSONObject();Json.put(result,"files",cleanFiles);Json.put(result,"progress",cleanProgress);return result;
     }
-    static boolean includesMedia(JSONObject value){int version=value.optInt("formatVersion");return version==2||version==3;}
-    static boolean includesCloudProgress(JSONObject value){return value.optInt("formatVersion")==3;}
-    static void validate(JSONObject value){
+    static boolean includesMedia(JSONObject value){int version=value.optInt("formatVersion");return Json.text(value,"format").equals(FORMAT)&&(version==2||version==3);}
+    static boolean includesCloudProgress(JSONObject value){return Json.text(value,"format").equals(FORMAT)&&value.optInt("formatVersion")==3;}
+    static void validate(JSONObject value) throws Exception {
+        if(DesktopTransfer.matches(value)){DesktopTransfer.validate(value);return;}
         if(!Json.text(value,"format").equals(FORMAT))throw invalid();long version=number(value,"formatVersion");
         if(version!=1&&version!=2&&version!=3)throw new IllegalArgumentException("备份版本不兼容，请使用兼容版本的 My Cinema TV。");
         JSONObject collection=version==1?value:value.optJSONObject("collection");if(collection==null||!Json.text(collection,"format").equals(FORMAT)||number(collection,"formatVersion")!=1)throw invalid();
@@ -116,14 +126,17 @@ final class TvBackup {
         for(int i=0;i<rows.length();i++){check();JSONObject row=rows.getJSONObject(i);ContentValues values=new ContentValues();values.put("id",Json.text(row,"key"));values.put("position",row.getLong("position"));values.put("duration",row.getLong("duration"));db.insertOrThrow(CLOUD+".progress",null,values);}
     }
     void restore(JSONObject input) throws Exception {
-        JSONObject data=Json.copy(input);validate(data);JSONObject clean=includesMedia(data)?media(data.getJSONObject("media")):null;JSONArray cloud=includesCloudProgress(data)?CloudProgressData.clean(data.getJSONArray("cloudProgress")):null;check();
+        JSONObject data=Json.copy(input);validate(data);check();
         try(Library library=new Library(context)){
             SQLiteDatabase db=attach(library);
             try{db.beginTransaction();try{
                 // All three files participate in the same rollback-journal transaction. Write the
                 // recovery snapshot before changing any database; nested Library.restore joins it.
-                writeLocal("before-restore.json",snapshot(db,library));check();
-                library.restore(includesMedia(data)?data.getJSONObject("collection"):data);
+                JSONObject before=snapshot(db,library);
+                JSONObject restored=DesktopTransfer.matches(data)?DesktopTransfer.merge(data,before):data;
+                validate(restored);JSONObject clean=includesMedia(restored)?media(restored.getJSONObject("media")):null;JSONArray cloud=includesCloudProgress(restored)?CloudProgressData.clean(restored.getJSONArray("cloudProgress")):null;
+                writeLocal("before-restore.json",before);check();
+                library.restore(includesMedia(restored)?restored.getJSONObject("collection"):restored);
                 if(clean!=null)restoreMedia(db,clean);if(cloud!=null)restoreCloud(db,cloud);check();db.setTransactionSuccessful();
             }finally{db.endTransaction();}}finally{detach(db);}
         }

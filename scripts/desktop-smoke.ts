@@ -1,6 +1,6 @@
 /** Real Electron/preload/SQLite smoke test against an isolated disposable profile. */
-import { app, BrowserWindow, Menu, clipboard } from 'electron';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { app, BrowserWindow, Menu, clipboard, dialog } from 'electron';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { openLibraryDatabase } from '../electron/main/data/database';
@@ -634,6 +634,22 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
 
 
   }
+  await route('/settings', "!!document.querySelector('#data')");
+  const originalFolderDialog=dialog.showOpenDialog;
+  try {
+    // Only the OS folder chooser is controlled; the renderer, preload, IPC and
+    // production SQLite export service execute normally against this profile.
+    dialog.showOpenDialog=(async()=>({canceled:false,filePaths:[output]})) as typeof dialog.showOpenDialog;
+    await js("[...document.querySelectorAll('#data button')].find(b=>b.textContent.trim()==='导出到电视').click()");
+    let file:string|undefined;
+    for(let attempt=0;attempt<100&&!file;attempt++){file=readdirSync(output).find(name=>name.startsWith('My-Cinema-Transfer-')&&name.endsWith('.json'));if(!file)await delay(50);}
+    assert.ok(file,'the actual settings action must write a migration file');
+    const exported=JSON.parse(readFileSync(join(output,file),'utf8'));
+    assert.equal(exported.format,'my-cinema-export');assert.equal(exported.formatVersion,2);
+    assert.ok(Array.isArray(exported.quarkTransfer.files));assert.equal(exported.films.length,(await js('window.cinema.library.stats()')).totalFilms);
+    assert.equal(exported.settings,undefined);
+    checks.push('TV migration file exported through the actual settings action, preload and IPC with no login settings');
+  } finally {dialog.showOpenDialog=originalFolderDialog;}
   // Mutations stay within this disposable profile's explicitly seeded or imported test entries.
   const testFilmIds = [...data.films.map((item) => item.film.id), data.missing.film.id, ...extraFilmIds];
   await js(`Promise.all(${JSON.stringify(testFilmIds)}.map(id => window.cinema.library.removeFilm(id)))`);

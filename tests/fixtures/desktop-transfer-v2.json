@@ -1,0 +1,178 @@
+{
+  "format": "my-cinema-export",
+  "formatVersion": 2,
+  "application": {
+    "name": "My Cinema",
+    "version": "migration-test"
+  },
+  "films": [
+    {
+      "id": "desktop-matrix",
+      "title": "黑客帝国",
+      "originalTitle": "The Matrix",
+      "year": 1999,
+      "overview": "跨端收藏迁移测试",
+      "tagline": null,
+      "posterPath": "poster/windows-only.jpg",
+      "backdropPath": "backdrop/windows-only.jpg",
+      "mediaType": "movie",
+      "runtime": 120,
+      "genres": [
+        "剧情"
+      ],
+      "originalLanguage": "en",
+      "metadataSource": "tmdb",
+      "externalId": "603",
+      "series": {
+        "key": "tmdb:collection:234",
+        "title": "黑客帝国系列",
+        "order": 1
+      },
+      "metadataUpdatedAt": "2026-11-18T00:00:00.000Z",
+      "createdAt": "2026-11-18T00:00:00.000Z",
+      "updatedAt": "2026-11-18T00:00:00.000Z"
+    },
+    {
+      "id": "desktop-season",
+      "title": "绝命毒师 · 第1季",
+      "originalTitle": "Breaking Bad Season 1",
+      "year": 2008,
+      "overview": "跨端收藏迁移测试",
+      "tagline": null,
+      "posterPath": "poster/windows-only.jpg",
+      "backdropPath": "backdrop/windows-only.jpg",
+      "mediaType": "tv",
+      "runtime": 120,
+      "genres": [
+        "剧情"
+      ],
+      "originalLanguage": "en",
+      "metadataSource": "tmdb",
+      "externalId": "1396:season:1",
+      "series": {
+        "key": "tmdb:tv:1396",
+        "title": "绝命毒师",
+        "order": 1,
+        "franchise": {
+          "key": "manual:crime",
+          "title": "犯罪宇宙"
+        }
+      },
+      "metadataUpdatedAt": "2026-11-18T00:00:00.000Z",
+      "createdAt": "2026-11-18T00:00:00.000Z",
+      "updatedAt": "2026-11-18T00:00:00.000Z"
+    }
+  ],
+  "collectionEntries": [
+    {
+      "id": "entry-desktop-matrix",
+      "filmId": "desktop-matrix",
+      "personalRating": 8.5,
+      "watchStatus": "watched",
+      "collectedAt": "2026-11-18T00:00:00.000Z",
+      "watchedAt": "2026-11-18T00:00:00.000Z",
+      "favoriteReason": "收藏理由 ✓",
+      "personalReview": "保留电脑短评",
+      "sortOrder": 0,
+      "createdAt": "2026-11-18T00:00:00.000Z",
+      "updatedAt": "2026-11-18T00:00:00.000Z"
+    },
+    {
+      "id": "entry-desktop-season",
+      "filmId": "desktop-season",
+      "personalRating": 9.5,
+      "watchStatus": "watched",
+      "collectedAt": "2026-11-18T00:00:00.000Z",
+      "watchedAt": "2026-11-18T00:00:00.000Z",
+      "favoriteReason": "收藏理由 ✓",
+      "personalReview": "保留电脑短评",
+      "sortOrder": 1,
+      "createdAt": "2026-11-18T00:00:00.000Z",
+      "updatedAt": "2026-11-18T00:00:00.000Z"
+    }
+  ],
+  "collections": [
+    {
+      "id": "desktop-topic",
+      "name": "重看计划",
+      "description": "电影与剧集",
+      "coverPath": null,
+      "sortOrder": 1,
+      "createdAt": "2026-11-18T00:00:00.000Z",
+      "updatedAt": "2026-11-18T00:00:00.000Z"
+    }
+  ],
+  "collectionFilms": [
+    {
+      "collectionId": "desktop-topic",
+      "entryId": "entry-desktop-matrix",
+      "sortOrder": 1,
+      "addedAt": "2026-11-18T00:00:00.000Z"
+    },
+    {
+      "collectionId": "desktop-topic",
+      "entryId": "entry-desktop-season",
+      "sortOrder": 2,
+      "addedAt": "2026-11-18T00:00:00.000Z"
+    }
+  ],
+  "mediaResources": [
+    {
+      "id": "desktop-resource",
+      "filmId": "desktop-matrix",
+      "provider": "quark",
+      "resourceName": "夸克分享",
+      "shareUrl": "https://pan.quark.cn/s/migration-fixture",
+      "accessCode": "test",
+      "qualityLabel": "2160p",
+      "versionLabel": "原盘",
+      "subtitleLabel": "简体中文",
+      "audioLabel": "DTS",
+      "notes": "公开测试记录",
+      "availabilityStatus": "unchecked",
+      "createdAt": "2026-11-18T00:00:00.000Z",
+      "updatedAt": "2026-11-18T00:00:00.000Z"
+    }
+  ],
+  "quarkTransfer": {
+    "version": 1,
+    "files": [
+      {
+        "fileId": "migrate-ignored-file",
+        "rootId": "migrate-root",
+        "parent": "migrate-root",
+        "name": "花絮.mp4",
+        "size": 123456,
+        "filmId": null,
+        "ignored": true
+      },
+      {
+        "fileId": "migrate-matrix-file",
+        "rootId": "migrate-root",
+        "parent": "migrate-root",
+        "name": "The.Matrix.1999.1080p.H264.mkv",
+        "size": 123456,
+        "filmId": "desktop-matrix",
+        "ignored": false
+      },
+      {
+        "fileId": "migrate-season-e01",
+        "rootId": "migrate-root",
+        "parent": "migrate-root",
+        "name": "Breaking.Bad.S01E01.1080p.mkv",
+        "size": 123456,
+        "filmId": "desktop-season",
+        "ignored": false
+      },
+      {
+        "fileId": "migrate-season-e02",
+        "rootId": "migrate-root",
+        "parent": "migrate-root",
+        "name": "Breaking.Bad.S01E02.1080p.mkv",
+        "size": 123456,
+        "filmId": "desktop-season",
+        "ignored": false
+      }
+    ]
+  }
+}

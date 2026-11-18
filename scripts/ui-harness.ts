@@ -359,6 +359,7 @@ window.__MYCINEMA_IMAGE_BASE__ = '/images/';
       chooseBackupFile: async () => null,
       restore: async () => { throw new Error('harness'); },
       exportJson: async () => null,
+      exportForTv: async () => null,
     },
   };
 

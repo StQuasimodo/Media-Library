@@ -414,6 +414,14 @@ export function registerIpc(runtime: AppRuntime): void {
     if (result.canceled || result.filePaths.length === 0) return null;
     return runtime.backup.exportJson(result.filePaths[0]);
   });
+  handle('data:exportForTv', async () => {
+    runtime.quarkSync.assertIdle();
+    const result = await dialog.showOpenDialog({ title: '选择电视迁移文件的保存位置',
+      properties: ['openDirectory', 'createDirectory'], defaultPath: runtime.paths.exportsDir });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    runtime.quarkSync.assertIdle();
+    return runtime.backup.exportForTv(result.filePaths[0]);
+  });
 }
 
 export type { Handler };

@@ -137,6 +137,15 @@ export function SettingsPage() {
     }
   };
 
+  const exportForTv = async () => {
+    try {
+      const result = await api.data.exportForTv();
+      if (!result) return;
+      setLastExport(`${result.path}（${formatBytes(result.bytes)}）`);
+      toast.success('电视迁移文件已导出，包含收藏、资源关联和忽略记录。请妥善保管。');
+    } catch (cause) { toast.error(describeError(cause)); }
+  };
+
   const openFolder = async (kind: 'data' | 'backups' | 'logs' | 'images') => {
     try {
       await api.app.openFolder(kind);
@@ -416,13 +425,16 @@ export function SettingsPage() {
 
           <div className="setting-row">
             <div className="setting-label">
-              <div className="setting-name">导出 JSON</div>
+              <div className="setting-name">导出 JSON / 迁移到电视</div>
               <div className="setting-help">
-                导出结构清晰、可长期保存的 JSON。若包含夸克分享链接或提取码，文件即为敏感文件，请妥善保管。
+                普通JSON用于存档；“导出到电视”包含收藏、专题、资源关联及已扫描文件的忽略记录。复制到电视后，从备份文件导入并连接同一夸克账号和原目录。图片与登录凭据不复制，文件中的资源信息请妥善保管。
               </div>
               {lastExport ? <div className="field-hint" style={{ marginTop: 6 }}>{lastExport}</div> : null}
             </div>
             <div className="setting-control">
+              <button type="button" className="btn btn-secondary" onClick={exportForTv}>
+                <Icon name="download" size={15} />导出到电视
+              </button>
               <button type="button" className="btn btn-secondary" onClick={exportJson}>
                 <Icon name="database" size={15} />
                 导出 JSON

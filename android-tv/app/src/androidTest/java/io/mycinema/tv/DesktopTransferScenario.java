@@ -70,6 +70,15 @@ final class DesktopTransferScenario {
             }
             try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){check(cloud.position("quark:migrate-matrix-file",variant)==55000,"independent cloud version progress survives migration");}
             backup.restore(desktop);String first=state();backup.restore(desktop);check(first.equals(state()),"reimport is idempotent without duplicate films, topics or resources");
+            final int[] loads={0};String review;try(Library library=new Library(context)){
+                review=Json.text(library.get(matrix).entry,"personalReview");library.setArtwork(matrix,"poster","poster/manual/kept.img");
+                int[] stats=TransferArtwork.fill(library,film->{loads[0]++;JSONObject image=new JSONObject();Json.put(image,"posterPath","poster/refilled.img");Json.put(image,"backdropPath","backdrop/refilled.img");return image;},()->{});
+                check(stats[0]>0&&loads[0]>0,"one-shot artwork refill visits imported missing images without per-work interaction");
+                check(Json.text(library.get(matrix).film,"posterPath").equals("poster/manual/kept.img")&&Json.text(library.get(matrix).entry,"personalReview").equals(review),"artwork refill preserves existing images and personal records");
+                int total=0;for(Library.Item item:library.list("","","","","recent"))if(Json.text(item.film,"metadataSource").equals("tmdb")){total++;library.setArtwork(item.id(),"poster","");library.setArtwork(item.id(),"backdrop","");}
+                int[] failedLoads={0};int[] stopped=TransferArtwork.fill(library,film->{failedLoads[0]++;throw new java.io.IOException("controlled offline refill");},()->{});check(failedLoads[0]==Math.min(3,total)&&(total<3||stopped[3]==1),"artwork refill stops after three consecutive request failures");
+            }
+            backup.restore(desktop);first=state();
             JSONObject portable=backup.snapshot();check(portable.optInt("formatVersion")==4,"extended matching uses a version that older TV backup readers reject");backup.restore(TvBackup.read(new ByteArrayInputStream(TvBackup.encode(portable))));check(state().equals(first),"native TV backup round-trip retains pending choices and ignored flags");
             final JSONObject downgraded=Json.copy(portable);Json.put(downgraded,"formatVersion",3);rejects(()->backup.restore(downgraded),"matching extensions cannot be silently relabeled as an older backup");
             final JSONObject oldFormat=Json.copy(desktop);Json.put(oldFormat,"formatVersion",1);rejects(()->backup.restore(oldFormat),"old desktop archive fails clearly without changing data");

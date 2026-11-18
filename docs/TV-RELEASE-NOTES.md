@@ -8,6 +8,7 @@
 - 相同TMDB电影或同一季自动合并，电脑的个人记录优先；电视独有收藏、专题成员及原文件／云端版本进度保留。
 - 在原夸克目录实际扫描后，按文件ID复用关联与忽略；文件改名不要求重新匹配。媒体菜单可以取消忽略或重新指定作品。
 - 导入前保存完整恢复点，失败时回滚收藏、关联和进度；重复导入不会新增重复作品和专题。
+- 设置新增 **补全收藏图片**，一次补齐缺失海报与背景，已有图片和个人记录保留；连续请求失败后暂停，避免长时间重复失败。
 - 新迁移状态进入电视备份，旧备份格式1–3继续兼容；含扩展匹配信息的新备份需使用支持格式4的版本恢复。
 
 [下载APK](https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.12/My-Cinema-TV-0.3.0-alpha.12-debug.apk) · [迁移与撤销指南](https://github.com/StQuasimodo/Media-Library/blob/main/docs/DESKTOP-TV-TRANSFER.md)。支持Android 5.0及以上、ARMv7／x86，版本代码20，沿用现有固定开发签名。

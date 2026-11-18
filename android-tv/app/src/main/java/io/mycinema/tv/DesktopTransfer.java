@@ -60,7 +60,7 @@ final class DesktopTransfer {
         id(raw,"id");id(raw,"filmId");if(!text(raw,"provider",20,true).equals("quark"))throw invalid();text(raw,"resourceName",500,true);
         String share=text(raw,"shareUrl",8192,true);HttpUrl url=HttpUrl.parse(share);if(url==null||!url.username().isEmpty()||!url.password().isEmpty())throw invalid();
         for(String key:new String[]{"accessCode","qualityLabel","versionLabel","subtitleLabel","audioLabel","notes"})text(raw,key,10000,false);
-        JSONObject result=new JSONObject();copy(raw,result,"id","filmId","provider","resourceName","shareUrl","accessCode","qualityLabel","versionLabel","subtitleLabel","audioLabel","notes","createdAt","updatedAt");Json.put(result,"availabilityStatus","unchecked");return result;
+        JSONObject result=new JSONObject();copy(raw,result,"id","filmId","provider","resourceName","shareUrl","accessCode","qualityLabel","versionLabel","subtitleLabel","audioLabel","notes","createdAt","updatedAt");String availability=text(raw,"availabilityStatus",20,false);if(!availability.isEmpty()&&!java.util.Arrays.asList("unchecked","available","unavailable").contains(availability))throw invalid();Json.put(result,"availabilityStatus",availability.isEmpty()?"unchecked":availability);return result;
     }
     static void validate(JSONObject data)throws Exception{
         if(!matches(data)||integer(data,"formatVersion")!=2)throw new IllegalArgumentException("请在新版电脑端使用“导出到电视”，普通JSON存档不含完整匹配与忽略记录。");

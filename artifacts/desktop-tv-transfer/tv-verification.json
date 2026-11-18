@@ -1,0 +1,30 @@
+{
+  "release": "https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.12",
+  "source": "8153e9957b4df6c4b0d12f4fbd1147b119d47077",
+  "assets": [
+    {
+      "name": "BUILD.json",
+      "bytes": 601,
+      "sha256": "2b1785b1ccdb7cacd7f8612b7370d56ea97acf411d1cfe87a1f0d89ebc7785cb",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.12/BUILD.json"
+    },
+    {
+      "name": "My-Cinema-TV-0.3.0-alpha.12-debug.apk",
+      "bytes": 48846507,
+      "sha256": "28d4b3d43cf0a39b9610b15b7bba0121ee665d45a0c127a9c4cc876539893e6d",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.12/My-Cinema-TV-0.3.0-alpha.12-debug.apk"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 181,
+      "sha256": "c6f505aed14c334da50f1a4e0aa21c6f07ce7ea630e7f570168aaa4a066be21e",
+      "url": "https://github.com/StQuasimodo/Media-Library/releases/download/tv-v0.3.0-alpha.12/SHA256SUMS.txt"
+    }
+  ],
+  "versionCode": 20,
+  "minSdk": 21,
+  "v1SignatureVerified": true,
+  "pinnedSignerVerified": true,
+  "physicalTelevisionVerified": false,
+  "publicDownloadPrefixVerified": true
+}

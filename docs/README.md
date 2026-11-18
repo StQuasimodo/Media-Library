@@ -4,6 +4,7 @@
 
 | 文档 | 内容 | 什么时候看 |
 |---|---|---|
+| [DESKTOP-TV-TRANSFER-VALIDATION.md](DESKTOP-TV-TRANSFER-VALIDATION.md) | Windows beta.7与TV alpha.12迁移、签名及实际回归 | 核对本次迁移交付与验收边界时 |
 | [DESKTOP-TV-TRANSFER.md](DESKTOP-TV-TRANSFER.md) | 电脑到电视的收藏、夸克匹配与忽略迁移 | 不想在电视重复整理资源时 |
 | [RELEASE-2026-11-15.md](RELEASE-2026-11-15.md) | Windows beta.6与TV alpha.11安装包、签名、升级和更新清单 | 下载或核对本次双端预览 |
 | [FRONTEND-OPTIMIZATION-2026-11-15.md](FRONTEND-OPTIMIZATION-2026-11-15.md) | 双端海报浏览、焦点连续性与遥控时间轴 | 查看本次前端优化和完整回归结果 |

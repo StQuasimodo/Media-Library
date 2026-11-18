@@ -22,7 +22,13 @@ Windows 1.3.0-beta.7 与 TV 0.3.0-alpha.12 / code20 提供专用迁移。操作�
 
 ## 安装包与更新身份
 
-待补充公开下载、原始构建身份与签名更新清单校验。
+[Windows beta.7](https://github.com/StQuasimodo/Media-Library/releases/tag/v1.3.0-beta.7)包含安装版与免安装版；[TV alpha.12](https://github.com/StQuasimodo/Media-Library/releases/tag/tv-v0.3.0-alpha.12)为同固定签名code20 APK。
+
+分别由发布运行[44348492066](https://github.com/StQuasimodo/Media-Library/actions/runs/44348492066)与[44348498025](https://github.com/StQuasimodo/Media-Library/actions/runs/44348498025)发布已通过测试的原始文件，没有重新打包。Windows与TV的Tag分别固定到各自原始构建提交，二者应用源码相同，后者仅增加CI测试依赖准备修复。PR [#4](https://github.com/StQuasimodo/Media-Library/pull/4)已合并到main。
+
+Windows六项／TV三项公开资产的GitHub SHA-256、文件长度、校验文件、BUILD与Tag身份均核对，公开HTTPS安装包前缀也与验证文件一致。Windows便携包的原生SQLite为PE/x64，应用归档版本为beta.7。TV验证minSdk21、v1、固定be6ca6证书、code20及ARMv7／x86库。
+
+两端预览更新清单均从公开HTTPS读取，以应用固定公钥独立验证签名，版本、安装包URL、长度与SHA-256均匹配上述Release。原始报告、校验和、构建身份及实际界面截图见[artifacts/desktop-tv-transfer](../artifacts/desktop-tv-transfer)。Windows源码为9ad1cfa，TV为8153e99，后续文档／发布记录提交不改变原始安装包身份。
 
 ## 验收边界
 

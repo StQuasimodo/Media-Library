@@ -1,0 +1,16 @@
+[
+  {
+    "platform": "windows",
+    "version": "1.3.0-beta.7",
+    "signedManifestHttpsVerified": true,
+    "publishedAssetIdentityVerified": true,
+    "url": "https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/windows-preview.json"
+  },
+  {
+    "platform": "tv",
+    "version": "0.3.0-alpha.12",
+    "signedManifestHttpsVerified": true,
+    "publishedAssetIdentityVerified": true,
+    "url": "https://raw.githubusercontent.com/StQuasimodo/Media-Library/main/updates/tv-preview.json"
+  }
+]

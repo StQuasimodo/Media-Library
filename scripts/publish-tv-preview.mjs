@@ -40,6 +40,12 @@ if(build.nativeLibraries){
   if(code>=6){const dav=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/quark-dav-report.json'),'utf8'));assert.equal(dav.localForwardingHops,1);assert.equal(dav.byteExactDropAndExpiryRecovery,true);assert.equal(dav.nativePlaybackAfterDropAndExpiry,true);assert.equal(dav.manualReconnectResumes,true);assert.ok(dav.continuousPlaybackWallMs>=90000);}
   if(code>=10){const remote=JSON.parse(readFileSync(join(evidence,'.harness/tv-remote/report.json'),'utf8'));assert.equal(remote.result,'passed');assert.equal(remote.buildRun,runId);assert.ok(remote.remoteKeyEvents>=30);assert.equal(remote.textInputUsedForQuickActions,false);assert.ok(remote.publicMirrorChecks.some(check=>check.signedManifestHttpsVerified),'At least one built-in mirror must serve an authenticated manifest over actual API22 HTTPS.');}
   if(code>=9){for(const [name,phase] of [['tv-features/report.json','full'],['tv-upgrade/upgrade.json','upgrade']]){const r=JSON.parse(readFileSync(join(evidence,'.harness',name),'utf8'));assert.equal(r.result,'passed');assert.equal(r.apiLevel,22);assert.equal(r.buildRun,runId);assert.equal(r.phase,phase);}}
+  if(code>=20){
+    const transfer=JSON.parse(readFileSync(join(evidence,'.harness/tv-features/desktop-transfer-report.json'),'utf8'));
+    assert.equal(transfer.result,'passed');assert.equal(transfer.apiLevel,22);
+    for(const check of ['actual Windows export recognized by the TV file reader','late media failure rolls collection, associations and progress back together','late cloud failure rolls all three databases back together','native confirmation completes the real asynchronous merge'])
+      assert.ok(transfer.checks.includes(check),check);
+  }
   if(code>=7){const dav=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/quark-dav-report.json'),'utf8'));for(const check of ['boundedMultiSegmentByteExact','headWithoutUpstreamHead','suffixRangeByteExact','wrongInitialRangeRejected','concurrentExpirySingleRefresh','leaseApiCancellationVerified','playbackSessionRevoked','pausedReconnectPreserved','rapidReconnectVerified','endedReconnectRestarts','stoppedSessionCannotRestart'])assert.equal(dav[check],true,check);}
 }else assert.equal(build.nativeLibraries,false);
 if(version!=='0.1.0-alpha.1'){

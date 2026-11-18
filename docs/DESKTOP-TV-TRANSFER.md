@@ -35,4 +35,4 @@
 
 ## 验证
 
-桌面测试通过真实SQLite与生产导出服务生成 `tests/fixtures/desktop-transfer-v2.json`，Android instrumentation直接读取该文件。新增检查覆盖手动关联、忽略／消失后返回、目录不符拒绝激活、重复合并、保留电视独有数据与两类进度、备份往返、取消确认，以及媒体和云端阶段故障回滚。实际原生执行结果随交付记录补充；模拟器验证不代替用户真实账号和电视验收。
+桌面测试通过真实SQLite与生产导出服务生成 `tests/fixtures/desktop-transfer-v2.json`，Android instrumentation直接读取该文件。新增检查覆盖手动关联、忽略／消失后返回、目录不符拒绝激活、重复合并、保留电视独有数据与两类进度、备份往返、取消确认，以及媒体和云端阶段故障回滚。Windows原生导出已通过真实界面、preload与IPC验证（构建[44344060272](https://github.com/StQuasimodo/Media-Library/actions/runs/44344060272)），两套回归分别41／72项，另有安装选项与凭据跨版本／重启检查。API22构建[44346285785](https://github.com/StQuasimodo/Media-Library/actions/runs/44346285785)完整通过：迁移44项、完整功能225项、备份25项、覆盖升级12项及播放／网盘／进程与设备重启回归；模拟器验证不代替用户真实账号和电视验收。

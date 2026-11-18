@@ -43,16 +43,19 @@ final class DesktopTransferScenario {
             }
             final String variant="high|1920|1080|h264|aac|2|HLS";try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){cloud.save("quark:migrate-matrix-file",variant,55000,180000);}
             String before=state();backup.restore(desktop);
+            String seasonId="";
             try(Library library=new Library(context)){
                 check(library.get(local).entry.optString("personalReview").equals("TV-only review"),"TV-only collection and review survive the merge");
                 check(library.get(matrix).entry.optDouble("personalRating")==8.5&&Json.text(library.get(matrix).entry,"personalReview").equals("保留电脑短评"),"same TMDB work reuses the TV identity and applies desktop personal records");
                 check(library.get(matrix).film.isNull("posterPath"),"Windows image cache paths are not treated as TV files");
-                Library.Item season=library.get("desktop-season");check(Json.text(season.film,"externalId").equals("1396:season:1")&&season.order()==1,"season identity and sequence are retained");
+                Library.Item season=null;for(Library.Item item:library.list("","","","","recent"))if(Json.text(item.film,"externalId").equals("1396:season:1"))season=item;
+                check(season!=null&&season.order()==1,"season identity and sequence are retained using the merged TV identity");seasonId=season.id();
                 check(Json.text(season.film.getJSONObject("series").getJSONObject("franchise"),"title").equals("犯罪宇宙"),"manual universe membership survives migration");
                 int topics=0;for(JSONObject topic:library.collections())if(Json.text(topic,"name").equals("重看计划"))topics++;check(topics==1,"same-name topic is merged without duplicates");
                 boolean shared=false;for(JSONObject resource:library.resources(matrix))if(Json.text(resource,"id").equals("desktop-resource")&&Json.text(resource,"accessCode").equals("test"))shared=true;check(shared,"shared resource labels and extraction code are retained");
             }
             try(MediaCatalog catalog=new MediaCatalog(context)){
+                for(int episode=1;episode<=2;episode++){MediaSources.Entry video=new MediaSources.Entry("quark","migrate-season-e0"+episode,"Breaking.Bad.S01E0"+episode+".mkv","migrate-root",false,123456);catalog.put(video,matrix,"migrate-root");check(Json.text(catalog.get(video.key()),"filmId").equals(seasonId),"episode "+episode+" uses the existing TV season identity after migration");}
                 check(catalog.position("quark:migrate-matrix-file")==45123&&catalog.position("quark:tv-only-file")==33123,"existing original-file progress survives import");
                 check(Json.text(catalog.get("quark:tv-only-file"),"filmId").equals(local),"TV-only media association survives import");
                 JSONObject pending=catalog.get("quark:migrate-matrix-file");check(Json.text(pending,"filmId").isEmpty()&&pending.getJSONObject("desktopMatch").optBoolean("pending"),"imported mapping waits for the original directory");
@@ -67,7 +70,8 @@ final class DesktopTransferScenario {
             }
             try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){check(cloud.position("quark:migrate-matrix-file",variant)==55000,"independent cloud version progress survives migration");}
             backup.restore(desktop);String first=state();backup.restore(desktop);check(first.equals(state()),"reimport is idempotent without duplicate films, topics or resources");
-            JSONObject portable=backup.snapshot();backup.restore(TvBackup.read(new ByteArrayInputStream(TvBackup.encode(portable))));check(state().equals(first),"native TV backup round-trip retains pending choices and ignored flags");
+            JSONObject portable=backup.snapshot();check(portable.optInt("formatVersion")==4,"extended matching uses a version that older TV backup readers reject");backup.restore(TvBackup.read(new ByteArrayInputStream(TvBackup.encode(portable))));check(state().equals(first),"native TV backup round-trip retains pending choices and ignored flags");
+            final JSONObject downgraded=Json.copy(portable);Json.put(downgraded,"formatVersion",3);rejects(()->backup.restore(downgraded),"matching extensions cannot be silently relabeled as an older backup");
             final JSONObject oldFormat=Json.copy(desktop);Json.put(oldFormat,"formatVersion",1);rejects(()->backup.restore(oldFormat),"old desktop archive fails clearly without changing data");
             JSONObject bad=Json.copy(desktop);bad.getJSONArray("collectionEntries").put(bad.getJSONArray("collectionEntries").getJSONObject(0));final JSONObject duplicate=bad;rejects(()->backup.restore(duplicate),"duplicate entry identities are rejected without mutation");
             final JSONObject dangling=Json.copy(desktop);Json.put(dangling.getJSONObject("quarkTransfer").getJSONArray("files").getJSONObject(1),"filmId","missing-film");rejects(()->backup.restore(dangling),"dangling resource-to-work mapping is rejected before writes");
@@ -83,6 +87,7 @@ final class DesktopTransferScenario {
             activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));idle();
             final java.lang.reflect.Method confirm=MainActivity.class.getDeclaredMethod("confirmRestore",JSONObject.class);confirm.setAccessible(true);final JSONObject transfer=desktop;
             ui(()->{try{confirm.invoke(activity,transfer);}catch(Exception error){throw new RuntimeException(error);}});idle();check(test.getUiAutomation().getRootInActiveWindow()!=null&&!test.getUiAutomation().getRootInActiveWindow().findAccessibilityNodeInfosByText("从电脑合并收藏？").isEmpty(),"desktop migration confirmation is shown");
+            android.graphics.Bitmap screenshot=test.getUiAutomation().takeScreenshot();if(screenshot==null)throw new AssertionError("native import screenshot");try(FileOutputStream image=new FileOutputStream(new File(context.getFilesDir(),"desktop-transfer-confirm.png"))){screenshot.compress(android.graphics.Bitmap.CompressFormat.PNG,100,image);}screenshot.recycle();
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);idle();check(state().equals(first),"canceling the migration confirmation changes no data");
             try(Library library=new Library(context)){JSONObject changed=new JSONObject();Json.put(changed,"personalRating",1);library.updateEntry(matrix,changed);}
             ui(()->{try{confirm.invoke(activity,transfer);}catch(Exception error){throw new RuntimeException(error);}});idle();

@@ -1,3 +1,23 @@
+# My Cinema v1.3.0-beta.7
+
+把电脑上整理好的收藏带到电视，保留已经完成的匹配与忽略。
+
+## 本次更新
+
+- 设置新增 **导出到电视**，一起保存收藏、评分、观看状态、短评、系列与专题，以及已扫描夸克文件的关联和忽略记录。
+- 迁移文件不包含登录凭据和图片缓存，无需电脑持续在线；原有数据库备份和普通JSON存档继续保留。
+- 导出前检查文件与记录数量，避免生成电视无法读取的迁移文件。
+
+## 使用方式
+
+更新电视到 **0.3.0-alpha.12或以后**。在电脑导出后，将JSON复制到电视或U盘，通过电视的备份文件入口导入；连接同一夸克账号、选择原影视目录并扫描一次，即可复用已整理的文件。
+
+[Windows安装版](https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.7/My-Cinema-1.3.0-beta.7-Setup.exe) · [免安装版](https://github.com/StQuasimodo/Media-Library/releases/download/v1.3.0-beta.7/My-Cinema-1.3.0-beta.7-portable-win64.zip) · [迁移指南](https://github.com/StQuasimodo/Media-Library/blob/main/docs/DESKTOP-TV-TRANSFER.md)。已使用预览版可在应用更新中选择预览渠道。
+
+这是预览版本。分享链接、提取码和文件名属于私人信息，请妥善保管导出文件。此功能迁移已有整理结果，不提供账号或云端数据库同步。
+
+---
+
 # My Cinema v1.3.0-beta.6
 
 更专注于电影，也更顺手地整理收藏。这个版本重新梳理影视库的空间与操作，让海报、评分和观影记忆成为浏览的中心。

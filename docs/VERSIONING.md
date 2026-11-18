@@ -74,3 +74,6 @@ Windows1.3预览与TV0.3预览开始使用`updates/{platform}-{channel}.json`。
 
 
 2026-11-15：双端前端优化发布递增为Windows `1.3.0-beta.6` 与TV `0.3.0-alpha.11` / code19。TV源码此前已为alpha.10/code18，因此继续递增，不复用开发构建编号；沿用固定签名及数据库。面向使用者的Release只显示对应版本说明，历史记录保留在文档，不拼入每次发布正文。
+
+
+2026-11-18：电脑到电视迁移使用Windows `1.3.0-beta.7` 与TV `0.3.0-alpha.12` / code20。迁移文件为桌面JSON格式2，含扩展匹配信息的电视备份为格式4；旧TV备份1–3继续可读，无SQLite schema迁移，固定签名保持。

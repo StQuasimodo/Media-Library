@@ -358,6 +358,7 @@ public final class MainActivity extends Activity {
         content.addView(button("媒体源 · 夸克 / WebDAV",this::mediaSources));
         content.addView(text("收藏与备份",19,PRIMARY));content.addView(text("备份包含收藏、媒体关联、原文件与云端播放进度，不包含图片缓存与账号登录信息。换机后需重新连接媒体源。",14,SECONDARY));
         content.addView(button("创建本机备份",()->job("备份收藏与播放记录…",()->{TvBackup backup=new TvBackup(this);backup.writeLocal("collection-backup.json",backup.snapshot());return true;},done->toast("已保存本机备份，包含媒体关联与播放进度。"))));
+        content.addView(text("电脑端“导出到电视”的迁移文件，也从下面的备份入口导入。合并前会说明范围，并保存可撤销的备份。",14,SECONDARY));
         content.addView(button("导出备份文件",()->backupDocument(true)));content.addView(button("从备份文件恢复",()->backupDocument(false)));
         if(android.os.Build.VERSION.SDK_INT<=22){content.addView(button("导出到下载目录",()->job("导出备份…",()->new TvBackup(this).exportDownloads(),file->toast("已导出到 下载/MyCinema/"+file.getName()+"，可用文件管理器复制到U盘。"))));content.addView(button("从下载目录恢复",this::downloadBackups));}
         content.addView(button("恢复上次本机备份",()->restoreLocal("collection-backup.json")));content.addView(button("恢复操作前备份",()->restoreLocal("before-restore.json")));content.addView(button("恢复更新前备份",()->restoreLocal("before-update.json")));

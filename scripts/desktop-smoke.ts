@@ -635,6 +635,8 @@ async function verify(win: BrowserWindow, data: Awaited<ReturnType<typeof seed>>
 
   }
   await route('/settings', "!!document.querySelector('#data')");
+  await js("document.querySelector('#data').scrollIntoView({block:'start',behavior:'instant'})");
+  await shot('31-desktop-tv-transfer');
   const originalFolderDialog=dialog.showOpenDialog;
   try {
     // Only the OS folder chooser is controlled; the renderer, preload, IPC and

@@ -28,6 +28,7 @@ export function SettingsPage() {
   const [keyBusy, setKeyBusy] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [transferBusy, setTransferBusy] = useState(false);
   const [pendingRestore, setPendingRestore] = useState<{ path: string; validation: BackupValidation } | null>(null);
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [lastBackup, setLastBackup] = useState<string | null>(null);
@@ -138,12 +139,14 @@ export function SettingsPage() {
   };
 
   const exportForTv = async () => {
+    setTransferBusy(true);
     try {
       const result = await api.data.exportForTv();
       if (!result) return;
       setLastExport(`${result.path}（${formatBytes(result.bytes)}）`);
       toast.success('电视迁移文件已导出，包含收藏、资源关联和忽略记录。请妥善保管。');
     } catch (cause) { toast.error(describeError(cause)); }
+    finally { setTransferBusy(false); }
   };
 
   const openFolder = async (kind: 'data' | 'backups' | 'logs' | 'images') => {
@@ -432,8 +435,8 @@ export function SettingsPage() {
               {lastExport ? <div className="field-hint" style={{ marginTop: 6 }}>{lastExport}</div> : null}
             </div>
             <div className="setting-control">
-              <button type="button" className="btn btn-secondary" onClick={exportForTv}>
-                <Icon name="download" size={15} />导出到电视
+              <button type="button" className="btn btn-secondary" onClick={exportForTv} disabled={transferBusy}>
+                {transferBusy ? <span className="spinner" /> : <Icon name="download" size={15} />}导出到电视
               </button>
               <button type="button" className="btn btn-secondary" onClick={exportJson}>
                 <Icon name="database" size={15} />

@@ -108,6 +108,6 @@ final class DesktopTransfer {
             Json.put(match,"rootId",Json.text(original,"rootId"));Json.put(match,"filmId",target.isEmpty()?"":filmIds.get(target));Json.put(match,"pending",true);Json.put(f,"desktopMatch",match);files.put(key,f);
         }
         limit(files);JSONObject migratedMedia=new JSONObject();Json.put(migratedMedia,"files",array(files));Json.put(migratedMedia,"progress",media.getJSONArray("progress"));
-        JSONObject result=new JSONObject();Json.put(result,"format","my-cinema-tv-backup");Json.put(result,"formatVersion",3);Json.put(result,"collection",collection);Json.put(result,"media",migratedMedia);Json.put(result,"cloudProgress",current.getJSONArray("cloudProgress"));return result;
+        JSONObject result=new JSONObject();Json.put(result,"format","my-cinema-tv-backup");Json.put(result,"formatVersion",4);Json.put(result,"collection",collection);Json.put(result,"media",migratedMedia);Json.put(result,"cloudProgress",current.getJSONArray("cloudProgress"));return result;
     }
 }

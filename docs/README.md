@@ -4,6 +4,7 @@
 
 | 文档 | 内容 | 什么时候看 |
 |---|---|---|
+| [DESKTOP-TV-TRANSFER.md](DESKTOP-TV-TRANSFER.md) | 电脑到电视的收藏、夸克匹配与忽略迁移 | 不想在电视重复整理资源时 |
 | [RELEASE-2026-11-15.md](RELEASE-2026-11-15.md) | Windows beta.6与TV alpha.11安装包、签名、升级和更新清单 | 下载或核对本次双端预览 |
 | [FRONTEND-OPTIMIZATION-2026-11-15.md](FRONTEND-OPTIMIZATION-2026-11-15.md) | 双端海报浏览、焦点连续性与遥控时间轴 | 查看本次前端优化和完整回归结果 |
 | [PROJECT-PROGRESS-2026-11-10.md](PROJECT-PROGRESS-2026-11-10.md) | 主线/发布/实验进度、证据边界、阻塞项及后续里程碑 | 查看当前真实进度和下一步开发顺序 |

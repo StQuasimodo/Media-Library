@@ -74,17 +74,18 @@ final class TvBackup {
         }
         JSONObject result=new JSONObject();Json.put(result,"files",cleanFiles);Json.put(result,"progress",cleanProgress);return result;
     }
-    static boolean includesMedia(JSONObject value){int version=value.optInt("formatVersion");return Json.text(value,"format").equals(FORMAT)&&(version==2||version==3);}
-    static boolean includesCloudProgress(JSONObject value){return Json.text(value,"format").equals(FORMAT)&&value.optInt("formatVersion")==3;}
+    static boolean includesMedia(JSONObject value){int version=value.optInt("formatVersion");return Json.text(value,"format").equals(FORMAT)&&(version==2||version==3||version==4);}
+    static boolean includesCloudProgress(JSONObject value){int version=value.optInt("formatVersion");return Json.text(value,"format").equals(FORMAT)&&(version==3||version==4);}
     static void validate(JSONObject value) throws Exception {
         if(DesktopTransfer.matches(value)){DesktopTransfer.validate(value);return;}
         if(!Json.text(value,"format").equals(FORMAT))throw invalid();long version=number(value,"formatVersion");
-        if(version!=1&&version!=2&&version!=3)throw new IllegalArgumentException("备份版本不兼容，请使用兼容版本的 My Cinema TV。");
+        if(version!=1&&version!=2&&version!=3&&version!=4)throw new IllegalArgumentException("备份版本不兼容，请使用兼容版本的 My Cinema TV。");
         JSONObject collection=version==1?value:value.optJSONObject("collection");if(collection==null||!Json.text(collection,"format").equals(FORMAT)||number(collection,"formatVersion")!=1)throw invalid();
         for(String table:new String[]{"films","entries","collections","resources","members"})if(collection.optJSONArray(table)==null||collection.optJSONArray(table).length()>10000)throw invalid();
-        if(version>=2)media(value.optJSONObject("media"));
-        if(version==3)CloudProgressData.clean(value.optJSONArray("cloudProgress"));
+        if(version>=2){JSONObject clean=media(value.optJSONObject("media"));if(version<4&&extendedMedia(clean))throw new IllegalArgumentException("迁移匹配记录需要版本4备份，请使用新版 My Cinema TV。");}
+        if(version>=3)CloudProgressData.clean(value.optJSONArray("cloudProgress"));
     }
+    private static boolean extendedMedia(JSONObject media){JSONArray files=Json.array(media,"files");for(int n=0;n<files.length();n++){JSONObject file=files.optJSONObject(n);if(file!=null&&(file.has("desktopMatch")||file.optBoolean("ignored")))return true;}return false;}
     private SQLiteDatabase attach(Library library) throws Exception {
         try(MediaCatalog ignored=new MediaCatalog(context);CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){/* Create unchanged media schema and import legacy cloud data before attaching. */}
         SQLiteDatabase db=library.getWritableDatabase();boolean media=false,cloud=false;
@@ -103,7 +104,7 @@ final class TvBackup {
         try(Cursor c=db.rawQuery("SELECT json,film_id FROM "+MEDIA+".files ORDER BY id",null)){while(c.moveToNext()){check();JSONObject row=Json.object(c.getString(0));Json.put(row,"filmId",c.getString(1));files.put(row);}}
         try(Cursor c=db.rawQuery("SELECT id,position,duration FROM "+MEDIA+".progress ORDER BY id",null)){while(c.moveToNext()){check();JSONObject row=new JSONObject();Json.put(row,"key",c.getString(0));Json.put(row,"position",c.getLong(1));Json.put(row,"duration",c.getLong(2));progress.put(row);}}
         JSONObject catalog=new JSONObject();Json.put(catalog,"files",files);Json.put(catalog,"progress",progress);
-        JSONObject result=new JSONObject();Json.put(result,"format",FORMAT);Json.put(result,"formatVersion",3);Json.put(result,"createdAt",Json.now());Json.put(result,"collection",library.snapshot());Json.put(result,"media",media(catalog));
+        JSONObject portableMedia=media(catalog);JSONObject result=new JSONObject();Json.put(result,"format",FORMAT);Json.put(result,"formatVersion",extendedMedia(portableMedia)?4:3);Json.put(result,"createdAt",Json.now());Json.put(result,"collection",library.snapshot());Json.put(result,"media",portableMedia);
         JSONArray cloud=new JSONArray();try(Cursor cursor=db.rawQuery("SELECT id,position,duration FROM "+CLOUD+".progress ORDER BY id LIMIT "+(CloudProgressData.MAX_ROWS+1),null)){
             while(cursor.moveToNext()){check();cloud.put(CloudProgressData.row(cursor.getString(0),cursor.getLong(1),cursor.getLong(2)));}
         }

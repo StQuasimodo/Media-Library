@@ -6,8 +6,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
 import java.io.Closeable;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -30,11 +32,18 @@ final class PlaybackController implements Closeable {
         void changed(Snapshot snapshot);
         void progress(long position,long duration);
     }
+    interface SubtitleList {void ready(List<MediaSources.Entry> entries);}
+    interface SubtitleMessage {void show(String message);}
     private final Context context;private final JSONObject file;private final Listener listener;
     private final Handler main=new Handler(Looper.getMainLooper());
     private final ExecutorService connector=Executors.newSingleThreadExecutor();
     private Future<?> connecting;private NetworkScope network;private PlaybackRelay relay;
     private PlaybackRelay.Session davSession;private CloudHlsRelay hlsRelay;
+    private NetworkScope subtitleScope;
+    private Future<?> subtitleTask;
+    private File subtitleFile;
+    private String subtitleId="";
+    private boolean subtitleChecked, preferExternal=true, subtitlesOff;
     private LibVLC vlc;private volatile MediaPlayer player;private VLCVideoLayout video;
     private PausedRestore pausedRestore;
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
@@ -67,7 +76,7 @@ final class PlaybackController implements Closeable {
     private final Runnable timer=new Runnable(){@Override public void run(){if(player==null||disposed)return;sample();if(wantPaused&&loaded&&!restoreFailed&&restoreAt<0&&state!=State.PAUSED&&state!=State.ENDED&&state!=State.ERROR)pauseWhenRestored();publish();if(++ticks%5==0)save();main.postDelayed(this,1000);}};
 
     void start(VLCVideoLayout video,long resume,boolean paused){
-        if(disposed)return;stop();this.video=video;position=Math.max(0,resume);restoreAt=-1;duration=0;wantPaused=paused;mutedForRestore=paused;loaded=false;restoreApplied=false;buffered=0;loginAttempts=0;ticks=0;
+        if(disposed)return;stop();this.video=video;position=Math.max(0,resume);restoreAt=-1;duration=0;wantPaused=paused;mutedForRestore=paused;loaded=false;restoreApplied=false;buffered=0;loginAttempts=0;ticks=0;subtitleChecked=false;
         final int session=++generation;network=new NetworkScope();final NetworkScope attempt=network;state(State.CONNECTING,"");
         try{
             connecting=connector.submit(()->{
@@ -105,10 +114,145 @@ final class PlaybackController implements Closeable {
         else if(event.type==MediaPlayer.Event.Playing){
             if(restoreFailed){engine.pause();return;}loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;engine.setRate(playbackRate);if(position>0){restoreAt=position;pausedRestore=wantPaused?new PausedRestore(position,restoreOutput()):null;if(!seekAtOpen)engine.setTime(position);}}
             if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
+            startSubtitles(engine);
         }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
         else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();if(!restoreFailed)state(State.PAUSED,"");}
         else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=hlsRelay!=null?hlsRelay.error():relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
         else if(event.type==MediaPlayer.Event.EndReached){if(restoreFailed)return;wantPaused=true;restoreAt=-1;position=0;duration=Math.max(duration,engine.getLength());state(State.ENDED,"播放完毕");listener.progress(0,duration);}
+    }
+
+    private void startSubtitles(MediaPlayer engine) {
+        if (subtitleChecked) return;
+        subtitleChecked = true;
+        if (subtitlesOff) {
+            engine.setSpuTrack(-1);
+        } else if (preferExternal) {
+            if (subtitleFile != null) attachSubtitle(engine, subtitleFile);
+            else loadSubtitle(null, null);
+        }
+    }
+
+    private NetworkScope beginSubtitleTask(boolean automatic) {
+        cancelSubtitleTask();
+        subtitleScope = new NetworkScope();
+        if (automatic) subtitleScope.background();
+        return subtitleScope;
+    }
+
+    private void cancelSubtitleTask() {
+        if (subtitleScope != null) {
+            subtitleScope.close();
+            subtitleScope = null;
+        }
+        if (subtitleTask != null) {
+            subtitleTask.cancel(true);
+            subtitleTask = null;
+        }
+    }
+
+    private boolean finishSubtitleTask(NetworkScope scope, MediaPlayer engine) {
+        if (disposed || engine != player || subtitleScope != scope) return false;
+        subtitleScope = null;
+        subtitleTask = null;
+        return true;
+    }
+
+    void listSubtitles(SubtitleList result, SubtitleMessage message) {
+        MediaPlayer engine = player;
+        if (engine == null || !loaded) {
+            message.show("视频连接后可选择外挂字幕。");
+            return;
+        }
+        NetworkScope scope = beginSubtitleTask(false);
+        subtitleTask = connector.submit(() -> {
+            try (NetworkScope owned = scope) {
+                List<MediaSources.Entry> entries = SubtitleFiles.list(new MediaSources(context).withScope(scope), file);
+                main.post(() -> {
+                    if (finishSubtitleTask(scope, engine)) result.ready(entries);
+                });
+            } catch (Exception failure) {
+                main.post(() -> {
+                    if (finishSubtitleTask(scope, engine)) message.show("无法读取当前目录中的字幕。");
+                });
+            }
+        });
+    }
+
+    void selectSubtitleTrack(int id) {
+        cancelSubtitleTask();
+        preferExternal = false;
+        subtitlesOff = id == -1;
+        if (player != null) player.setSpuTrack(id);
+    }
+
+    private boolean attachSubtitle(MediaPlayer engine, File subtitle) {
+        try {
+            return engine.addSlave(IMedia.Slave.Type.Subtitle, Uri.fromFile(subtitle), true);
+        } catch (RuntimeException failure) {
+            return false;
+        }
+    }
+
+    void loadSubtitle(MediaSources.Entry chosen, SubtitleMessage message) {
+        MediaPlayer engine = player;
+        if (engine == null || !loaded) {
+            if (message != null) message.show("视频连接后可加载外挂字幕。");
+            return;
+        }
+        boolean automatic = chosen == null;
+        if (!automatic && subtitleFile != null && subtitleId.equals(chosen.id)) {
+            preferExternal = true;
+            subtitlesOff = false;
+            reconnect();
+            message.show("已选择外挂字幕。");
+            return;
+        }
+        NetworkScope scope = beginSubtitleTask(automatic);
+        subtitleTask = connector.submit(() -> {
+            try (NetworkScope owned = scope) {
+                MediaSources sources = new MediaSources(context).withScope(scope);
+                MediaSources.Entry entry = automatic
+                    ? SubtitleFiles.automatic(Json.text(file, "name"), SubtitleFiles.list(sources, file))
+                    : chosen;
+                if (entry == null) {
+                    main.post(() -> finishSubtitleTask(scope, engine));
+                    return;
+                }
+                File copy = SubtitleFiles.fetch(context, sources, entry, scope);
+                main.post(() -> {
+                    if (!finishSubtitleTask(scope, engine)) {
+                        copy.delete();
+                        return;
+                    }
+                    applySubtitle(engine, copy, entry.id, message);
+                });
+            } catch (Exception failure) {
+                main.post(() -> {
+                    if (finishSubtitleTask(scope, engine) && message != null) {
+                        message.show("未能加载字幕，请检查文件格式、大小或连接后重试。");
+                    }
+                });
+            }
+        });
+    }
+
+    private void applySubtitle(MediaPlayer engine, File copy, String id, SubtitleMessage message) {
+        File previous = subtitleFile;
+        if (previous == null && !attachSubtitle(engine, copy)) {
+            copy.delete();
+            if (message != null) message.show("播放器未能打开该字幕。");
+            return;
+        }
+        subtitleFile = copy;
+        subtitleId = id;
+        preferExternal = true;
+        subtitlesOff = false;
+        if (previous != null) {
+            // Reopen at the same position to replace the previous slave without retaining tracks.
+            reconnect();
+            previous.delete();
+        }
+        if (message != null) message.show("已选择外挂字幕。");
     }
 
     void reconnect(){if(video==null||disposed)return;save();long resume=state==State.ENDED?0:position;boolean paused=state!=State.ENDED&&wantPaused;start(video,resume,paused);}
@@ -155,11 +299,12 @@ final class PlaybackController implements Closeable {
         static synchronized void release(LibVLC engine){if(owner==engine){Dialog.setCallbacks(engine,null);owner=null;}}
     }
     private void release(){
+        cancelSubtitleTask();
         generation++;main.removeCallbacks(timer);if(network!=null){network.close();network=null;}if(connecting!=null){connecting.cancel(true);connecting=null;}
         if(hlsRelay!=null){hlsRelay.close();hlsRelay=null;}if(davSession!=null){davSession.close();davSession=null;}if(relay!=null){relay.close();relay=null;}if(vlc!=null)VlcDialogs.release(vlc);
         if(player!=null){player.setEventListener(null);player.stop();player.detachViews();player.release();player=null;}
         if(vlc!=null){vlc.release();vlc=null;}loaded=false;pausedRestore=null;restoreFailed=false;seekAtOpen=false;
     }
     void stop(){save();release();state(State.STOPPED,"");}
-    @Override public void close(){if(disposed)return;stop();disposed=true;connector.shutdownNow();}
+    @Override public void close(){if(disposed)return;stop();disposed=true;connector.shutdownNow();if(subtitleFile!=null){subtitleFile.delete();subtitleFile=null;}}
 }

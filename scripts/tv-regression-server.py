@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import io
 import json
 import re
 from pathlib import Path
@@ -11,7 +12,34 @@ import subprocess
 import threading
 import time
 from urllib.parse import parse_qs, urlparse
+from xml.sax.saxutils import escape
 import zlib
+
+
+def ass_subtitle(color, text):
+    return (f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,sans-serif,80,{color},&H00FFFFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3,0,5,20,20,20,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:02:55.00,Default,,0,0,0,,{{\\an5\\pos(960,800)}}{text}
+""").encode()
+
+
+QUARK_VIDEO_NAME = 'Breaking.Bad.S02E01.1080p.H264.AAC.中文 & #测试.mp4'
+DAV_VIDEO_NAME = 'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
+SUBTITLE_FILES = {
+    'subtitle-auto': (QUARK_VIDEO_NAME[:-4]+'.zh-CN.ass', ass_subtitle('&H00B753EF','MY CINEMA AUTOMATIC')),
+    'subtitle-manual': ('导演评论字幕.ass', ass_subtitle('&H0028A2F2','MY CINEMA MANUAL')),
+    'subtitle-other-episode': ('Breaking.Bad.S02E02.zh-CN.ass', ass_subtitle('&H0000FF00','WRONG EPISODE')),
+    'subtitle-external': (DAV_VIDEO_NAME[:-4]+'.srt', b'1\n00:00:00,000 --> 00:02:55,000\nEXTERNAL WEBDAV SUBTITLE\n'),
+}
 
 
 def png(color, width=160, height=240):
@@ -74,6 +102,12 @@ def serve(root, log):
             if slow: time.sleep(10)
             href='https://example.invalid/stolen.mp4' if path == '/bad-dav/' else path+'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
             xml=('<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>'+href+'</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>1024</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>').encode()
+            if path=='/dav/' and state.get('subtitles'):
+                name,data=SUBTITLE_FILES['subtitle-external']
+                row=(f'<d:response><d:href>{escape(path+name)}</d:href><d:propstat><d:prop>'
+                     f'<d:resourcetype/><d:getcontentlength>{len(data)}</d:getcontentlength>'
+                     '</d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>')
+                xml=xml.replace(b'</d:multistatus>',row.encode()+b'</d:multistatus>')
             self.send_response(207)
             self.send_header('Content-Type','application/xml; charset=utf-8')
             self.send_header('Content-Length',str(len(xml)))
@@ -110,7 +144,11 @@ def serve(root, log):
                     self.reply({},401)
                     return
                 body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
-                if body.get('fids') != ['movie-file']:
+                fids=body.get('fids',[])
+                if state.get('subtitles') and len(fids)==1 and fids[0] in SUBTITLE_FILES:
+                    self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+fids[0]}]})
+                    return
+                if fids != ['movie-file']:
                     self.reply({},400)
                     return
                 with lock:
@@ -274,7 +312,13 @@ def serve(root, log):
                 self.reply({},403)
                 return
             video=root/'sample.mp4'
-            size=video.stat().st_size
+            subtitle=None
+            if state.get('subtitles'):
+                if uri.path.startswith('/stream/'):
+                    subtitle=SUBTITLE_FILES.get(uri.path.split('/')[-1])
+                elif uri.path=='/dav/'+SUBTITLE_FILES['subtitle-external'][0]:
+                    subtitle=SUBTITLE_FILES['subtitle-external']
+            size=len(subtitle[1]) if subtitle else video.stat().st_size
             start,end=0,size-1
             ranged=self.headers.get('Range','')
             if ranged:
@@ -310,7 +354,7 @@ def serve(root, log):
             if bad_resume:
                 start,end,ranged=0,size-1,''
             self.send_response(206 if ranged else 200)
-            self.send_header('Content-Type','video/mp4')
+            self.send_header('Content-Type','text/plain' if subtitle else 'video/mp4')
             self.send_header('Accept-Ranges','bytes')
             self.send_header('ETag','"my-cinema-fixture-v1"')
             self.send_header('Content-Length',str(end-start+1))
@@ -318,7 +362,7 @@ def serve(root, log):
             self.end_headers()
             if self.command == 'HEAD':return
             try:
-                with video.open('rb') as stream:
+                with (io.BytesIO(subtitle[1]) if subtitle else video.open('rb')) as stream:
                     stream.seek(start)
                     remaining=end-start+1
                     while remaining>0:
@@ -365,6 +409,7 @@ def serve(root, log):
                         if target is None:self.reply({},400);return
                     with lock:
                         state['mode'] = mode
+                        if 'subtitles' in query:state['subtitles']=query['subtitles']==['on']
                         state['fault']=fault
                         state['drops']=0
                         state['expiredLease']=state['downloads'] if fault=='expire_concurrent' else -1
@@ -399,7 +444,11 @@ def serve(root, log):
                     if state['mode']=='bridge_tree':
                         if parent=='0':rows=[{'fid':'tv-root','file_name':'影视 & 中文','file':False},{'fid':'outside','file_name':'不在挂载范围','file':False}]
                         elif parent=='tv-root':rows=[{'fid':'season2','file_name':'第2季 #目录','file':False}]
-                        elif parent=='season2':rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.H264.AAC.中文 & #测试.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
+                        elif parent=='season2':
+                            rows=[{'fid':'movie-file','file_name':QUARK_VIDEO_NAME,'file':True,'size':(root/'sample.mp4').stat().st_size}]
+                            if state.get('subtitles'):
+                                rows.extend({'fid':fid,'file_name':name,'file':True,'size':len(data)}
+                                            for fid,(name,data) in SUBTITLE_FILES.items() if fid!='subtitle-external')
                         else:rows=[]
                     self.reply({'status':200,'code':0,'data':{'list':rows},'metadata':{'_total':len(rows)}})
                 return

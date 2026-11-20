@@ -128,12 +128,18 @@ final class ExternalSubtitleScenario {
                 && painted(239,83,183,"q04-auto-subtitle.png"),"matched ASS text is drawn");
 
             MediaPlayer before=engine();
+            MediaPlayer.TrackDescription[] audioTracks=before.getAudioTracks();
+            require(audioTracks!=null&&audioTracks.length>=2,"manual switching fixture has multiple audio tracks");
+            int alternateAudio=audioTracks[audioTracks.length-1].id;
+            test.runOnMainSync(()->before.setAudioTrack(alternateAudio));
+            await(()->engine().getAudioTrack()==alternateAudio,"select alternate audio before replacing subtitles");
             test.runOnMainSync(()->before.setTime(20000));
             await(()->engine().getTime()>=19000,"seek before picking a different subtitle");
             test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
             await(()->click("选择外挂字幕"),"remote opens external subtitle picker");
             await(()->click("导演评论字幕.ass"),"manually choose a nonmatching file name");
             await(()->engine()!=null&&engine()!=before&&engine().isPlaying()&&engine().getTime()>=19000
+                &&engine().getAudioTrack()==alternateAudio
                 &&engine().getSpuTrack()>=0&&painted(242,162,40,"q05-manual-subtitle.png"),
                 "manual ASS text replaces matching subtitle at the same playback position");
             finish();
@@ -150,6 +156,7 @@ final class ExternalSubtitleScenario {
             Json.put(report,"externalSubtitleMatchingVerified",true);
             Json.put(report,"quarkAutoSubtitleRendered",true);
             Json.put(report,"quarkManualSubtitleRendered",true);
+            Json.put(report,"audioSelectionPreservedAcrossSubtitleChange",true);
             Json.put(report,"externalDavSrtTrackVerified",true);
             Json.put(report,"subtitleCopiesRemovedOnExit",true);
         }finally{

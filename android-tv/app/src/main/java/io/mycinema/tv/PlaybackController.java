@@ -34,6 +34,20 @@ final class PlaybackController implements Closeable {
     }
     interface SubtitleList {void ready(List<MediaSources.Entry> entries);}
     interface SubtitleMessage {void show(String message);}
+    private static final class SubtitleResumeOptions {
+        final int audioTrack;
+        final long audioDelay, subtitleDelay;
+        SubtitleResumeOptions(MediaPlayer player) {
+            audioTrack=player.getAudioTrack();
+            audioDelay=player.getAudioDelay();
+            subtitleDelay=player.getSpuDelay();
+        }
+        void restore(MediaPlayer player) {
+            player.setAudioTrack(audioTrack);
+            player.setAudioDelay(audioDelay);
+            player.setSpuDelay(subtitleDelay);
+        }
+    }
     private final Context context;private final JSONObject file;private final Listener listener;
     private final Handler main=new Handler(Looper.getMainLooper());
     private final ExecutorService connector=Executors.newSingleThreadExecutor();
@@ -44,6 +58,7 @@ final class PlaybackController implements Closeable {
     private File subtitleFile;
     private String subtitleId="";
     private boolean subtitleChecked, preferExternal=true, subtitlesOff;
+    private SubtitleResumeOptions subtitleResumeOptions;
     private LibVLC vlc;private volatile MediaPlayer player;private VLCVideoLayout video;
     private PausedRestore pausedRestore;
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
@@ -115,6 +130,10 @@ final class PlaybackController implements Closeable {
             if(restoreFailed){engine.pause();return;}loaded=true;loginAttempts=0;if(!restoreApplied){restoreApplied=true;engine.setRate(playbackRate);if(position>0){restoreAt=position;pausedRestore=wantPaused?new PausedRestore(position,restoreOutput()):null;if(!seekAtOpen)engine.setTime(position);}}
             if(wantPaused)pauseWhenRestored();else state(State.PLAYING,"");
             startSubtitles(engine);
+            if(subtitleResumeOptions!=null){
+                subtitleResumeOptions.restore(engine);
+                subtitleResumeOptions=null;
+            }
         }else if(event.type==MediaPlayer.Event.TimeChanged&&loaded&&restoreApplied){sample();if(wantPaused&&state!=State.PAUSED&&state!=State.ENDED)pauseWhenRestored();}
         else if(event.type==MediaPlayer.Event.Paused){if(mutedForRestore){mutedForRestore=false;engine.setVolume(100);}save();if(!restoreFailed)state(State.PAUSED,"");}
         else if(event.type==MediaPlayer.Event.EncounteredError){save();String error=hlsRelay!=null?hlsRelay.error():relay==null?CinemaApplication.dav(context).error(file):relay.error(file);state(State.ERROR,error.isEmpty()?"无法播放该资源，请检查连接或更换电视支持的编码版本。":error);}
@@ -203,7 +222,7 @@ final class PlaybackController implements Closeable {
         if (!automatic && subtitleFile != null && subtitleId.equals(chosen.id)) {
             preferExternal = true;
             subtitlesOff = false;
-            reconnect();
+            reconnectForSubtitle(engine);
             message.show("已选择外挂字幕。");
             return;
         }
@@ -249,10 +268,15 @@ final class PlaybackController implements Closeable {
         subtitlesOff = false;
         if (previous != null) {
             // Reopen at the same position to replace the previous slave without retaining tracks.
-            reconnect();
+            reconnectForSubtitle(engine);
             previous.delete();
         }
         if (message != null) message.show("已选择外挂字幕。");
+    }
+
+    private void reconnectForSubtitle(MediaPlayer engine) {
+        subtitleResumeOptions=new SubtitleResumeOptions(engine);
+        reconnect();
     }
 
     void reconnect(){if(video==null||disposed)return;save();long resume=state==State.ENDED?0:position;boolean paused=state!=State.ENDED&&wantPaused;start(video,resume,paused);}

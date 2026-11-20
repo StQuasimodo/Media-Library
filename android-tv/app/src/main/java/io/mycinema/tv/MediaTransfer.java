@@ -108,6 +108,7 @@ final class MediaTransfer {
         if((exchange.response.code()==401||exchange.response.code()==403)&&quark){
             exchange.close();
             attempt.stage="刷新媒体地址";
+            attempt.status=0;
             MediaSources.Lease refreshed=lease(file,current,scope);
             attempt.stage=requestStage;
             exchange=request(refreshed,range,head,scope,originalQuark,attempt);

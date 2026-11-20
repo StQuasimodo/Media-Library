@@ -4,12 +4,15 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.net.ssl.SSLException;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -28,6 +31,28 @@ final class MediaTransfer {
     private volatile String lastError="";
     private static final class Slot {MediaSources.Lease lease;int users;volatile String error="";}
     private static final class ClientGone extends IOException {private static final long serialVersionUID=1L;}
+    private static final class ReadAttempt {
+        String stage = "准备媒体";
+        int status;
+        long forwarded;
+
+        String failure(Exception failure) {
+            int apiCode = 0;
+            int httpStatus = status;
+            if (failure instanceof MediaSources.QuarkResponseException) {
+                MediaSources.QuarkResponseException response = (MediaSources.QuarkResponseException) failure;
+                httpStatus = response.httpStatus;
+                apiCode = response.apiCode;
+            }
+            StringBuilder message = new StringBuilder("媒体读取失败（").append(stage);
+            if (httpStatus > 0) message.append(" · HTTP ").append(httpStatus);
+            if (apiCode != 0) message.append(" · 夸克代码 ").append(apiCode);
+            if (failure instanceof SocketTimeoutException) message.append(" · 网络超时");
+            else if (failure instanceof UnknownHostException) message.append(" · 域名解析失败");
+            else if (failure instanceof SSLException) message.append(" · HTTPS连接失败");
+            return message.append(" · 已转发 ").append(forwarded).append(" 字节）").toString();
+        }
+    }
     MediaTransfer(Provider provider){this.provider=provider;}
     private static String key(JSONObject file){return Json.text(file,"source")+":"+Json.text(file,"fileId");}
     private Slot slot(JSONObject file){String key=key(file);Slot slot=leases.get(key);if(slot==null){slot=new Slot();leases.put(key,slot);}return slot;}
@@ -53,23 +78,39 @@ final class MediaTransfer {
     synchronized void close(){closed=true;leases.clear();}
     private synchronized void error(JSONObject file,String text){if(closed)return;slot(file).error=text;lastError=text;trim();}
 
-    private NetworkScope.Exchange request(MediaSources.Lease lease,String range,boolean head,NetworkScope scope) throws Exception {
+    private NetworkScope.Exchange request(MediaSources.Lease lease,String range,boolean head,NetworkScope scope,boolean originalQuark,ReadAttempt attempt) throws Exception {
         HttpUrl url=lease.url;
         for(int redirects=0;redirects<=4;redirects++){
             scope.check();Request.Builder request=new Request.Builder().url(url).method(head?"HEAD":"GET",null).header("Accept-Encoding","identity");
             if(MediaSources.sameOrigin(url,lease.url))for(Map.Entry<String,String> header:lease.requestHeaders().entrySet())request.header(header.getKey(),header.getValue());
+            else if(originalQuark&&url.isHttps()){
+                // A signed CDN redirect still needs the public client headers.
+                // Never forward Cookie or Authorization across origins.
+                request.header("User-Agent",MediaSources.UA).header("Referer","https://pan.quark.cn/");
+            }
             if(!range.isEmpty())request.header("Range",range);
+            attempt.status=0;
             NetworkScope.Exchange exchange=scope.open(MediaSources.HTTP,request.build());Response response=exchange.response;
+            attempt.status=response.code();
             if(response.code()<300||response.code()>=400)return exchange;
             String location=response.header("Location");HttpUrl next=location==null?null:url.resolve(location);exchange.close();
             if(next==null||lease.sameOriginOnly&&!MediaSources.sameOrigin(lease.url,next)||(lease.url.isHttps()&&!next.isHttps())||!next.username().isEmpty()||!next.password().isEmpty())throw new IOException("Invalid media redirect");url=next;
         }
         throw new IOException("Too many media redirects");
     }
-    private NetworkScope.Exchange open(JSONObject file,String range,boolean head,NetworkScope scope) throws Exception {
-        MediaSources.Lease current=lease(file,null,scope);NetworkScope.Exchange exchange=request(current,range,head,scope);
-        if((exchange.response.code()==401||exchange.response.code()==403)&&Json.text(file,"source").equals("quark")){
-            exchange.close();exchange=request(lease(file,current,scope),range,head,scope);
+    private NetworkScope.Exchange open(JSONObject file,String range,boolean head,NetworkScope scope,ReadAttempt attempt,String requestStage) throws Exception {
+        boolean quark=Json.text(file,"source").equals("quark");
+        boolean originalQuark=quark&&!file.optBoolean("_cloudHls");
+        attempt.stage="获取媒体地址";attempt.status=0;
+        MediaSources.Lease current=lease(file,null,scope);
+        attempt.stage=requestStage;
+        NetworkScope.Exchange exchange=request(current,range,head,scope,originalQuark,attempt);
+        if((exchange.response.code()==401||exchange.response.code()==403)&&quark){
+            exchange.close();
+            attempt.stage="刷新媒体地址";
+            MediaSources.Lease refreshed=lease(file,current,scope);
+            attempt.stage=requestStage;
+            exchange=request(refreshed,range,head,scope,originalQuark,attempt);
         }
         return exchange;
     }
@@ -114,28 +155,30 @@ final class MediaTransfer {
     }
 
     void serve(JSONObject file,String header,boolean head,OutputStream output,NetworkScope scope) throws IOException {
+        ReadAttempt attempt=new ReadAttempt();
         boolean started=false;NetworkScope.Exchange current=null;InputStream prefetched=null;
         try{
             Range range;try{range=header.isEmpty()?null:new Range(header);}catch(IllegalArgumentException invalid){headers(output,416,0,"",null);return;}
             boolean quark=Json.text(file,"source").equals("quark");
             if(head){
-                current=open(file,quark?"bytes=0-0":"",!quark,scope);
-                if(!quark&&(current.response.code()==405||current.response.code()==501)){current.close();current=open(file,"bytes=0-0",false,scope);}
+                current=open(file,quark?"bytes=0-0":"",!quark,scope,attempt,"探测文件大小");
+                if(!quark&&(current.response.code()==405||current.response.code()==501)){current.close();current=open(file,"bytes=0-0",false,scope,attempt,"探测文件大小");}
                 Shape shape=new Shape(current.response);if(shape.total<0)throw new IOException("Unknown media length");
                 started=true;headers(output,200,shape.total,"",current.response);return;
             }
             long from=range==null?0:range.start,desiredEnd=range==null?Long.MAX_VALUE:range.end;
             if(range!=null&&range.suffix>0){
-                current=open(file,"bytes=0-0",false,scope);Shape probe=new Shape(current.response);if(probe.total<=0)throw new IOException("Unknown suffix position");from=range.start(probe.total);desiredEnd=range.end(probe.total);current.close();current=null;
+                current=open(file,"bytes=0-0",false,scope,attempt,"探测尾段位置");Shape probe=new Shape(current.response);if(probe.total<=0)throw new IOException("Unknown suffix position");from=range.start(probe.total);desiredEnd=range.end(probe.total);current.close();current=null;
             }
             long firstEnd=quark?segmentEnd(from,desiredEnd):desiredEnd;
             String upstreamRange=quark?bytes(from,firstEnd):header;
-            current=open(file,upstreamRange,false,scope);Response response=current.response;
+            current=open(file,upstreamRange,false,scope,attempt,"请求首段视频");Response response=current.response;
             if(response.code()==416){String value=response.header("Content-Range","");if(!value.matches("bytes \\*/\\d+"))value="";started=true;headers(output,416,0,value,null);return;}
             if(file.optBoolean("_cloudHls")){
                 String type=response.header("Content-Type","").split(";")[0].trim().toLowerCase(java.util.Locale.ROOT);
                 if(!type.isEmpty()&&!java.util.Arrays.asList("video/mp4","audio/mp4","application/mp4","video/mp2t","audio/aac","audio/mpeg","application/octet-stream","binary/octet-stream","video/iso.segment","text/vtt").contains(type))throw new IOException("Unsupported HLS resource type");
             }
+            if(response.isSuccessful())attempt.stage="校验首段响应";
             Shape shape=new Shape(response);long end;
             if(response.code()==206){
                 long expectedEnd=Math.min(firstEnd,shape.total-1);if(!quark&&range==null)expectedEnd=shape.total-1;
@@ -156,21 +199,24 @@ final class MediaTransfer {
             error(file,"");started=true;headers(output,code,length,code==206?"bytes "+from+"-"+end+"/"+shape.total:"",response);
             byte[] buffer=new byte[65536];long offset=from,partEnd=shape.end;int retries=0;
             while(!scope.cancelled()){
+                attempt.stage="读取视频数据";
                 InputStream input=prefetched==null?current.response.body().byteStream():prefetched;prefetched=null;boolean dropped=false;
                 while(!scope.cancelled()){
                     int limit=partEnd>=0?(int)Math.min(buffer.length,partEnd-offset+1):buffer.length;if(limit==0)break;
                     int count;try{count=input.read(buffer,0,limit);if(count<0&&partEnd>=0&&offset<=partEnd)throw new IOException("Media ended early");}
                     catch(IOException failure){if(!quark||shape.total<=0||retries>=2)throw failure;dropped=true;break;}
-                    if(count<0)return;write(output,buffer,count);offset+=count;
+                    if(count<0)return;write(output,buffer,count);offset+=count;attempt.forwarded+=count;
                 }
                 scope.check();if(end>=0&&offset>end)return;if(partEnd<0)return;
                 current.close();current=null;
                 if(dropped){retries++;}else{partEnd=quark?segmentEnd(offset,end):end;}
-                current=open(file,bytes(offset,partEnd),false,scope);shape.verify(current.response,offset,partEnd);
+                current=open(file,bytes(offset,partEnd),false,scope,attempt,dropped?"续接视频":"请求后续视频");
+                if(current.response.isSuccessful())attempt.stage=dropped?"校验续接响应":"校验后续分段";
+                shape.verify(current.response,offset,partEnd);
                 if(dropped)recoveries.incrementAndGet();else segments.incrementAndGet();
             }
         }catch(ClientGone ignored){/* Seeking/stopping is normal, not a source failure. */}
-        catch(Exception failure){if(!scope.cancelled()){error(file,"媒体读取未完成，请检查网络或登录状态后重新连接。");if(!started)headers(output,502,0,"",null);}}
+        catch(Exception failure){if(!scope.cancelled()){error(file,attempt.failure(failure));if(!started)headers(output,502,0,"",null);}}
         finally{if(current!=null)current.close();}
     }
 }

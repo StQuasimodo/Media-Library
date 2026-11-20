@@ -37,6 +37,15 @@ final class MediaSources {
         String key(){return source+":"+id;}
         JSONObject json(){JSONObject data=new JSONObject();Json.put(data,"source",source);Json.put(data,"fileId",id);Json.put(data,"name",name);Json.put(data,"parent",parent);Json.put(data,"size",size);Json.put(data,"key",key());if(!davPath.isEmpty()){Json.put(data,"davPath",davPath);Json.put(data,"davRoot",davRoot);}return data;}
     }
+    static final class QuarkResponseException extends IllegalStateException {
+        final int httpStatus, apiCode;
+
+        QuarkResponseException(String message, int httpStatus, int apiCode) {
+            super(message);
+            this.httpStatus = httpStatus;
+            this.apiCode = apiCode;
+        }
+    }
     static class Lease {
         final HttpUrl url;final Map<String,String> headers;
         interface Headers {Map<String,String> read() throws Exception;}
@@ -84,10 +93,13 @@ final class MediaSources {
             Request.Builder request=new Request.Builder().url(url).header("Cookie",cookie).header("Referer","https://pan.quark.cn/").header("User-Agent",UA);
             if(body!=null)request.post(body);
             try(NetworkScope.Exchange exchange=scope.open(HTTP,request.build())){Response response=exchange.response;
-            if(response.code()==429){QUARK_GATE.rateLimited(response.header("Retry-After"));throw new IllegalStateException("夸克请求过于频繁，已暂停后续请求，请稍后重试。");}
-            requireSuccess(response,"夸克");JSONObject json=Json.object(new String(TmdbClient.read(response.body().byteStream(),2*1024*1024),StandardCharsets.UTF_8));
-            if(json.optInt("status",0)==429){QUARK_GATE.rateLimited(null);throw new IllegalStateException("夸克请求过于频繁，已暂停后续请求，请稍后重试。");}
-            if(json.optInt("code",-1)!=0||json.optInt("status",0)!=200)throw new IllegalStateException("夸克请求未通过，请重新连接账号或检查官方页面的访问限制。");
+            int httpStatus=response.code();
+            if(httpStatus==429){QUARK_GATE.rateLimited(response.header("Retry-After"));throw new QuarkResponseException("夸克请求过于频繁，已暂停后续请求，请稍后重试。",httpStatus,0);}
+            try{requireSuccess(response,"夸克");}catch(IllegalStateException failure){throw new QuarkResponseException(failure.getMessage(),httpStatus,0);}
+            JSONObject json=Json.object(new String(TmdbClient.read(response.body().byteStream(),2*1024*1024),StandardCharsets.UTF_8));
+            int apiCode=json.optInt("code",0),status=json.optInt("status",0);
+            if(status==429){QUARK_GATE.rateLimited(null);throw new QuarkResponseException("夸克请求过于频繁，已暂停后续请求，请稍后重试。",httpStatus,apiCode!=0?apiCode:status);}
+            if(json.optInt("code",-1)!=0||status!=200)throw new QuarkResponseException("夸克请求未通过，请重新连接账号或检查官方页面的访问限制。",httpStatus,apiCode!=0?apiCode:status>=400?status:0);
             // Persist only renewal of the session cookie issued by the API host.
             String updated=cookie;
             for(Cookie renewal:Cookie.parseAll(url,response.headers()))if(renewal.name().equals("__puus")||renewal.name().equals("__pus")){

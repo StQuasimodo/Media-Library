@@ -117,7 +117,11 @@ def serve(root, log):
                     state['downloads']+=1
                     number=state['downloads']
                     slow=state['fault']=='slow_download'
+                    denied=state['fault']=='deny_download'
                     if slow:state['pendingDownloads']+=1
+                if denied:
+                    self.reply({'status':403,'code':31001,'message':'fixture-private-response'})
+                    return
                 if slow:
                     try:time.sleep(10)
                     finally:
@@ -213,11 +217,28 @@ def serve(root, log):
             self.do_GET()
 
         def media(self,uri):
+            cdn = uri.path == '/cdn/movie.mp4'
             if uri.path.startswith('/dav/') and self.headers.get('Authorization') != 'Basic dHYtdGVzdDpmaXh0dXJl':
                 self.reply({},401)
                 return
             if uri.path.startswith('/stream/') and '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
                 self.reply({},401)
+                return
+            with lock:
+                fault = state['fault']
+            if uri.path.startswith('/stream/') and fault == 'redirect_stream':
+                self.send_response(302)
+                self.send_header('Location','https://api.tmdb.org/cdn/movie.mp4?token=fixture-private-redirect')
+                self.send_header('Content-Length','0')
+                self.end_headers()
+                return
+            if cdn and (self.headers.get('Cookie') or self.headers.get('Authorization')
+                        or self.headers.get('Referer') != 'https://pan.quark.cn/'
+                        or 'Chrome/114.0.0.0' not in self.headers.get('User-Agent','')):
+                self.reply({},403)
+                return
+            if uri.path.startswith('/stream/') and fault == 'deny_stream':
+                self.reply({'message':'fixture-private-response'},403)
                 return
             if uri.path.endswith('/expired.mp4'):
                 self.reply({},403)
@@ -309,7 +330,7 @@ def serve(root, log):
                     state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     target=None
@@ -344,7 +365,7 @@ def serve(root, log):
             if uri.path.startswith('/cloud/'):
                 self.cloud_media(uri, self.command=='HEAD')
                 return
-            if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/'):
+            if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/') or uri.path == '/cdn/movie.mp4':
                 self.media(uri)
                 return
             if uri.path == '/1/clouddrive/file/sort':

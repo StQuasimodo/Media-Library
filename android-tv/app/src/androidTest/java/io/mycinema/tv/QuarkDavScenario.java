@@ -82,6 +82,36 @@ final class QuarkDavScenario {
         Json.put(report,"redirectPublicHeadersWithoutCredentials",true);
         Json.put(report,"streamFailureStagesVerified",true);
     }
+    private void downloadCompatibility(MediaSources sources, MediaSources.Entry video, JSONObject report, byte[] baseline) throws Exception {
+        JSONObject target=video.json();
+        try {
+            for(String fault:new String[]{"download_compat","download_both_400","download_auth_400"}) {
+                int calls=control(fault).optInt("compatDownloads");
+                MediaTransfer transfer=new MediaTransfer((entry, scope)->sources.withScope(scope).resolve(entry));
+                try(NetworkScope scope=new NetworkScope()){
+                    java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();
+                    transfer.serve(target,"bytes=1000-1063",false,output,scope);
+                    byte[] payload=output.toByteArray();
+                    String diagnostic=transfer.error(target);
+                    if(fault.equals("download_compat")){
+                        check(new String(payload,0,12,StandardCharsets.US_ASCII).equals("HTTP/1.1 206")
+                            && Arrays.equals(baseline,Arrays.copyOfRange(payload,payload.length-baseline.length,payload.length)),
+                            "primary HTTP 400 falls back to the compatible API and reads exact media bytes");
+                    }else{
+                        String expected=fault.equals("download_both_400")
+                            ?"获取媒体地址，兼容接口 · HTTP 400 · 夸克代码 24567"
+                            :"获取媒体地址 · HTTP 400 · 夸克代码 31001";
+                        check(new String(payload,0,12,StandardCharsets.US_ASCII).equals("HTTP/1.1 502")
+                            && diagnostic.contains(expected)&&!diagnostic.contains("fixture-private"),
+                            "address API refusal exposes safe status and code");
+                    }
+                    check(control(null).optInt("compatDownloads")==calls+(fault.equals("download_auth_400")?0:1),
+                        "compatibility path is attempted once for malformed requests and skipped for login rejection");
+                }finally{transfer.close();}
+            }
+        }finally{control("none");}
+        Json.put(report,"downloadCompatibilityAfterHttp400",true);
+    }
     private void recovery(MediaSources.Lease endpoint,MediaSources.Lease file,MediaSources.Entry video,QuarkDavManager manager,JSONObject report) throws Exception {
         byte[] baseline;try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){baseline=response.body().bytes();}
         int before=manager.recoveries(),downloads=control("drop_expire").optInt("downloads");
@@ -159,6 +189,8 @@ final class QuarkDavScenario {
             checks.add("app directory and playback paths use the generated TV WebDAV; nested fid routes, HEAD length and byte-exact206 work");
             streamDiagnostics(sources,endpoint,file,video,manager,report,bytes);
             checks.add("CDN redirect keeps public headers only; address API, CDN HTTP and invalid Range failures have distinct safe diagnostics");
+            downloadCompatibility(sources,video,report,bytes);
+            checks.add("original-file address tries the compatibility API once after HTTP400; preserves bytes and reports structured refusals");
             recovery(endpoint,file,video,manager,report);
             Json.put(report,"architectureChecks","running");new PlaybackArchitectureScenario(context).run(file,video,report);Json.put(report,"architectureChecks","passed");
             checks.add("four-MiB sequential transport, exact segment boundary and suffix, HEAD through GET probe, wrong initial Range rejection, concurrent expiry deduplication, underlying API cancellation");

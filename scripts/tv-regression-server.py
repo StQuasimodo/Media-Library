@@ -30,7 +30,7 @@ def prepare(root):
     for command in commands:
         subprocess.run(command, check=True, capture_output=True)
     ext = root / 'extensions.cnf'
-    ext.write_text('subjectAltName=DNS:api.tmdb.org,DNS:api.themoviedb.org,DNS:image.tmdb.org,DNS:drive-pc.quark.cn\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n')
+    ext.write_text('subjectAltName=DNS:api.tmdb.org,DNS:api.themoviedb.org,DNS:image.tmdb.org,DNS:drive-pc.quark.cn,DNS:drive.quark.cn\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n')
     subprocess.run(['openssl', 'x509', '-req', '-in', str(root / 'server.csr'), '-CA', str(root / 'ca.pem'), '-CAkey', str(root / 'ca.key'), '-CAcreateserial', '-days', '2', '-sha256', '-extfile', str(ext), '-out', str(root / 'server.pem')], check=True, capture_output=True)
     for name in ['ca.key', 'server.key']:
         (root / name).chmod(0o600)
@@ -118,7 +118,25 @@ def serve(root, log):
                     number=state['downloads']
                     slow=state['fault']=='slow_download'
                     denied=state['fault']=='deny_download'
+                    fault=state['fault']
+                    alternate=self.headers.get('Host')=='drive.quark.cn'
+                    if alternate:state['compatDownloads']=state.get('compatDownloads',0)+1
                     if slow:state['pendingDownloads']+=1
+                if fault=='download_auth_400':
+                    self.reply({'code':31001,'message':'fixture-private-response'},400)
+                    return
+                if fault in ('download_compat','download_both_400'):
+                    if not alternate:
+                        self.reply(b'<html>fixture-private-response</html>',400)
+                        return
+                    if ('quark-cloud-drive/' not in self.headers.get('User-Agent','')
+                            or self.headers.get('Accept')!='application/json, text/plain, */*'
+                            or self.headers.get('Referer')!='https://pan.quark.cn/'):
+                        self.reply({'code':901},400)
+                        return
+                    if fault=='download_both_400':
+                        self.reply({'code':24567,'message':'fixture-private-response'},400)
+                        return
                 if denied:
                     self.reply({'status':403,'code':31001,'message':'fixture-private-response'})
                     return
@@ -330,7 +348,7 @@ def serve(root, log):
                     state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream','download_compat','download_both_400','download_auth_400']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     target=None

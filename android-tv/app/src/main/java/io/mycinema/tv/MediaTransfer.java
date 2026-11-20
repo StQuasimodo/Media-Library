@@ -39,12 +39,15 @@ final class MediaTransfer {
         String failure(Exception failure) {
             int apiCode = 0;
             int httpStatus = status;
+            boolean compatibilityAddress = false;
             if (failure instanceof MediaSources.QuarkResponseException) {
                 MediaSources.QuarkResponseException response = (MediaSources.QuarkResponseException) failure;
                 httpStatus = response.httpStatus;
                 apiCode = response.apiCode;
+                compatibilityAddress = response.compatibilityAddress;
             }
             StringBuilder message = new StringBuilder("媒体读取失败（").append(stage);
+            if (compatibilityAddress) message.append("，兼容接口");
             if (httpStatus > 0) message.append(" · HTTP ").append(httpStatus);
             if (apiCode != 0) message.append(" · 夸克代码 ").append(apiCode);
             if (failure instanceof SocketTimeoutException) message.append(" · 网络超时");
@@ -86,7 +89,8 @@ final class MediaTransfer {
             else if(originalQuark&&url.isHttps()){
                 // A signed CDN redirect still needs the public client headers.
                 // Never forward Cookie or Authorization across origins.
-                request.header("User-Agent",MediaSources.UA).header("Referer","https://pan.quark.cn/");
+                String userAgent=lease.headers.get("User-Agent");
+                request.header("User-Agent",userAgent==null?MediaSources.UA:userAgent).header("Referer","https://pan.quark.cn/");
             }
             if(!range.isEmpty())request.header("Range",range);
             attempt.status=0;

@@ -18,7 +18,7 @@ adb pull /system/etc/hosts .harness/tv-fixture-private/playback-hosts-original
 python3 - <<'PYHOSTS'
 from pathlib import Path
 root=Path('.harness/tv-fixture-private')
-(root/'playback-hosts').write_text((root/'playback-hosts-original').read_text()+'\n10.0.2.2 api.tmdb.org api.themoviedb.org image.tmdb.org drive-pc.quark.cn\n')
+(root/'playback-hosts').write_text((root/'playback-hosts-original').read_text()+'\n10.0.2.2 api.tmdb.org api.themoviedb.org image.tmdb.org drive-pc.quark.cn drive.quark.cn\n')
 PYHOSTS
 adb push .harness/tv-fixture-private/playback-hosts /system/etc/hosts
 adb shell chmod 644 /system/etc/hosts

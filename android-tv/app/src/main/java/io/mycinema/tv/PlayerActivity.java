@@ -115,7 +115,28 @@ public final class PlayerActivity extends Activity {
     private void playbackInfo(){
         MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
         String info=playbackInfoText(player);
-        new AlertDialog.Builder(this).setTitle("播放信息").setMessage(info).setPositiveButton("完成",null).show();
+        new AlertDialog.Builder(this).setTitle("播放信息").setMessage(info)
+            .setNeutralButton("取流诊断",(dialog,n)->showStreamDiagnostics())
+            .setPositiveButton("完成",null).show();
+    }
+    private void showStreamDiagnostics(){
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("取流诊断")
+            .setMessage(controller.streamDiagnostics())
+            .setNeutralButton("复制",(d,n)->{
+                android.content.ClipboardManager clipboard=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("取流诊断",controller.streamDiagnostics()));
+                subtitleNotice("已复制诊断。");
+            }).setPositiveButton("完成",null).create();
+        Runnable update=new Runnable(){
+            @Override public void run(){
+                if(!dialog.isShowing()||isFinishing())return;
+                dialog.setMessage(controller.streamDiagnostics());
+                remote.postDelayed(this,1000);
+            }
+        };
+        dialog.setOnDismissListener(ignored->remote.removeCallbacks(update));
+        dialog.show();
+        remote.postDelayed(update,1000);
     }
     static String playbackInfoText(MediaPlayer player){
         IMedia media=player.getMedia();if(media==null)return "媒体信息暂不可用。";

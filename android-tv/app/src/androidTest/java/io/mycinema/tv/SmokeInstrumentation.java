@@ -51,6 +51,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             if("true".equals(arguments.getString("backup"))){new BackupScenario(this).run(arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("resourceNames"))){new ResourceNameScenario(this).run(arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("playback"))){new PlaybackScenario(this,arguments.getString("buildRun","")).run();return;}
+            if("true".equals(arguments.getString("playbackLoad"))){new PlaybackLoadScenario(this).run(arguments.getString("buildRun",""));return;}
             if("true".equals(arguments.getString("regression"))){new RegressionScenario(this,arguments).run();return;}
             if("true".equals(arguments.getString("networkProbe"))){
                 JSONObject report=new JSONObject();String address=java.net.InetAddress.getByName("api.tmdb.org").getHostAddress();check(!address.equals("10.0.2.2"),"public network probe must not use fixture DNS");Json.put(report,"publicApiAddress",address);boolean unauthorized=false;String reason="";

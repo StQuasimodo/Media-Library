@@ -12,6 +12,7 @@ import org.json.JSONObject;
 
 /** Short-lived authenticated loopback endpoint for one selected HLS VOD. */
 final class CloudHlsRelay implements Closeable {
+    StreamMetrics metrics(){return transfer.metrics();}
     private final ServerSocket server;private final String prefix="/"+UUID.randomUUID()+"/",password=UUID.randomUUID().toString();
     private final Set<Socket> sockets=new HashSet<>();private final Set<NetworkScope> requests=new HashSet<>();
     private final ThreadPoolExecutor workers=new ThreadPoolExecutor(3,3,0,TimeUnit.SECONDS,new ArrayBlockingQueue<>(4));

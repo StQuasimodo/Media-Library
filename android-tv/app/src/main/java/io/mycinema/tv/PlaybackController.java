@@ -64,6 +64,9 @@ final class PlaybackController implements Closeable {
     private int generation,ticks,loginAttempts;private long position,duration,restoreAt=-1;
     private boolean restoreFailed,seekAtOpen,loaded,restoreApplied,wantPaused,mutedForRestore,disposed;private float buffered,playbackRate=1f;
     private State state=State.STOPPED;private String message="";
+    private boolean playbackStarted;
+    private long bufferBegan, bufferedAfterStart;
+    private int bufferEpisodes;
     private volatile Snapshot snapshot=new Snapshot(State.STOPPED,0,0,0,"");
 
     PlaybackController(Context context,JSONObject file,Listener listener){this.context=context.getApplicationContext();this.file=Json.copy(file);this.listener=listener;}
@@ -71,7 +74,36 @@ final class PlaybackController implements Closeable {
     MediaPlayer engine(){return player;}
     private boolean current(int session,MediaPlayer engine){return session==generation&&engine==player&&!disposed;}
     private void publish(){snapshot=new Snapshot(state,position,duration,buffered,message);listener.changed(snapshot);}
-    private void state(State state,String message){this.state=state;this.message=message;publish();}
+    private void state(State state,String message){
+        if(this.state!=state){
+            long now=android.os.SystemClock.elapsedRealtime();
+            if(bufferBegan!=0){bufferedAfterStart+=now-bufferBegan;bufferBegan=0;}
+            if(state==State.PLAYING)playbackStarted=true;
+            if(state==State.BUFFERING&&playbackStarted){bufferBegan=now;bufferEpisodes++;}
+        }
+        this.state=state;this.message=message;publish();
+    }
+    int bufferEpisodes(){return bufferEpisodes;}
+    long rebufferMs(){return bufferedAfterStart+(bufferBegan==0?0:android.os.SystemClock.elapsedRealtime()-bufferBegan);}
+    StreamMetrics.Snapshot streamSnapshot(){
+        if(davSession!=null)return davSession.metrics.snapshot();
+        if(hlsRelay!=null)return hlsRelay.metrics().snapshot();
+        return relay==null?null:relay.metrics().snapshot();
+    }
+    String streamDiagnostics(){
+        StreamMetrics.Snapshot stream=streamSnapshot();
+        if(stream==null)return "播放连接暂未就绪。";
+        StringBuilder text=new StringBuilder(String.format(java.util.Locale.ROOT,
+            "近 5 秒转发速度 %.2f Mb/s\n已读 %.2f MiB · 已转发 %.2f MiB\n上游请求 %d 次 · 续接／刷新 %d 次\n开播后缓冲 %d 次 · %.1f 秒\n",
+            stream.recentMbps(),stream.received/1048576.0,stream.forwarded/1048576.0,
+            stream.responses,stream.retries,bufferEpisodes(),rebufferMs()/1000.0));
+        String[] labels={"获取地址","等待上游响应","读取视频数据","写给播放器"};
+        for(StreamMetrics.Step step:StreamMetrics.Step.values()){
+            text.append('\n').append(labels[step.ordinal()]).append(" · 最长 ").append(stream.maxMs(step)).append(" ms");
+            if(stream.currentMs(step)>0)text.append(" · 当前 ").append(stream.currentMs(step)).append(" ms");
+        }
+        return text.toString();
+    }
     private int restoreOutput(){
         if(player==null)return -1;IMedia media=player.getMedia();if(media==null)return -1;
         try{IMedia.Stats stats=media.getStats();if(stats==null)return -1;return player.getVideoTracksCount()>0||stats.decodedVideo>0?stats.displayedPictures:player.getAudioTracksCount()>0?stats.decodedAudio:-1;}finally{media.release();}
@@ -92,6 +124,7 @@ final class PlaybackController implements Closeable {
 
     void start(VLCVideoLayout video,long resume,boolean paused){
         if(disposed)return;stop();this.video=video;position=Math.max(0,resume);restoreAt=-1;duration=0;wantPaused=paused;mutedForRestore=paused;loaded=false;restoreApplied=false;buffered=0;loginAttempts=0;ticks=0;subtitleChecked=false;
+        playbackStarted=false;bufferBegan=0;bufferedAfterStart=0;bufferEpisodes=0;
         final int session=++generation;network=new NetworkScope();final NetworkScope attempt=network;state(State.CONNECTING,"");
         try{
             connecting=connector.submit(()->{

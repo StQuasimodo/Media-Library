@@ -18,22 +18,28 @@ adb pull /system/etc/hosts .harness/tv-fixture-private/playback-hosts-original
 python3 - <<'PYHOSTS'
 from pathlib import Path
 root=Path('.harness/tv-fixture-private')
-(root/'playback-hosts').write_text((root/'playback-hosts-original').read_text()+'\n10.0.2.2 api.tmdb.org api.themoviedb.org image.tmdb.org drive-pc.quark.cn\n')
+(root/'playback-hosts').write_text((root/'playback-hosts-original').read_text()+'\n10.0.2.2 api.tmdb.org api.themoviedb.org image.tmdb.org drive-pc.quark.cn drive.quark.cn\n')
 PYHOSTS
 adb push .harness/tv-fixture-private/playback-hosts /system/etc/hosts
 adb shell chmod 644 /system/etc/hosts
 adb shell cat /system/etc/hosts > "$out/guest-hosts-after.txt"
 adb shell am force-stop io.mycinema.tv
 adb shell run-as io.mycinema.tv rm -f files/tv-playback-report.json files/p01-playing.png files/p02-sources.png files/tv-quark-dav-report.json files/q01-quark-dav-playing.png files/q02-cloud-versions.png files/q03-cloud-hls-playing.png
+adb shell run-as io.mycinema.tv rm -f files/tv-playback-load-report.json files/tv-stream-diagnostics.png
 collect() {
   timeout 15s adb logcat -d > "$out/logcat.txt" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-playback-report.json > "$out/report.json" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/p01-playing.png > "$out/p01-playing.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/p02-sources.png > "$out/p02-sources.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-quark-dav-report.json > "$out/quark-dav-report.json" || true
+  timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-playback-load-report.json > "$out/load-report.json" || true
+  timeout 10s adb exec-out run-as io.mycinema.tv cat files/tv-stream-diagnostics.png > "$out/stream-diagnostics.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q01-quark-dav-playing.png > "$out/q01-quark-dav-playing.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q02-cloud-versions.png > "$out/q02-cloud-versions.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q03-cloud-hls-playing.png > "$out/q03-cloud-hls-playing.png" || true
+  for image in q04-auto-subtitle.png q05-manual-subtitle.png q06-playback-options.png q07-subtitle-picker.png; do
+    timeout 10s adb exec-out run-as io.mycinema.tv cat "files/$image" > "$out/$image" || true
+  done
   # The following collection regression probes the PUBLIC TMDB endpoint first.
   # Restore routing and clear this process's DNS/TLS cache before that probe.
   timeout 10s adb push .harness/tv-fixture-private/playback-hosts-original /system/etc/hosts || true
@@ -42,6 +48,8 @@ collect() {
   timeout 10s adb shell am force-stop io.mycinema.tv || true
 }
 trap collect EXIT
+timeout 140s adb shell am instrument -w -e disposableEmulator true -e playbackLoad true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/load-instrumentation.txt"
+grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/load-instrumentation.txt"
 timeout 420s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/instrumentation.txt"
 collect
@@ -50,6 +58,9 @@ import json,os
 report=json.load(open('.harness/tv-playback/report.json'))
 assert report['result']=='passed' and report['apiLevel']==22
 assert report['buildRun']==os.environ['GITHUB_RUN_ID']
+assert report['quarkAutoSubtitleRendered'] and report['quarkManualSubtitleRendered']
+assert report['externalDavSrtTrackVerified'] and report['subtitleCopiesRemovedOnExit']
+assert report['styledPlaybackDialogsAndDpadVerified']
 bridge=json.load(open('.harness/tv-playback/quark-dav-report.json'))
 assert bridge['result']=='passed' and bridge['buildRun']==os.environ['GITHUB_RUN_ID']
 assert bridge['cloudBackupRestoredNativeResume']
@@ -57,4 +68,9 @@ assert bridge['cloudPlaybackVerified'] and bridge['cloudHlsByteExactRenewal'] an
 assert bridge['cloudHlsCacheEvictionReusesRoot'] and bridge['cloudHlsConcurrentExpirySingleRefresh']
 assert bridge['cloudHlsByteExactDropAndExpiry'] and bridge['cloudHlsNativeDropAndExpiryVerified'] and bridge['cloudHlsBlockedManifestCancelled']
 assert bridge['cloudHlsContinuousWallMs']>=90000 and bridge['cloudHlsContinuousAdvanceMs']>=85000 and bridge['cloudHlsContinuousDisplayedPictures']>0
+load=json.load(open('.harness/tv-playback/load-report.json'))
+assert load['result']=='passed' and load['apiLevel']==22 and load['buildRun']==os.environ['GITHUB_RUN_ID']
+assert load['highBitrate1080p']['playbackQuality']=='continuous'
+assert load['1080pStallReproduced'] and load['diagnosticDialogVerified']
+assert load['hevcMain10Capability']['playbackQuality'] in ['continuous','stalled_or_dropped','no_frame']
 PY

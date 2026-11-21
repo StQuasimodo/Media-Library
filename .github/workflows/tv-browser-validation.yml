@@ -39,7 +39,7 @@ jobs:
         run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
       - name: Build and lint native APK and separate instrumentation
         working-directory: android-tv
-        run: ./gradlew --no-daemon lintDebug assembleDebug assembleDebugAndroidTest
+        run: ./gradlew --no-daemon lintDebug testDebugUnitTest assembleDebug assembleDebugAndroidTest
       - name: Verify API 21 minimum, v1 signature and ARMv7/x86 decoder
         run: |
           mkdir -p .harness/android-tv-package
@@ -57,6 +57,7 @@ jobs:
           node scripts/prepare-tv-regression.mjs
           python3 scripts/tv-regression-server.py prepare
           timeout 120s bash scripts/prepare-tv-playback.sh
+          timeout 170s bash scripts/prepare-tv-load-fixtures.sh
           sudo python3 scripts/tv-regression-server.py serve > .harness/tv-regression/fixture-server.log 2>&1 &
       - name: Install, launch and exercise actual API 22
         uses: reactivecircus/android-emulator-runner@v2
@@ -82,6 +83,9 @@ jobs:
           path: |
             .harness/tv-playback/report.json
             .harness/tv-playback/quark-dav-report.json
+            .harness/tv-playback/load-*.json
+            .harness/tv-playback/load-instrumentation.txt
+            android-tv/app/build/test-results/testDebugUnitTest/*.xml
             .harness/tv-playback/instrumentation.txt
             .harness/tv-playback/logcat.txt
             .harness/tv-playback/*.png

@@ -45,7 +45,7 @@ final class PlaybackRelay implements Closeable {
     String password(){return password;}
     String authorization(){return "Basic "+Base64.encodeToString((username()+":"+password).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);}
     final class Session implements Closeable {
-        final MediaSources.Lease endpoint;final String fileId,auth;private final boolean directory;private volatile boolean background;
+        final MediaSources.Lease endpoint;final String fileId,auth;final StreamMetrics metrics=new StreamMetrics();private final boolean directory;private volatile boolean background;
         private final Set<NetworkScope> owned=new HashSet<>();private boolean ended;
         private Session(String fileId,HttpUrl url,boolean directory){this.fileId=fileId;this.directory=directory;auth="Basic "+Base64.encodeToString(((directory?"listing:":"playback:")+UUID.randomUUID()).getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);Map<String,String> headers=new LinkedHashMap<>();headers.put("Authorization",auth);endpoint=new MediaSources.Lease(url,headers);}
         private synchronized void attach(NetworkScope scope) throws IOException {if(ended)throw new IOException("Playback session ended");if(background)scope.background();owned.add(scope);}
@@ -68,6 +68,7 @@ final class PlaybackRelay implements Closeable {
     String error(){String streaming=transfer.error();return streaming.isEmpty()?error:streaming;}
     String error(JSONObject target){return transfer.error(target);}
     int recoveries(){return transfer.recoveries();}
+    StreamMetrics metrics(){return transfer.metrics();}
     int segments(){return transfer.segments();}
     int activeRequests(){synchronized(requests){return requests.size();}}
     boolean idle(){return workers.getActiveCount()==0&&workers.getQueue().isEmpty();}
@@ -96,7 +97,8 @@ final class PlaybackRelay implements Closeable {
                 if(method.equals("PROPFIND")){String depth=value(headers,"depth","1");if(!depth.equals("0")&&!depth.equals("1")){reply(output,depth.equalsIgnoreCase("infinity")?403:400,"","application/xml; charset=utf-8","<?xml version=\"1.0\"?><d:error xmlns:d=\"DAV:\"><d:propfind-finite-depth/></d:error>".getBytes(StandardCharsets.UTF_8),"");return;}byte[] xml=dav.propfind(node,base,depth.equals("1"),scope);reply(output,207,"","application/xml; charset=utf-8",xml,"DAV: 1\r\n");return;}
                 if(node.entry.directory){status(output,405);return;}target=node.entry.json();
             }else if(!path.equals("/"+token)||!(method.equals("GET")||method.equals("HEAD"))){status(output,404);return;}
-            transfer.serve(target,value(headers,"range",""),method.equals("HEAD"),output,scope);
+            if(session==null)transfer.serve(target,value(headers,"range",""),method.equals("HEAD"),output,scope);
+            else transfer.serve(target,value(headers,"range",""),method.equals("HEAD"),output,scope,session.metrics);
         }catch(QuarkDavTree.Missing missing){try{status(socket.getOutputStream(),404);}catch(IOException ignored){}}
         catch(Exception failure){if(!closed&&!scope.cancelled()){error="媒体读取中断，有限重试未能完成。请检查网络、登录状态或更换资源后重试。";try{status(socket.getOutputStream(),502);}catch(IOException ignored){}}}
         }catch(IOException ignored){}

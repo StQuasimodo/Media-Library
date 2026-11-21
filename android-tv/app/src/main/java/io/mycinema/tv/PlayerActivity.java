@@ -134,6 +134,7 @@ public final class PlayerActivity extends Activity {
             }
         };
         dialog.setOnDismissListener(ignored->remote.removeCallbacks(update));
+        dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_NEUTRAL).requestFocus());
         dialog.show();
         remote.postDelayed(update,1000);
     }

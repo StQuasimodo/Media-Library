@@ -149,50 +149,40 @@ final class PlaybackLoadScenario {
         return result;
     }
 
-    private boolean click(String text){
-        AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();
-        if(root==null)return false;
-        for(AccessibilityNodeInfo node:root.findAccessibilityNodeInfosByText(text)){
-            if(node.getText()==null||!node.getText().toString().equals(text))continue;
-            for(AccessibilityNodeInfo target=node;target!=null;target=target.getParent()){
-                if(target.isClickable()&&target.performAction(AccessibilityNodeInfo.ACTION_CLICK))return true;
-            }
-        }
-        return false;
-    }
-
-    private void clickWhenVisible(String text) throws Exception {
-        long until=SystemClock.elapsedRealtime()+4000;
-        do{if(click(text))return;Thread.sleep(200);}while(SystemClock.elapsedRealtime()<until);
-        throw new AssertionError("diagnostics control not reached: "+text);
-    }
-
-    private void verifyDiagnosticDialog() throws Exception {
-        test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
-        clickWhenVisible("取流诊断");
+    private boolean waitForText(String text) throws InterruptedException {
         long until=SystemClock.elapsedRealtime()+4000;
         do{
             AccessibilityNodeInfo screen=test.getUiAutomation().getRootInActiveWindow();
-            if(screen!=null&&!screen.findAccessibilityNodeInfosByText("等待上游响应").isEmpty()){
-                Bitmap image=test.getUiAutomation().takeScreenshot();
-                require(image!=null,"diagnostics screenshot");
-                try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),"tv-stream-diagnostics.png"))){
-                    image.compress(Bitmap.CompressFormat.PNG,100,out);
-                }finally{image.recycle();}
-                clickWhenVisible("复制");
-                final String[] copied={""};
-                test.runOnMainSync(()->{
-                    android.content.ClipboardManager clipboard=(android.content.ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
-                    android.content.ClipData content=clipboard.getPrimaryClip();
-                    if(content!=null)copied[0]=String.valueOf(content.getItemAt(0).getText());
-                });
-                require(copied[0].contains("等待上游响应")&&!copied[0].contains("https://")
-                    &&!copied[0].contains("__puus")&&!copied[0].contains("load-1080"),"clipboard contains only safe playback metrics");
-                return;
-            }
+            if(screen!=null&&!screen.findAccessibilityNodeInfosByText(text).isEmpty())return true;
             Thread.sleep(200);
         }while(SystemClock.elapsedRealtime()<until);
-        throw new AssertionError("safe stream metrics are not visible");
+        return false;
+    }
+
+    private void verifyDiagnosticDialog() throws Exception {
+        test.setInTouchMode(false);
+        test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
+        require(waitForText("播放选项"),"playback menu did not open");
+        for(int row=0;row<7;row++)test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
+        test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_CENTER);
+        boolean visible=waitForText("等待上游响应");
+        Bitmap image=test.getUiAutomation().takeScreenshot();
+        if(image!=null){
+            try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),"tv-stream-diagnostics.png"))){
+                image.compress(Bitmap.CompressFormat.PNG,100,out);
+            }finally{image.recycle();}
+        }
+        require(visible,"safe stream metrics are not visible");
+        require(image!=null,"diagnostics screenshot");
+        test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_CENTER);
+        final String[] copied={""};
+        test.runOnMainSync(()->{
+            android.content.ClipboardManager clipboard=(android.content.ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
+            android.content.ClipData content=clipboard.getPrimaryClip();
+            if(content!=null)copied[0]=String.valueOf(content.getItemAt(0).getText());
+        });
+        require(copied[0].contains("等待上游响应")&&!copied[0].contains("https://")
+            &&!copied[0].contains("__puus")&&!copied[0].contains("load-1080"),"clipboard contains only safe playback metrics");
     }
 
     private void closePlayer(){

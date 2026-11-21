@@ -71,13 +71,14 @@ public final class PlayerActivity extends Activity {
     private void tracks(){
         if(controller==null||controller.engine()==null)return;
         RemoteUi.showList(new AlertDialog.Builder(this).setTitle("播放选项")
-            .setItems(new String[]{"选择音轨","选择字幕轨道","选择外挂字幕","调整音频同步","调整字幕同步","播放速度","播放信息"},
+            .setItems(new String[]{"选择音轨","选择字幕轨道","选择外挂字幕","调整音频同步","调整字幕同步","播放速度","播放信息","取流诊断"},
                 (dialog,index)->{
                     if(index<2)selectTracks(index==0);
                     else if(index==2)chooseExternalSubtitle();
                     else if(index<5)adjustDelay(index==3);
                     else if(index==5)selectSpeed();
-                    else playbackInfo();
+                    else if(index==6)playbackInfo();
+                    else showStreamDiagnostics();
                 })
             .setNegativeButton("返回",null),0);
     }
@@ -115,9 +116,7 @@ public final class PlayerActivity extends Activity {
     private void playbackInfo(){
         MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
         String info=playbackInfoText(player);
-        new AlertDialog.Builder(this).setTitle("播放信息").setMessage(info)
-            .setNeutralButton("取流诊断",(dialog,n)->showStreamDiagnostics())
-            .setPositiveButton("完成",null).show();
+        new AlertDialog.Builder(this).setTitle("播放信息").setMessage(info).setPositiveButton("完成",null).show();
     }
     private void showStreamDiagnostics(){
         AlertDialog dialog=new AlertDialog.Builder(this).setTitle("取流诊断")

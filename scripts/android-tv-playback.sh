@@ -48,10 +48,10 @@ collect() {
   timeout 10s adb shell am force-stop io.mycinema.tv || true
 }
 trap collect EXIT
-timeout 420s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
-grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/instrumentation.txt"
 timeout 140s adb shell am instrument -w -e disposableEmulator true -e playbackLoad true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/load-instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/load-instrumentation.txt"
+timeout 420s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
+grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/instrumentation.txt"
 collect
 python3 - <<'PY'
 import json,os

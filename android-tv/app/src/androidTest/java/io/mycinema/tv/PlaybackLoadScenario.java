@@ -169,7 +169,6 @@ final class PlaybackLoadScenario {
 
     private void verifyDiagnosticDialog() throws Exception {
         test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
-        clickWhenVisible("播放信息");
         clickWhenVisible("取流诊断");
         long until=SystemClock.elapsedRealtime()+4000;
         do{
@@ -180,6 +179,15 @@ final class PlaybackLoadScenario {
                 try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),"tv-stream-diagnostics.png"))){
                     image.compress(Bitmap.CompressFormat.PNG,100,out);
                 }finally{image.recycle();}
+                clickWhenVisible("复制");
+                final String[] copied={""};
+                test.runOnMainSync(()->{
+                    android.content.ClipboardManager clipboard=(android.content.ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    android.content.ClipData content=clipboard.getPrimaryClip();
+                    if(content!=null)copied[0]=String.valueOf(content.getItemAt(0).getText());
+                });
+                require(copied[0].contains("等待上游响应")&&!copied[0].contains("https://")
+                    &&!copied[0].contains("__puus")&&!copied[0].contains("load-1080"),"clipboard contains only safe playback metrics");
                 return;
             }
             Thread.sleep(200);
@@ -210,11 +218,17 @@ final class PlaybackLoadScenario {
         Json.put(report,"decoderPath","unknown");
         Json.put(report,"result","running");
         try{
+            require(java.net.InetAddress.getByName("drive-pc.quark.cn").getHostAddress().equals("10.0.2.2"),
+                "disposable emulator must use fixture DNS");
             control("load_clean");
             new MediaSources(context).saveQuark("__puus=tv-playback-fixture");
             anchor=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             JSONObject baseline=measure("load-1080","load_clean",30);
             Json.put(report,"highBitrate1080p",baseline);
+            closePlayer();
+            writeReport();
+
+            Json.put(report,"hevcMain10Capability",measure("load-4k","load_clean",24));
             closePlayer();
             writeReport();
 
@@ -231,8 +245,6 @@ final class PlaybackLoadScenario {
             closePlayer();
             writeReport();
 
-            Json.put(report,"hevcMain10Capability",measure("load-4k","load_clean",24));
-            closePlayer();
             require(baseline.optString("playbackQuality").equals("continuous"),"high-bitrate 1080p failed continuous playback");
             require(reproduced,"the delayed range case did not reproduce a measurable stall");
             Json.put(report,"result","passed");

@@ -70,7 +70,7 @@ public final class PlayerActivity extends Activity {
     private static String clock(long value){long seconds=Math.max(0,value)/1000;return String.format(Locale.ROOT,"%d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
     private void tracks(){
         if(controller==null||controller.engine()==null)return;
-        new AlertDialog.Builder(this).setTitle("播放选项")
+        RemoteUi.showList(new AlertDialog.Builder(this).setTitle("播放选项")
             .setItems(new String[]{"选择音轨","选择字幕轨道","选择外挂字幕","调整音频同步","调整字幕同步","播放速度","播放信息"},
                 (dialog,index)->{
                     if(index<2)selectTracks(index==0);
@@ -79,7 +79,7 @@ public final class PlayerActivity extends Activity {
                     else if(index==5)selectSpeed();
                     else playbackInfo();
                 })
-            .setNegativeButton("返回",null).show();
+            .setNegativeButton("返回",null),0);
     }
     private void subtitleNotice(String message){
         if(!isFinishing())android.widget.Toast.makeText(this,message,android.widget.Toast.LENGTH_SHORT).show();
@@ -94,11 +94,11 @@ public final class PlayerActivity extends Activity {
             }
             String[] labels=new String[entries.size()];
             for(int i=0;i<labels.length;i++)labels[i]=entries.get(i).name;
-            new AlertDialog.Builder(this).setTitle("选择同目录字幕")
+            RemoteUi.showList(new AlertDialog.Builder(this).setTitle("选择同目录字幕")
                 .setItems(labels,(dialog,index)->{
                     subtitleNotice("正在加载字幕…");
                     controller.loadSubtitle(entries.get(index),this::subtitleNotice);
-                }).setNegativeButton("返回",null).show();
+                }).setNegativeButton("返回",null),0);
         },this::subtitleNotice);
     }
     private void selectSpeed(){
@@ -107,10 +107,10 @@ public final class PlayerActivity extends Activity {
         final String[] labels={"0.5×","0.75×","正常 · 1×","1.25×","1.5×","2×"};
         int selected=2;for(int i=0;i<rates.length;i++)if(Math.abs(controller.playbackRate()-rates[i])<0.01f)selected=i;
         final PlaybackController current=controller;final MediaPlayer engine=current.engine();
-        new AlertDialog.Builder(this).setTitle("播放速度").setSingleChoiceItems(labels,selected,(dialog,index)->{
+        RemoteUi.showList(new AlertDialog.Builder(this).setTitle("播放速度").setSingleChoiceItems(labels,selected,(dialog,index)->{
             if(controller==current&&current.engine()==engine){if(!current.setPlaybackRate(rates[index]))status.setText("当前媒体暂不支持该播放速度。");}
             dialog.dismiss();
-        }).setNegativeButton("返回",null).show();
+        }).setNegativeButton("返回",null),selected);
     }
     private void playbackInfo(){
         MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
@@ -147,13 +147,13 @@ public final class PlayerActivity extends Activity {
         MediaPlayer player=controller==null?null:controller.engine();if(player==null)return;
         long delay=audio?player.getAudioDelay():player.getSpuDelay();
         String label=audio?"音频":"字幕";
-        new AlertDialog.Builder(this).setTitle(String.format(Locale.ROOT,"%s同步：%+.1f 秒（正值为延后）",label,delay/1000000.0))
+        RemoteUi.showList(new AlertDialog.Builder(this).setTitle(String.format(Locale.ROOT,"%s同步：%+.1f 秒（正值为延后）",label,delay/1000000.0))
             .setItems(new String[]{"提前 0.5 秒","延后 0.5 秒","恢复默认"},(dialog,index)->{
                 MediaPlayer current=controller==null?null:controller.engine();if(current!=player)return;
                 long next=index==2?0:Math.max(-60000000L,Math.min(60000000L,delay+(index==0?-500000L:500000L)));
                 boolean ok=audio?player.setAudioDelay(next):player.setSpuDelay(next);
                 if(ok)adjustDelay(audio);else status.setText("无法调整"+label+"同步，请确认媒体正在播放。");
-            }).setNegativeButton("完成",null).show();
+            }).setNegativeButton("完成",null),0);
     }
     private void selectTracks(boolean audio){
         MediaPlayer player=controller==null?null:controller.engine();
@@ -164,15 +164,18 @@ public final class PlayerActivity extends Activity {
             return;
         }
         String[] labels=new String[tracks.length];
-        for(int i=0;i<tracks.length;i++)
+        int selected=0,active=audio?player.getAudioTrack():player.getSpuTrack();
+        for(int i=0;i<tracks.length;i++){
             labels[i]=tracks[i].id==-1?(audio?"关闭音轨":"关闭字幕"):tracks[i].name;
-        new AlertDialog.Builder(this).setTitle(audio?"音轨":"字幕")
+            if(tracks[i].id==active)selected=i;
+        }
+        RemoteUi.showList(new AlertDialog.Builder(this).setTitle(audio?"音轨":"字幕")
             .setItems(labels,(dialog,n)->{
                 if(controller.engine()==player){
                     if(audio)player.setAudioTrack(tracks[n].id);
                     else controller.selectSubtitleTrack(tracks[n].id);
                 }
-            }).setNegativeButton("返回",null).show();
+            }).setNegativeButton("返回",null),selected);
     }
     private final Runnable clearSeek=()->{if(seekFeedback!=null)seekFeedback.setVisibility(View.GONE);};
     private void scheduleHide(){remote.removeCallbacks(hideControls);if(controls!=null&&controller!=null&&controller.snapshot().state==PlaybackController.State.PLAYING)remote.postDelayed(hideControls,5000);}

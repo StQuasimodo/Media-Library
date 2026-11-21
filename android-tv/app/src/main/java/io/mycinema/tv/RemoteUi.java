@@ -33,5 +33,10 @@ final class RemoteUi {
     static String focusKey(View focused,View root){for(View at=focused;at!=null;){if(at==root)return key(focused);android.view.ViewParent parent=at.getParent();at=parent instanceof View?(View)parent:null;}return "";}
     private static String key(View view){for(View at=view;at!=null;){Object key=at.getTag(R.id.remote_focus_key);if(key instanceof String)return (String)key;android.view.ViewParent parent=at.getParent();at=parent instanceof View?(View)parent:null;}return "";}
     static void listFocus(AlertDialog dialog,int selected){if(dialog.getWindow()!=null)dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);if(dialog.getListView()!=null){dialog.getListView().setSelection(Math.max(0,selected));dialog.getListView().requestFocus();}}
+    static void showList(AlertDialog.Builder builder,int selected){
+        AlertDialog dialog=builder.create();
+        dialog.setOnShowListener(ignored->listFocus(dialog,selected));
+        dialog.show();
+    }
     static void rating(Activity owner,Double current,Rating result){String[] labels=new String[21];for(int i=0;i<labels.length;i++)labels[i]=String.format(Locale.ROOT,"%.1f 分",i/2.0);int selected=current==null?16:Math.max(0,Math.min(20,(int)Math.round(current*2)));AlertDialog dialog=new AlertDialog.Builder(owner).setTitle("选择个人评分 · 返回不修改").setSingleChoiceItems(labels,selected,(d,n)->{d.dismiss();result.chosen(n/2.0);}).setNeutralButton("清除评分",(d,n)->result.chosen(null)).setNegativeButton("取消",null).create();dialog.setOnShowListener(d->listFocus(dialog,selected));dialog.show();}
 }

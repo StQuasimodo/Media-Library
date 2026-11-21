@@ -34,7 +34,7 @@ collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q01-quark-dav-playing.png > "$out/q01-quark-dav-playing.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q02-cloud-versions.png > "$out/q02-cloud-versions.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q03-cloud-hls-playing.png > "$out/q03-cloud-hls-playing.png" || true
-  for image in q04-auto-subtitle.png q05-manual-subtitle.png; do
+  for image in q04-auto-subtitle.png q05-manual-subtitle.png q06-playback-options.png q07-subtitle-picker.png; do
     timeout 10s adb exec-out run-as io.mycinema.tv cat "files/$image" > "$out/$image" || true
   done
   # The following collection regression probes the PUBLIC TMDB endpoint first.
@@ -55,6 +55,7 @@ assert report['result']=='passed' and report['apiLevel']==22
 assert report['buildRun']==os.environ['GITHUB_RUN_ID']
 assert report['quarkAutoSubtitleRendered'] and report['quarkManualSubtitleRendered']
 assert report['externalDavSrtTrackVerified'] and report['subtitleCopiesRemovedOnExit']
+assert report['styledPlaybackDialogsAndDpadVerified']
 bridge=json.load(open('.harness/tv-playback/quark-dav-report.json'))
 assert bridge['result']=='passed' and bridge['buildRun']==os.environ['GITHUB_RUN_ID']
 assert bridge['cloudBackupRestoredNativeResume']

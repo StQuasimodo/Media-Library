@@ -67,16 +67,26 @@ final class ExternalSubtitleScenario {
         test.waitForIdleSync();
         activity=null;
     }
-    private boolean click(String label) {
+    private boolean styledDialog(String label,String screenshot) throws Exception {
         AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();
-        if(root==null)return false;
-        for(AccessibilityNodeInfo node:root.findAccessibilityNodeInfosByText(label)){
-            if(node.getText()==null||!node.getText().toString().equals(label))continue;
-            for(AccessibilityNodeInfo target=node;target!=null;target=target.getParent()){
-                if(target.isClickable()&&target.performAction(AccessibilityNodeInfo.ACTION_CLICK))return true;
+        if(root==null||root.findAccessibilityNodeInfosByText(label).isEmpty())return false;
+        Bitmap image=test.getUiAutomation().takeScreenshot();
+        if(image==null)return false;
+        try{
+            int surface=0,focus=0;
+            for(int y=image.getHeight()/8;y<image.getHeight()*7/8;y+=2){
+                for(int x=image.getWidth()/8;x<image.getWidth()*7/8;x+=2){
+                    int pixel=image.getPixel(x,y);
+                    if(pixel==0xff171a21)surface++;
+                    if(pixel==0xff8ab4ff)focus++;
+                }
             }
-        }
-        return false;
+            if(surface<1000||focus<35)return false;
+            try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),screenshot))){
+                image.compress(Bitmap.CompressFormat.PNG,100,out);
+            }
+            return true;
+        }finally{image.recycle();}
     }
     private boolean painted(int red,int green,int blue,String screenshot) throws Exception {
         Bitmap image=test.getUiAutomation().takeScreenshot();
@@ -136,8 +146,14 @@ final class ExternalSubtitleScenario {
             test.runOnMainSync(()->before.setTime(20000));
             await(()->engine().getTime()>=19000,"seek before picking a different subtitle");
             test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
-            await(()->click("选择外挂字幕"),"remote opens external subtitle picker");
-            await(()->click("导演评论字幕.ass"),"manually choose a nonmatching file name");
+            await(()->styledDialog("播放选项","q06-playback-options.png"),"playback options use the Cinema palette and visible focus");
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_CENTER);
+            await(()->styledDialog("选择同目录字幕","q07-subtitle-picker.png"),"subtitle picker uses the Cinema palette and visible focus");
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_CENTER);
             await(()->engine()!=null&&engine()!=before&&engine().isPlaying()&&engine().getTime()>=19000
                 &&engine().getAudioTrack()==alternateAudio
                 &&engine().getSpuTrack()>=0&&painted(242,162,40,"q05-manual-subtitle.png"),
@@ -157,6 +173,7 @@ final class ExternalSubtitleScenario {
             Json.put(report,"quarkAutoSubtitleRendered",true);
             Json.put(report,"quarkManualSubtitleRendered",true);
             Json.put(report,"audioSelectionPreservedAcrossSubtitleChange",true);
+            Json.put(report,"styledPlaybackDialogsAndDpadVerified",true);
             Json.put(report,"externalDavSrtTrackVerified",true);
             Json.put(report,"subtitleCopiesRemovedOnExit",true);
         }finally{

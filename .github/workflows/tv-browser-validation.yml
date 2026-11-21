@@ -83,6 +83,9 @@ jobs:
           path: |
             .harness/tv-playback/report.json
             .harness/tv-playback/quark-dav-report.json
+            .harness/tv-playback/load-*.json
+            .harness/tv-playback/load-instrumentation.txt
+            android-tv/app/build/test-results/testDebugUnitTest/*.xml
             .harness/tv-playback/instrumentation.txt
             .harness/tv-playback/logcat.txt
             .harness/tv-playback/*.png

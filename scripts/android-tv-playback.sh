@@ -48,7 +48,7 @@ collect() {
   timeout 10s adb shell am force-stop io.mycinema.tv || true
 }
 trap collect EXIT
-timeout 140s adb shell am instrument -w -e disposableEmulator true -e playbackLoad true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/load-instrumentation.txt"
+timeout 200s adb shell am instrument -w -e disposableEmulator true -e playbackLoad true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/load-instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/load-instrumentation.txt"
 timeout 420s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/instrumentation.txt"
@@ -71,6 +71,7 @@ assert bridge['cloudHlsContinuousWallMs']>=90000 and bridge['cloudHlsContinuousA
 load=json.load(open('.harness/tv-playback/load-report.json'))
 assert load['result']=='passed' and load['apiLevel']==22 and load['buildRun']==os.environ['GITHUB_RUN_ID']
 assert load['highBitrate1080p']['playbackQuality']=='continuous'
+assert load['parallelDelayed1080p']['playbackQuality']=='continuous'
 assert load['1080pStallReproduced'] and load['diagnosticDialogVerified']
 assert load['hevcMain10Capability']['playbackQuality'] in ['continuous','stalled_or_dropped','no_frame']
 PY

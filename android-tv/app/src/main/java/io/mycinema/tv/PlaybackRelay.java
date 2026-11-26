@@ -79,7 +79,7 @@ final class PlaybackRelay implements Closeable {
         try(NetworkScope requestScope=scope;Socket client=socket){try{scope.check();InputStream input=new BufferedInputStream(client.getInputStream());OutputStream output=client.getOutputStream();String[] request=line(input).split(" ");
             if(request.length!=3||!request[2].matches("HTTP/1\\.[01]")){status(output,400);return;}
             Map<String,String> headers=new LinkedHashMap<>();int bytes=0;for(int count=0;count<40;count++){String header=line(input);bytes+=header.length();if(bytes>16384)throw new IOException();if(header.isEmpty())break;if(count==39)throw new IOException();int colon=header.indexOf(':');if(colon<=0)throw new IOException();String key=header.substring(0,colon).trim().toLowerCase(java.util.Locale.ROOT);if(headers.put(key,header.substring(colon+1).trim())!=null){status(output,400);return;}}
-            String method=request[0],path=request[1];JSONObject target=file;
+            String method=request[0],path=request[1];JSONObject target=file;boolean video=false;
             if(dav!=null){
                 String auth=value(headers,"authorization","");boolean baseAuth=MessageDigest.isEqual(authorization().getBytes(StandardCharsets.US_ASCII),auth.getBytes(StandardCharsets.UTF_8));
                 if(!baseAuth){synchronized(sessions){session=sessions.get(auth);}if(session==null){reply(output,401,"","",new byte[0],"WWW-Authenticate: Basic realm=\"My Cinema Quark WebDAV\"\r\n");return;}session.attach(scope);}
@@ -95,10 +95,10 @@ final class PlaybackRelay implements Closeable {
                 if(session!=null&&(!session.fileId.equals(node.entry.id)||session.directory!=node.entry.directory||!session.directory&&!method.equals("GET")&&!method.equals("HEAD"))){status(output,403);return;}
                 if(method.equals("OPTIONS")){reply(output,200,"","",new byte[0],"DAV: 1\r\nAllow: OPTIONS, PROPFIND, GET, HEAD\r\n");return;}
                 if(method.equals("PROPFIND")){String depth=value(headers,"depth","1");if(!depth.equals("0")&&!depth.equals("1")){reply(output,depth.equalsIgnoreCase("infinity")?403:400,"","application/xml; charset=utf-8","<?xml version=\"1.0\"?><d:error xmlns:d=\"DAV:\"><d:propfind-finite-depth/></d:error>".getBytes(StandardCharsets.UTF_8),"");return;}byte[] xml=dav.propfind(node,base,depth.equals("1"),scope);reply(output,207,"","application/xml; charset=utf-8",xml,"DAV: 1\r\n");return;}
-                if(node.entry.directory){status(output,405);return;}target=node.entry.json();
+                if(node.entry.directory){status(output,405);return;}target=node.entry.json();video=node.entry.video();
             }else if(!path.equals("/"+token)||!(method.equals("GET")||method.equals("HEAD"))){status(output,404);return;}
             if(session==null)transfer.serve(target,value(headers,"range",""),method.equals("HEAD"),output,scope);
-            else transfer.serve(target,value(headers,"range",""),method.equals("HEAD"),output,scope,session.metrics);
+            else transfer.serve(target,value(headers,"range",""),method.equals("HEAD"),output,scope,session.metrics,video);
         }catch(QuarkDavTree.Missing missing){try{status(socket.getOutputStream(),404);}catch(IOException ignored){}}
         catch(Exception failure){if(!closed&&!scope.cancelled()){error="媒体读取中断，有限重试未能完成。请检查网络、登录状态或更换资源后重试。";try{status(socket.getOutputStream(),502);}catch(IOException ignored){}}}
         }catch(IOException ignored){}

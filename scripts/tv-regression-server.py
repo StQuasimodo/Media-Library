@@ -146,7 +146,7 @@ def serve(root, log):
                     return
                 body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
                 fids=body.get('fids',[])
-                if state['mode'] in ('load_clean','load_delayed') and len(fids)==1 and fids[0] in LOAD_FILES:
+                if state['mode'] in ('load_clean','load_delayed','load_outage') and len(fids)==1 and fids[0] in LOAD_FILES:
                     self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+LOAD_FILES[fids[0]]}]})
                     return
                 if state.get('subtitles') and len(fids)==1 and fids[0] in SUBTITLE_FILES:
@@ -336,8 +336,8 @@ def serve(root, log):
                 start=int(match[1]);end=min(int(match[2]) if match[2] else end,end)
                 if start>end:
                     self.send_response(416);self.send_header('Content-Range',f'bytes */{size}');self.send_header('Content-Length','0');self.end_headers();return
-            if load_source and state['mode']=='load_delayed' and start>=4*1024*1024:
-                time.sleep(3.5)
+            if load_source and state['mode'] in ('load_delayed','load_outage') and start>=4*1024*1024:
+                time.sleep(3.5 if state['mode']=='load_delayed' else 9)
             with lock:
                 quark_stream=uri.path.startswith('/stream/')
                 fault=state['fault'] if quark_stream else 'none'
@@ -400,7 +400,7 @@ def serve(root, log):
                     state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree','load_clean','load_delayed'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream','download_compat','download_both_400','download_auth_400']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree','load_clean','load_delayed','load_outage'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream','download_compat','download_both_400','download_auth_400']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     target=None
@@ -449,7 +449,7 @@ def serve(root, log):
                         if slow: state['slowListStarts'] += 1
                     if slow: time.sleep(10)
                     rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
-                    if state['mode'] in ('load_clean','load_delayed'):
+                    if state['mode'] in ('load_clean','load_delayed','load_outage'):
                         rows=[{'fid':fid,'file_name':name,'file':True,'size':(root/name).stat().st_size}
                               for fid,name in LOAD_FILES.items()] if parent=='0' else []
                     if state['mode']=='bridge_tree':

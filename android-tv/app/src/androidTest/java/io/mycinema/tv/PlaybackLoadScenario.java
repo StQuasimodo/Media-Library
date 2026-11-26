@@ -96,7 +96,7 @@ final class PlaybackLoadScenario {
             .putExtra("mediaKey",selected.key()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         FrameSample current=sample();
         while(current.pictures==0&&!current.state.equals("ERROR")
-            &&SystemClock.elapsedRealtime()-opened<FIRST_FRAME_LIMIT_MS){
+            &&SystemClock.elapsedRealtime()-opened<(mode.equals("load_outage")?22000:FIRST_FRAME_LIMIT_MS)){
             Thread.sleep(200);
             current=sample();
         }
@@ -222,7 +222,12 @@ final class PlaybackLoadScenario {
             closePlayer();
             writeReport();
 
-            JSONObject delayed=measure("load-1080","load_delayed",30);
+            JSONObject recovered=measure("load-1080","load_delayed",30);
+            Json.put(report,"parallelDelayed1080p",recovered);
+            closePlayer();
+            writeReport();
+
+            JSONObject delayed=measure("load-1080","load_outage",30);
             boolean reproduced=delayed.optLong("longestFrameGapMs")>=2000
                 || delayed.optLong("advanceMs")<delayed.optLong("wallMs")*.75;
             JSONObject waits=delayed.optJSONObject("maxWaitMs");
@@ -236,6 +241,10 @@ final class PlaybackLoadScenario {
             writeReport();
 
             require(baseline.optString("playbackQuality").equals("continuous"),"high-bitrate 1080p failed continuous playback");
+            require(recovered.getJSONObject("maxWaitMs").getLong("RESPONSE")>=3000,
+                "the improved case must encounter the same upstream delay");
+            require(recovered.optString("playbackQuality").equals("continuous"),
+                "overlapped ranges did not sustain delayed 1080p");
             require(reproduced,"the delayed range case did not reproduce a measurable stall");
             Json.put(report,"result","passed");
             result.putString("result","passed");

@@ -1,7 +1,13 @@
 package io.mycinema.tv;
 
 import org.json.JSONObject;
+import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
@@ -171,10 +177,70 @@ final class MediaTransfer {
         byte[] encoded=headers.append("\r\n").toString().getBytes(StandardCharsets.US_ASCII);write(output,encoded,encoded.length);
     }
 
-    void serve(JSONObject file,String header,boolean head,OutputStream output,NetworkScope scope) throws IOException {
-        serve(file,header,head,output,scope,metrics);
+    // A single foreground stream may overlap up to four header waits. Bodies stay
+    // on their sockets until consumed in order, under the same 64 KiB copy loop.
+    private static final Semaphore lookaheadSlot = new Semaphore(1);
+
+    private final class RangeWindow implements Closeable {
+        private final ArrayDeque<Future<NetworkScope.Exchange>> pending = new ArrayDeque<>();
+        private final NetworkScope calls = new NetworkScope();
+        private final ExecutorService workers = Executors.newFixedThreadPool(4);
+        private final JSONObject file;
+        private final StreamMetrics metrics;
+        private final long last;
+        private long next;
+        private boolean closedWindow;
+
+        RangeWindow(JSONObject file, StreamMetrics metrics, long next, long last) {
+            this.file = file;
+            this.metrics = metrics;
+            this.next = next;
+            this.last = last;
+        }
+
+        synchronized void fill() {
+            while (!closedWindow && pending.size() < 4 && next <= last) {
+                long start = next;
+                long end = segmentEnd(start, last);
+                next = end + 1;
+                pending.add(workers.submit(() -> {
+                    try (StreamMetrics.Request timing = metrics.open()) {
+                        NetworkScope.Exchange exchange = open(file, bytes(start, end), false, calls,
+                            new ReadAttempt(timing), "请求后续视频");
+                        calls.own(exchange);
+                        return exchange;
+                    }
+                }));
+            }
+        }
+
+        NetworkScope.Exchange take() throws Exception {
+            Future<NetworkScope.Exchange> first;
+            synchronized (this) {
+                calls.check();
+                first = pending.element();
+            }
+            NetworkScope.Exchange exchange = first.get();
+            synchronized (this) { pending.remove(); }
+            calls.disown(exchange);
+            return exchange;
+        }
+
+        @Override public synchronized void close() {
+            if (closedWindow) return;
+            closedWindow = true;
+            calls.close();
+            for (Future<?> future : pending) future.cancel(true);
+            workers.shutdownNow();
+            lookaheadSlot.release();
+        }
     }
-    void serve(JSONObject file,String header,boolean head,OutputStream output,NetworkScope scope,StreamMetrics metrics) throws IOException {
+
+    void serve(JSONObject file,String header,boolean head,OutputStream output,NetworkScope scope) throws IOException {
+        serve(file,header,head,output,scope,metrics,false);
+    }
+    void serve(JSONObject file,String header,boolean head,OutputStream output,NetworkScope scope,StreamMetrics metrics,boolean playbackVideo) throws IOException {
+        RangeWindow window=null;
         ReadAttempt attempt=new ReadAttempt(metrics.open());
         boolean started=false;NetworkScope.Exchange current=null;InputStream prefetched=null;
         try{
@@ -220,7 +286,13 @@ final class MediaTransfer {
             }
             error(file,"");started=true;headers(output,code,length,code==206?"bytes "+from+"-"+end+"/"+shape.total:"",response);
             byte[] buffer=new byte[65536];long offset=from,partEnd=shape.end;int retries=0;
+            if(playbackVideo && quark && response.code()==206 && end-partEnd>=SEGMENT_BYTES
+                    && lookaheadSlot.tryAcquire()){
+                window=new RangeWindow(file,metrics,partEnd+1,end);
+                scope.own(window);
+            }
             while(!scope.cancelled()){
+                if(window!=null)window.fill();
                 attempt.stage="读取视频数据";
                 InputStream input=prefetched==null?current.response.body().byteStream():prefetched;prefetched=null;boolean dropped=false;
                 while(!scope.cancelled()){
@@ -239,14 +311,32 @@ final class MediaTransfer {
                 scope.check();if(end>=0&&offset>end)return;if(partEnd<0)return;
                 current.close();current=null;
                 if(dropped){retries++;attempt.timing.retry();}else{partEnd=quark?segmentEnd(offset,end):end;}
-                current=open(file,bytes(offset,partEnd),false,scope,attempt,dropped?"续接视频":"请求后续视频");
+                if(window!=null && !dropped){
+                    try{
+                        current=window.take();
+                        attempt.status=current.response.code();
+                        if(!current.response.isSuccessful()){
+                            current.close();
+                            current=null;
+                        }
+                    }catch(java.util.concurrent.ExecutionException failed){
+                        // Retry this exact offset through the serial path.
+                    }
+                    if(current==null){
+                        window.close();
+                        scope.disown(window);
+                        window=null;
+                        attempt.timing.retry();
+                    }
+                }
+                if(current==null)current=open(file,bytes(offset,partEnd),false,scope,attempt,dropped?"续接视频":"请求后续视频");
                 if(current.response.isSuccessful())attempt.stage=dropped?"校验续接响应":"校验后续分段";
                 shape.verify(current.response,offset,partEnd);
                 if(dropped)recoveries.incrementAndGet();else segments.incrementAndGet();
             }
         }catch(ClientGone ignored){/* Seeking/stopping is normal, not a source failure. */}
         catch(Exception failure){if(!scope.cancelled()){error(file,attempt.failure(failure));if(!started)headers(output,502,0,"",null);}}
-        finally{if(current!=null)current.close();attempt.timing.close();}
+        finally{if(current!=null)current.close();if(window!=null){window.close();scope.disown(window);}attempt.timing.close();}
     }
     private static int read(InputStream input,byte[] buffer,int from,int length,ReadAttempt attempt) throws IOException {
         int count=0;

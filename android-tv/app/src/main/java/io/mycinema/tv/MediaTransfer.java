@@ -184,6 +184,8 @@ final class MediaTransfer {
     private final class RangeWindow implements Closeable {
         private final ArrayDeque<Future<NetworkScope.Exchange>> pending = new ArrayDeque<>();
         private final NetworkScope calls = new NetworkScope();
+        private final java.util.Set<NetworkScope.Exchange> unclaimed = new java.util.HashSet<>();
+        final Closeable cancellation = this::cancel;
         private final ExecutorService workers = Executors.newFixedThreadPool(4);
         private final JSONObject file;
         private final StreamMetrics metrics;
@@ -207,8 +209,14 @@ final class MediaTransfer {
                     try (StreamMetrics.Request timing = metrics.open()) {
                         NetworkScope.Exchange exchange = open(file, bytes(start, end), false, calls,
                             new ReadAttempt(timing), "请求后续视频");
-                        calls.own(exchange);
-                        return exchange;
+                        synchronized (this) {
+                            if (!closedWindow) {
+                                unclaimed.add(exchange);
+                                return exchange;
+                            }
+                        }
+                        exchange.close();
+                        throw new IOException("Range cancelled");
                     }
                 }));
             }
@@ -221,18 +229,33 @@ final class MediaTransfer {
                 first = pending.element();
             }
             NetworkScope.Exchange exchange = first.get();
-            synchronized (this) { pending.remove(); }
-            calls.disown(exchange);
+            synchronized (this) {
+                pending.remove();
+                unclaimed.remove(exchange);
+            }
             return exchange;
         }
 
-        @Override public synchronized void close() {
+        // Session revocation can run on the Activity thread. Cancel calls here,
+        // but close unread response bodies on the serving thread (OkHttp may drain).
+        private synchronized void cancel() {
             if (closedWindow) return;
             closedWindow = true;
             calls.close();
             for (Future<?> future : pending) future.cancel(true);
             workers.shutdownNow();
-            lookaheadSlot.release();
+        }
+
+        @Override public void close() {
+            cancel();
+            try {
+                synchronized (this) {
+                    for (NetworkScope.Exchange exchange : unclaimed) exchange.close();
+                    unclaimed.clear();
+                }
+            } finally {
+                lookaheadSlot.release();
+            }
         }
     }
 
@@ -289,7 +312,7 @@ final class MediaTransfer {
             if(playbackVideo && quark && response.code()==206 && end-partEnd>=SEGMENT_BYTES
                     && lookaheadSlot.tryAcquire()){
                 window=new RangeWindow(file,metrics,partEnd+1,end);
-                scope.own(window);
+                scope.own(window.cancellation);
             }
             while(!scope.cancelled()){
                 if(window!=null)window.fill();
@@ -324,7 +347,7 @@ final class MediaTransfer {
                     }
                     if(current==null){
                         window.close();
-                        scope.disown(window);
+                        scope.disown(window.cancellation);
                         window=null;
                         attempt.timing.retry();
                     }
@@ -336,7 +359,7 @@ final class MediaTransfer {
             }
         }catch(ClientGone ignored){/* Seeking/stopping is normal, not a source failure. */}
         catch(Exception failure){if(!scope.cancelled()){error(file,attempt.failure(failure));if(!started)headers(output,502,0,"",null);}}
-        finally{if(current!=null)current.close();if(window!=null){window.close();scope.disown(window);}attempt.timing.close();}
+        finally{if(current!=null)current.close();if(window!=null){window.close();scope.disown(window.cancellation);}attempt.timing.close();}
     }
     private static int read(InputStream input,byte[] buffer,int from,int length,ReadAttempt attempt) throws IOException {
         int count=0;

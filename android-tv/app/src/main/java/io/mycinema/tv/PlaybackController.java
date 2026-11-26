@@ -90,10 +90,37 @@ final class PlaybackController implements Closeable {
         if(hlsRelay!=null)return hlsRelay.metrics().snapshot();
         return relay==null?null:relay.metrics().snapshot();
     }
+    private static String stateLabel(State current){
+        switch(current){
+            case CONNECTING:return "连接中";
+            case BUFFERING:return "缓冲中";
+            case PLAYING:return "播放中";
+            case PAUSED:return "已暂停";
+            case ENDED:return "已结束";
+            case ERROR:return "出错";
+            default:return "已停止";
+        }
+    }
+
     String streamDiagnostics(){
+        StringBuilder text=new StringBuilder(stateLabel(state));
+        if(player!=null){
+            long time=player.getTime();
+            if(time>=0)text.append(" · 播放位置 ").append(time/1000).append(" 秒");
+            IMedia media=player.getMedia();
+            if(media!=null){
+                try{
+                    IMedia.Stats stats=media.getStats();
+                    if(stats!=null)text.append("\n本次解码 ").append(stats.decodedVideo)
+                        .append(" 帧 · 显示 ").append(stats.displayedPictures)
+                        .append(" 帧 · 丢失 ").append(stats.lostPictures).append(" 帧");
+                }finally{media.release();}
+            }
+        }
+        text.append('\n');
         StreamMetrics.Snapshot stream=streamSnapshot();
-        if(stream==null)return "播放连接暂未就绪。";
-        StringBuilder text=new StringBuilder(String.format(java.util.Locale.ROOT,
+        if(stream==null)return text.append("尚无取流统计。").toString();
+        text.append(String.format(java.util.Locale.ROOT,
             "近 5 秒转发速度 %.2f Mb/s\n已读 %.2f MiB · 已转发 %.2f MiB\n上游请求 %d 次 · 续接／刷新 %d 次\n开播后缓冲 %d 次 · %.1f 秒\n",
             stream.recentMbps(),stream.received/1048576.0,stream.forwarded/1048576.0,
             stream.responses,stream.retries,bufferEpisodes(),rebufferMs()/1000.0));

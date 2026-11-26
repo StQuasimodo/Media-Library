@@ -69,7 +69,8 @@ public final class PlayerActivity extends Activity {
     private void seek(long delta){if(controller==null||!controller.seek(delta)){status.setText("当前媒体源尚不支持定位，或仍在缓冲。");return;}if(controls.getVisibility()!=View.VISIBLE){seekFeedback.setText((delta<0?"后退 ":"前进 ")+Math.abs(delta)/1000+" 秒");seekFeedback.setVisibility(View.VISIBLE);remote.removeCallbacks(clearSeek);remote.postDelayed(clearSeek,1300);}scheduleHide();}
     private static String clock(long value){long seconds=Math.max(0,value)/1000;return String.format(Locale.ROOT,"%d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);}
     private void tracks(){
-        if(controller==null||controller.engine()==null)return;
+        if(controller==null)return;
+        if(controller.engine()==null){showStreamDiagnostics();return;}
         RemoteUi.showList(new AlertDialog.Builder(this).setTitle("播放选项")
             .setItems(new String[]{"选择音轨","选择字幕轨道","选择外挂字幕","调整音频同步","调整字幕同步","播放速度","播放信息","取流诊断"},
                 (dialog,index)->{

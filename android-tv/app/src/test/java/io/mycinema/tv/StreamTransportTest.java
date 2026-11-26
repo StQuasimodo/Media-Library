@@ -180,10 +180,90 @@ public final class StreamTransportTest {
                 assertTrue(header>4);
                 assertArrayEquals(fixture,Arrays.copyOfRange(sent,header,sent.length));
                 assertEquals(reject?1:0,transfer.metrics().snapshot().retries);
+                if(reject){
+                    int before=origin.getRequestCount();
+                    transfer.serve(file,"bytes=0-",false,new OutputStream(){
+                        boolean headers=true;
+                        public void write(int b){}
+                        public void write(byte[] b,int off,int len){
+                            if(headers){headers=false;return;}
+                            assertTrue("fresh request stays serial during cooldown",
+                                origin.getRequestCount()-before <= 1+written/PART);
+                            written+=len;
+                        }
+                        long written;
+                    },scope,transfer.metrics(),true);
+                    assertEquals(before+3,origin.getRequestCount());
+                }
             }
         }finally{
             release.countDown();
             caller.shutdownNow();
+            transfer.close();
+            origin.shutdown();
+        }
+    }
+
+    @Test public void seekTakesOverLookaheadAtNextBoundary() throws Exception {
+        CountDownLatch oldReaderActive=new CountDownLatch(1);
+        CountDownLatch newReaderActive=new CountDownLatch(1);
+        CountDownLatch letNewReaderAdvance=new CountDownLatch(1);
+        CountDownLatch thirdRangeRequested=new CountDownLatch(1);
+        int total=PART*3;
+        MockWebServer origin=new MockWebServer();
+        origin.setDispatcher(new Dispatcher(){
+            @Override public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
+                String[] bounds=request.getHeader("Range").substring(6).split("-");
+                int first=Integer.parseInt(bounds[0]);
+                int last=Math.min(total-1,Integer.parseInt(bounds[1]));
+                if(request.getPath().equals("/old") && first>0)oldReaderActive.countDown();
+                if(request.getPath().equals("/seek") && first==PART*2)thirdRangeRequested.countDown();
+                return new MockResponse().setResponseCode(206)
+                    .setHeader("Content-Range","bytes "+first+"-"+last+"/"+total)
+                    .setBody(new Buffer().write(new byte[last-first+1]));
+            }
+        });
+        origin.start();
+        ExecutorService pool=Executors.newFixedThreadPool(2);
+        MediaTransfer transfer=new MediaTransfer((f,s)->new MediaSources.Lease(
+            origin.url("/"+f.getString("fileId")),Collections.emptyMap()));
+        try(NetworkScope oldScope=new NetworkScope();NetworkScope seekScope=new NetworkScope()){
+            JSONObject old=new JSONObject().put("source","quark").put("fileId","old");
+            JSONObject seek=new JSONObject().put("source","quark").put("fileId","seek");
+            CountDownLatch dropOld=new CountDownLatch(1);
+            Future<?> retired=pool.submit(()->{
+                transfer.serve(old,"bytes=0-",false,new OutputStream(){
+                    public void write(int b){}
+                    public void write(byte[] b,int off,int len)throws IOException{
+                        if(len>1024){waitFor(dropOld);throw new IOException("client sought");}
+                    }
+                },oldScope,transfer.metrics(),true);
+                return null;
+            });
+            assertTrue(oldReaderActive.await(4,TimeUnit.SECONDS));
+            Future<?> playing=pool.submit(()->{
+                transfer.serve(seek,"bytes=0-",false,new OutputStream(){
+                    long body;
+                    public void write(int b){}
+                    public void write(byte[] b,int off,int len)throws IOException{
+                        if(body==0 && len<1024)return; // headers
+                        if(body==0){newReaderActive.countDown();waitFor(letNewReaderAdvance);}
+                        if(body==PART)waitFor(thirdRangeRequested);
+                        body+=len;
+                    }
+                },seekScope,transfer.metrics(),true);
+                return null;
+            });
+            assertTrue(newReaderActive.await(4,TimeUnit.SECONDS));
+            dropOld.countDown();
+            retired.get(4,TimeUnit.SECONDS);
+            letNewReaderAdvance.countDown();
+            playing.get(4,TimeUnit.SECONDS);
+            assertEquals(0,thirdRangeRequested.getCount());
+            assertEquals(total,transfer.metrics().snapshot().forwarded);
+        }finally{
+            letNewReaderAdvance.countDown();
+            pool.shutdownNow();
             transfer.close();
             origin.shutdown();
         }

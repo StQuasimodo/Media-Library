@@ -36,7 +36,7 @@ final class MediaTransfer {
     private final AtomicInteger recoveries=new AtomicInteger(),segments=new AtomicInteger();
     private volatile boolean closed;
     private volatile String lastError="";
-    private static final class Slot {MediaSources.Lease lease;int users;volatile String error="";}
+    private static final class Slot {MediaSources.Lease lease;long resumeLookaheadNanos;int users;volatile String error="";}
     private static final class ClientGone extends IOException {private static final long serialVersionUID=1L;}
     private static final class ReadAttempt {
         final StreamMetrics.Request timing;
@@ -68,6 +68,16 @@ final class MediaTransfer {
     MediaTransfer(Provider provider){this.provider=provider;}
     private static String key(JSONObject file){return Json.text(file,"source")+":"+Json.text(file,"fileId");}
     private Slot slot(JSONObject file){String key=key(file);Slot slot=leases.get(key);if(slot==null){slot=new Slot();leases.put(key,slot);}return slot;}
+    private synchronized boolean mayPrefetch(JSONObject file){
+        Slot cached=leases.get(key(file));
+        return cached==null || cached.resumeLookaheadNanos==0 || System.nanoTime()-cached.resumeLookaheadNanos>=0;
+    }
+
+    private synchronized void pausePrefetch(JSONObject file){
+        Slot cached=leases.get(key(file));
+        if(cached!=null)cached.resumeLookaheadNanos=System.nanoTime()+java.util.concurrent.TimeUnit.MINUTES.toNanos(1);
+    }
+
     private void trim(){
         java.util.Iterator<Slot> entries=leases.values().iterator();while(leases.size()>8&&entries.hasNext())if(entries.next().users==0)entries.remove();
     }
@@ -249,10 +259,10 @@ final class MediaTransfer {
         @Override public void close() {
             cancel();
             try {
-                synchronized (this) {
-                    for (NetworkScope.Exchange exchange : unclaimed) exchange.close();
-                    unclaimed.clear();
-                }
+                // cancel() seals unclaimed under the monitor. Only this relay thread
+                // can take entries; workers that finish later close their own exchange.
+                for (NetworkScope.Exchange exchange : unclaimed) exchange.close();
+                unclaimed.clear();
             } finally {
                 lookaheadSlot.release();
             }
@@ -309,12 +319,15 @@ final class MediaTransfer {
             }
             error(file,"");started=true;headers(output,code,length,code==206?"bytes "+from+"-"+end+"/"+shape.total:"",response);
             byte[] buffer=new byte[65536];long offset=from,partEnd=shape.end;int retries=0;
-            if(playbackVideo && quark && response.code()==206 && end-partEnd>=SEGMENT_BYTES
-                    && lookaheadSlot.tryAcquire()){
-                window=new RangeWindow(file,metrics,partEnd+1,end);
-                scope.own(window.cancellation);
-            }
+            boolean allowWindow=playbackVideo && quark && response.code()==206;
             while(!scope.cancelled()){
+                // A seek can overlap the retiring request. Retry admission at each
+                // segment boundary so that the new reader can inherit the slot.
+                if(window==null && allowWindow && end-partEnd>=SEGMENT_BYTES
+                        && mayPrefetch(file) && lookaheadSlot.tryAcquire()){
+                    window=new RangeWindow(file,metrics,partEnd+1,end);
+                    scope.own(window.cancellation);
+                }
                 if(window!=null)window.fill();
                 attempt.stage="读取视频数据";
                 InputStream input=prefetched==null?current.response.body().byteStream():prefetched;prefetched=null;boolean dropped=false;
@@ -339,6 +352,7 @@ final class MediaTransfer {
                         current=window.take();
                         attempt.status=current.response.code();
                         if(!current.response.isSuccessful()){
+                            if(attempt.status==429)pausePrefetch(file);
                             current.close();
                             current=null;
                         }
@@ -349,6 +363,7 @@ final class MediaTransfer {
                         window.close();
                         scope.disown(window.cancellation);
                         window=null;
+                        allowWindow=false;
                         attempt.timing.retry();
                     }
                 }

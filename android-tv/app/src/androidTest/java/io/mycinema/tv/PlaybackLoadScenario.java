@@ -181,7 +181,8 @@ final class PlaybackLoadScenario {
             android.content.ClipData content=clipboard.getPrimaryClip();
             if(content!=null)copied[0]=String.valueOf(content.getItemAt(0).getText());
         });
-        require(copied[0].contains("等待上游响应")&&!copied[0].contains("https://")
+        require(copied[0].contains("本次解码") && copied[0].contains("丢失") && copied[0].contains("播放位置")
+            && copied[0].contains("等待上游响应")&&!copied[0].contains("https://")
             &&!copied[0].contains("__puus")&&!copied[0].contains("load-1080"),"clipboard contains only safe playback metrics");
     }
 

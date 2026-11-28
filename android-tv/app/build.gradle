@@ -15,11 +15,11 @@ android {
         minSdk 21
         ndk { abiFilters 'armeabi-v7a', 'x86' }
         targetSdk 35
-        versionCode 20
+        versionCode 29
         if (migrationPreview && project.hasProperty('tvUpgradeTestVersionCode')) {
             versionCode Integer.parseInt(project.property('tvUpgradeTestVersionCode'))
         }
-        versionName '0.3.0-alpha.12'
+        versionName '0.3.0-alpha.21'
         testInstrumentationRunner 'io.mycinema.tv.SmokeInstrumentation'
     }
     signingConfigs {
@@ -41,7 +41,19 @@ android {
     lint { abortOnError true; checkReleaseBuilds true }
 }
 
+def mpvLibs = layout.buildDirectory.dir('generated/mpvJni')
+def prepareMpv = tasks.register('prepareMpvLibraries', Exec) {
+    inputs.file('../../scripts/prepare-tv-mpv.py')
+    outputs.dir(mpvLibs)
+    commandLine 'python3', '../../scripts/prepare-tv-mpv.py', mpvLibs.get().asFile
+}
+android.sourceSets.main.jniLibs.srcDir(mpvLibs)
+tasks.named('preBuild').configure { dependsOn prepareMpv }
+
 dependencies {
     implementation 'org.videolan.android:libvlc-all:3.7.7'
     implementation 'com.squareup.okhttp3:okhttp:3.12.13'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:3.12.13'
 }

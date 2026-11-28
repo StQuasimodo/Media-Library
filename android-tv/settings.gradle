@@ -1,4 +1,22 @@
 pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        // Keep fresh CI runners independent of Maven Central's shared IP rate limit for tests.
+        maven {
+            name = 'MavenCentralTestMirror'
+            url = uri('https://maven-central.storage-download.googleapis.com/maven2')
+            content {
+                includeModule('junit', 'junit')
+                includeModule('org.hamcrest', 'hamcrest-core')
+                includeModule('org.hamcrest', 'hamcrest-parent')
+                includeModule('org.json', 'json')
+                includeModule('com.squareup.okhttp3', 'mockwebserver')
+            }
+        }
+        mavenCentral()
+    }
+}
 rootProject.name = 'MyCinemaTV'
 include ':app'

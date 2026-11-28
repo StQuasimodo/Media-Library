@@ -118,8 +118,13 @@ final class CloudHlsScenario {
             IMedia media=player().getMedia();try{check(media.getUri().getHost().equals("127.0.0.1"),"decoder consumes only local HLS");IMedia.Stats stats=media.getStats();check(stats!=null&&stats.decodedVideo>0&&stats.decodedAudio>0,"HLS actual video and audio decode counters");Json.put(report,"cloudHlsDecodedVideo",stats.decodedVideo);Json.put(report,"cloudHlsDecodedAudio",stats.decodedAudio);}finally{media.release();}
             String info=PlayerActivity.playbackInfoText(player());Json.put(report,"cloudHlsActualTrackInfo",info);check(info.contains("1920 × 1080"),"HLS runtime dimensions from demuxer rather than filename/tier");
             Json.put(report,"cloudHlsPhase","native-drop-and-continuity");nativeContinuity(report);Json.put(report,"cloudHlsPhase","native-seek-pause-resume");
-            int before=frames();test.runOnMainSync(()->{try{player().setTime(40000);}catch(Exception error){throw new IllegalStateException(error);}});
-            await(()->player().getTime()>=39500&&player().getTime()<48000&&frames()>before,"HLS seek settles near target with new frames");Json.put(report,"cloudHlsPostSeekMs",player().getTime());
+            int before=frames();
+            test.runOnMainSync(()->{try{check(controller().seekTo(40000),"timeline seek accepted");}catch(Exception error){throw new IllegalStateException(error);}});
+            // The first 40000 read can be the requested time while old frames
+            // are still draining. Require advancing output beyond the target.
+            await(()->player().getTime()>=40500&&player().getTime()<48000&&frames()>before+5,
+                "HLS seek advances beyond 40s with fresh frames");
+            Json.put(report,"cloudHlsPostSeekMs",player().getTime());
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);await(()->controller().snapshot().state==PlaybackController.State.PAUSED&&!player().isPlaying(),"cloud pause through remote");
             long held=player().getTime();Thread.sleep(800);check(Math.abs(player().getTime()-held)<1000,"cloud paused clock remains stable");Json.put(report,"cloudHlsPausedBeforeReconnectMs",held);Json.put(report,"cloudHlsSavedBeforeReconnectMs",controller().snapshot().position);MediaPlayer previous=player();
             test.runOnMainSync(()->{View reconnect=label(activity.getWindow().getDecorView(),"重新连接");check(reconnect!=null&&reconnect.performClick(),"cloud remote reconnect");});
@@ -127,8 +132,10 @@ final class CloudHlsScenario {
             Json.put(report,"cloudHlsPausedAfterReconnectMs",player().getTime());Json.put(report,"cloudHlsPausedReconnectDisplayedPictures",frames());
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);await(()->player().isPlaying()&&player().getTime()>held+500&&frames()>0,"cloud resumes with new frames after paused reconnect");
             Bitmap shot=test.getUiAutomation().takeScreenshot();try(FileOutputStream output=new FileOutputStream(new File(context.getFilesDir(),"q03-cloud-hls-playing.png"))){shot.compress(Bitmap.CompressFormat.PNG,100,output);}shot.recycle();
+            long beforeClose=player().getTime();
+            Json.put(report,"cloudHlsBeforeCloseMs",beforeClose);
             test.runOnMainSync(activity::finish);test.waitForIdleSync();activity=null;
-            await(()->cloudPosition(key,variant)>=39000,"separate cloud progress survives Activity close");long saved=cloudPosition(key,variant);
+            await(()->cloudPosition(key,variant)>=39000&&Math.abs(cloudPosition(key,variant)-beforeClose)<2000,"separate cloud progress survives Activity close");long saved=cloudPosition(key,variant);
             TvBackup backup=new TvBackup(context);JSONObject snapshot=backup.snapshot();check(TvBackup.includesCloudProgress(snapshot),"native cloud progress exports in v3 backup");
             try(CloudPlaybackProgress cloud=new CloudPlaybackProgress(context)){cloud.save(key,variant,0,180000);}backup.restore(snapshot);check(cloudPosition(key,variant)==saved,"backup restores exact native-generated cloud progress");
             open(key,variant);await(()->player()!=null&&player().isPlaying()&&player().getTime()>=saved-1000&&frames()>0,"cloud activity reopens and resumes backup-restored trial progress");Json.put(report,"cloudBackupRestoredNativeResume",true);

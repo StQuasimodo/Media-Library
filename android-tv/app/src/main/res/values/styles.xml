@@ -7,7 +7,54 @@
         <item name="android:colorBackground">#171A21</item>
         <item name="android:textColorPrimary">#E9ECF2</item>
         <item name="android:textColorSecondary">#9299A6</item>
+        <item name="android:alertDialogTheme">@style/CinemaAlertDialog</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="CinemaAlertDialog" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/dialog_surface</item>
+        <item name="android:colorBackground">#171A21</item>
+        <item name="android:backgroundDimAmount">0.62</item>
+        <item name="android:colorAccent">#8AB4FF</item>
+        <item name="android:colorControlHighlight">#338AB4FF</item>
+        <item name="android:textColorPrimary">#E9ECF2</item>
+        <item name="android:textColorSecondary">#9299A6</item>
+        <item name="android:textColorAlertDialogListItem">#E9ECF2</item>
+        <item name="android:windowTitleStyle">@style/CinemaDialogTitle</item>
+        <item name="android:textAppearanceListItem">@style/CinemaDialogOption</item>
+        <item name="android:textAppearanceListItemSmall">@style/CinemaDialogOption</item>
+        <item name="android:listChoiceBackgroundIndicator">@drawable/dialog_row_focus</item>
+        <item name="android:listPreferredItemHeightSmall">48dp</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/CinemaDialogAction.Primary</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/CinemaDialogAction</item>
+        <item name="android:buttonBarNeutralButtonStyle">@style/CinemaDialogAction</item>
+    </style>
+
+    <style name="CinemaDialogTitle">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">#E9ECF2</item>
+        <item name="android:textSize">22sp</item>
+    </style>
+
+    <style name="CinemaDialogOption" parent="android:style/TextAppearance.Material.Body1">
+        <item name="android:textColor">#E9ECF2</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+
+    <style name="CinemaDialogAction" parent="android:style/Widget.Material.Button.Borderless">
+        <item name="android:background">@drawable/dialog_focus</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">#E9ECF2</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minWidth">72dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+    </style>
+
+    <style name="CinemaDialogAction.Primary">
+        <item name="android:textColor">#8AB4FF</item>
     </style>
 </resources>

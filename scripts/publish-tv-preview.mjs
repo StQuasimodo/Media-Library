@@ -46,6 +46,26 @@ if(build.nativeLibraries){
     for(const check of ['actual Windows export recognized by the TV file reader','late media failure rolls collection, associations and progress back together','late cloud failure rolls all three databases back together','native confirmation completes the real asynchronous merge'])
       assert.ok(transfer.checks.includes(check),check);
   }
+  if(code>=25){
+    const load=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/load-report.json'),'utf8'));
+    assert.equal(load.buildRun,runId);assert.equal(load.result,'passed');assert.equal(load.apiLevel,22);
+    assert.equal(load.highBitrate1080p.playbackQuality,'continuous');
+    if(code>=26)assert.equal(load.parallelDelayed1080p.playbackQuality,'continuous');
+    if(code>=28){
+      assert.equal(load.shared12Mbps720p.playbackQuality,'continuous');
+      assert.ok(load.shared12Mbps1080p.firstFrameMs>=0);
+      assert.equal(load.shared12Mbps1080p.playbackQuality,'stalled_or_dropped');
+    }
+    assert.equal(load['1080pStallReproduced'],true);assert.equal(load.diagnosticDialogVerified,true);
+    assert.ok(['continuous','stalled_or_dropped','no_frame'].includes(load.hevcMain10Capability.playbackQuality));
+  }
+  if(code>=29){
+    assert.equal(build.dualSubtitlePlayer,'mpv-android 2024-11-16');
+    const load=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/load-report.json'),'utf8'));
+    assert.equal(load.shared12MbpsModerate1080p.playbackQuality,'continuous');
+    assert.equal(playback.dualSubtitleFourCombinationsVerified,true);
+    assert.equal(playback.buildRun,runId);
+  }
   if(code>=7){const dav=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/quark-dav-report.json'),'utf8'));for(const check of ['boundedMultiSegmentByteExact','headWithoutUpstreamHead','suffixRangeByteExact','wrongInitialRangeRejected','concurrentExpirySingleRefresh','leaseApiCancellationVerified','playbackSessionRevoked','pausedReconnectPreserved','rapidReconnectVerified','endedReconnectRestarts','stoppedSessionCannotRestart'])assert.equal(dav[check],true,check);}
 }else assert.equal(build.nativeLibraries,false);
 if(version!=='0.1.0-alpha.1'){

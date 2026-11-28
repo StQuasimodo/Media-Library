@@ -12,6 +12,7 @@
         android:usesCleartextTraffic="true">
         <provider android:name=".UpdateProvider" android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".MediaBrowserActivity" android:exported="false" android:screenOrientation="landscape" />
+        <activity android:name=".DualSubtitleActivity" android:exported="false" android:screenOrientation="landscape" />
         <activity android:name=".PlayerActivity" android:exported="false" android:screenOrientation="landscape" />
         <activity android:name=".QuarkLoginActivity" android:exported="false" android:screenOrientation="landscape" />
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape">

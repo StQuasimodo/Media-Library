@@ -18,3 +18,13 @@ https://github.com/StQuasimodo/Media-Library/tree/main/android-tv
 LibVLC remains in shared native libraries. No LibVLC source was modified.
 Users may rebuild My Cinema with a compatible replacement of these libraries.
 See docs/TV-PLAYBACK.md for dependency source and relinking instructions.
+
+Dual subtitle playback uses the JNI and native libraries from mpv-android release
+2024-11-16 (ARMv7 and x86). The original archives and their matching build
+scripts and dependency definitions are available at:
+https://github.com/mpv-android/mpv-android/releases/tag/2024-11-16
+https://github.com/mpv-android/mpv-android/tree/4258ae5ea8dd70e779e7d7490a90346338941298/buildscripts
+mpv https://github.com/mpv-player/mpv
+FFmpeg https://ffmpeg.org/
+libass https://github.com/libass/libass
+See mpv-android-MIT.txt, GPL-2.txt and LGPL-2.1.txt.

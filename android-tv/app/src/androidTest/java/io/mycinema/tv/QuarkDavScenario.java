@@ -42,7 +42,77 @@ final class QuarkDavScenario {
     }
     private void mode(String mode) throws Exception {try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("http://10.0.2.2:8765/control?mode="+mode).build()).execute()){check(response.code()==200,"fixture mode");}}
     private JSONObject control(String fault) throws Exception {try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("http://10.0.2.2:8765/"+(fault==null?"":"control?fault="+fault)).build()).execute()){check(response.code()==200,"fixture control");return Json.object(response.body().string());}}
-    private void recovery(MediaSources.Lease endpoint,MediaSources.Lease file,QuarkDavManager manager,JSONObject report) throws Exception {
+    private void streamDiagnostics(MediaSources sources, MediaSources.Lease endpoint, MediaSources.Lease file,
+                                   MediaSources.Entry video, QuarkDavManager manager, JSONObject report, byte[] baseline) throws Exception {
+        JSONObject target = video.json();
+        try {
+            control("redirect_stream");
+            try (Response response = request(endpoint,"GET",file.url.toString(),null,"bytes=1000-1063",true)) {
+                check(response.code()==206 && Arrays.equals(baseline,response.body().bytes()),
+                    "cross-origin CDN accepts public headers with no Cookie or Authorization and returns exact bytes");
+            }
+
+            control("deny_download");
+            MediaTransfer transfer = new MediaTransfer((entry, scope) -> sources.withScope(scope).resolve(entry));
+            try (NetworkScope scope = new NetworkScope()) {
+                transfer.serve(target,"bytes=1000-1063",false,new java.io.ByteArrayOutputStream(),scope);
+                String diagnostic = transfer.error(target);
+                check(diagnostic.contains("获取媒体地址 · HTTP 200 · 夸克代码 31001 · 已转发 0 字节")
+                    && !diagnostic.contains("fixture-private"),"download API rejection reports its safe status and code");
+            } finally {
+                transfer.close();
+            }
+
+            control("deny_stream");
+            try (Response response = request(endpoint,"GET",file.url.toString(),null,"bytes=1000-1063",true)) {
+                check(response.code()==502,"CDN denial fails before any bytes are forwarded");
+                String diagnostic = manager.error(target);
+                check(diagnostic.contains("请求首段视频 · HTTP 403 · 已转发 0 字节")
+                    && !diagnostic.contains("fixture-private"),"CDN denial remains distinct from address API rejection");
+            }
+
+            control("wrong_initial");
+            try (Response response = request(endpoint,"GET",file.url.toString(),null,"bytes=1000-1063",true)) {
+                check(response.code()==502 && manager.error(target).contains("校验首段响应 · HTTP 206 · 已转发 0 字节"),
+                    "invalid 206 is reported separately from a CDN denial");
+            }
+        } finally {
+            control("none");
+        }
+        Json.put(report,"redirectPublicHeadersWithoutCredentials",true);
+        Json.put(report,"streamFailureStagesVerified",true);
+    }
+    private void downloadCompatibility(MediaSources sources, MediaSources.Entry video, JSONObject report, byte[] baseline) throws Exception {
+        JSONObject target=video.json();
+        try {
+            for(String fault:new String[]{"download_compat","download_both_400","download_auth_400"}) {
+                int calls=control(fault).optInt("compatDownloads");
+                MediaTransfer transfer=new MediaTransfer((entry, scope)->sources.withScope(scope).resolve(entry));
+                try(NetworkScope scope=new NetworkScope()){
+                    java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();
+                    transfer.serve(target,"bytes=1000-1063",false,output,scope);
+                    byte[] payload=output.toByteArray();
+                    String diagnostic=transfer.error(target);
+                    if(fault.equals("download_compat")){
+                        check(new String(payload,0,12,StandardCharsets.US_ASCII).equals("HTTP/1.1 206")
+                            && Arrays.equals(baseline,Arrays.copyOfRange(payload,payload.length-baseline.length,payload.length)),
+                            "primary HTTP 400 falls back to the compatible API and reads exact media bytes");
+                    }else{
+                        String expected=fault.equals("download_both_400")
+                            ?"获取媒体地址，兼容接口 · HTTP 400 · 夸克代码 24567"
+                            :"获取媒体地址 · HTTP 400 · 夸克代码 31001";
+                        check(new String(payload,0,12,StandardCharsets.US_ASCII).equals("HTTP/1.1 502")
+                            && diagnostic.contains(expected)&&!diagnostic.contains("fixture-private"),
+                            "address API refusal exposes safe status and code");
+                    }
+                    check(control(null).optInt("compatDownloads")==calls+(fault.equals("download_auth_400")?0:1),
+                        "compatibility path is attempted once for malformed requests and skipped for login rejection");
+                }finally{transfer.close();}
+            }
+        }finally{control("none");}
+        Json.put(report,"downloadCompatibilityAfterHttp400",true);
+    }
+    private void recovery(MediaSources.Lease endpoint,MediaSources.Lease file,MediaSources.Entry video,QuarkDavManager manager,JSONObject report) throws Exception {
         byte[] baseline;try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){baseline=response.body().bytes();}
         int before=manager.recoveries(),downloads=control("drop_expire").optInt("downloads");
         try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){check(response.code()==206&&Arrays.equals(baseline,response.body().bytes()),"drop plus expired lease resumes at exact byte, without loss or duplication");}
@@ -51,6 +121,8 @@ final class QuarkDavScenario {
         control("drop_always");before=manager.recoveries();boolean rejected=false;
         try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){response.body().bytes();}catch(java.io.IOException expected){rejected=true;}
         check(rejected&&control(null).optInt("drops")==3&&manager.recoveries()==before+2,"continuous failures stop after two resumptions");
+        check(manager.error(video.json()).matches(".*读取视频数据.*已转发 [1-9][0-9]* 字节.*"),
+            "late stream failure reports the byte count already forwarded");
         Json.put(report,"maximumResumptionsPerRequest",2);
         control("bad_resume");before=manager.recoveries();rejected=false;
         try(Response response=request(endpoint,"GET",file.url.toString(),null,"bytes=1000-201000",true)){response.body().bytes();}catch(java.io.IOException expected){rejected=true;}
@@ -115,7 +187,11 @@ final class QuarkDavScenario {
             try(Response response=MediaSources.HTTP.newCall(new Request.Builder().url("https://drive-pc.quark.cn/stream/movie.mp4").header("Cookie","__puus=tv-playback-fixture").header("Range","bytes=1000-1063").build()).execute()){check(Arrays.equals(bytes,response.body().bytes()),"converted Range bytes exactly match upstream");}
             try(Response response=request(endpoint,"HEAD",file.url.toString(),null,null,true)){check(response.code()==200&&response.body().bytes().length==0&&Long.parseLong(response.header("Content-Length"))>1024,"HEAD gives real length without body");}
             checks.add("app directory and playback paths use the generated TV WebDAV; nested fid routes, HEAD length and byte-exact206 work");
-            recovery(endpoint,file,manager,report);
+            streamDiagnostics(sources,endpoint,file,video,manager,report,bytes);
+            checks.add("CDN redirect keeps public headers only; address API, CDN HTTP and invalid Range failures have distinct safe diagnostics");
+            downloadCompatibility(sources,video,report,bytes);
+            checks.add("original-file address tries the compatibility API once after HTTP400; preserves bytes and reports structured refusals");
+            recovery(endpoint,file,video,manager,report);
             Json.put(report,"architectureChecks","running");new PlaybackArchitectureScenario(context).run(file,video,report);Json.put(report,"architectureChecks","passed");
             checks.add("four-MiB sequential transport, exact segment boundary and suffix, HEAD through GET probe, wrong initial Range rejection, concurrent expiry deduplication, underlying API cancellation");
             String key;try(MediaCatalog catalog=new MediaCatalog(context)){JSONObject data=catalog.put(video,"");key=Json.text(data,"key");catalog.progress(key,0,45000);check(Json.text(data,"source").equals("quark")&&!data.toString().contains(endpoint.headers.get("Authorization")),"catalog persists stable identity, not gateway secrets");}

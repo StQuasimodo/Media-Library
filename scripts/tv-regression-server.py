@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import io
 import json
 import re
 from pathlib import Path
@@ -11,7 +12,37 @@ import subprocess
 import threading
 import time
 from urllib.parse import parse_qs, urlparse
+from xml.sax.saxutils import escape
 import zlib
+
+
+def ass_subtitle(color, text):
+    return (f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,sans-serif,80,{color},&H00FFFFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3,0,5,20,20,20,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:02:55.00,Default,,0,0,0,,{{\\an5\\pos(960,800)}}{text}
+""").encode()
+
+
+QUARK_VIDEO_NAME = 'Breaking.Bad.S02E01.1080p.H264.AAC.中文 & #测试.mp4'
+DAV_VIDEO_NAME = 'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
+SUBTITLE_FILES = {
+    'subtitle-auto': (QUARK_VIDEO_NAME[:-4]+'.zh-CN.ass', ass_subtitle('&H00B753EF','MY CINEMA AUTOMATIC')),
+    'subtitle-manual': ('导演评论字幕.ass', ass_subtitle('&H0028A2F2','MY CINEMA MANUAL')),
+    'subtitle-other-episode': ('Breaking.Bad.S02E02.zh-CN.ass', ass_subtitle('&H0000FF00','WRONG EPISODE')),
+    'subtitle-second-a': ('附加A.srt', b'1\n00:00:00,000 --> 00:02:55,000\nPRIMARY SIDECAR TEST\n'),
+    'subtitle-second-b': ('附加B.srt', b'1\n00:00:00,000 --> 00:02:55,000\nSECONDARY SIDECAR TEST\n'),
+    'subtitle-external': (DAV_VIDEO_NAME[:-4]+'.srt', b'1\n00:00:00,000 --> 00:02:55,000\nEXTERNAL WEBDAV SUBTITLE\n'),
+}
+LOAD_FILES = {'load-1080-moderate': 'load-1080-moderate.mp4', 'load-720': 'load-720.mp4', 'load-1080': 'load-1080.mp4', 'load-4k': 'load-4k.mp4'}
 
 
 def png(color, width=160, height=240):
@@ -30,7 +61,7 @@ def prepare(root):
     for command in commands:
         subprocess.run(command, check=True, capture_output=True)
     ext = root / 'extensions.cnf'
-    ext.write_text('subjectAltName=DNS:api.tmdb.org,DNS:api.themoviedb.org,DNS:image.tmdb.org,DNS:drive-pc.quark.cn\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n')
+    ext.write_text('subjectAltName=DNS:api.tmdb.org,DNS:api.themoviedb.org,DNS:image.tmdb.org,DNS:drive-pc.quark.cn,DNS:drive.quark.cn\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n')
     subprocess.run(['openssl', 'x509', '-req', '-in', str(root / 'server.csr'), '-CA', str(root / 'ca.pem'), '-CAkey', str(root / 'ca.key'), '-CAcreateserial', '-days', '2', '-sha256', '-extfile', str(ext), '-out', str(root / 'server.pem')], check=True, capture_output=True)
     for name in ['ca.key', 'server.key']:
         (root / name).chmod(0o600)
@@ -44,6 +75,18 @@ def serve(root, log):
              'pendingDownloads': 0, 'quarkGets': 0, 'unboundedQuarkGets': 0, 'maxQuarkRangeBytes': 0,
              'slowListStarts': 0, 'slowDavStarts': 0}
     lock = threading.Lock()
+    # One 12 Mb/s budget for every concurrent Range, including read-ahead.
+    link_lock = threading.Lock()
+    next_chunk_at = 0.0
+
+    def pace_shared_link(byte_count):
+        nonlocal next_chunk_at
+        with link_lock:
+            now = time.monotonic()
+            next_chunk_at = max(next_chunk_at, now) + byte_count * 8 / 12_000_000
+            delay = next_chunk_at - now
+        time.sleep(delay)
+
     expired_pair = threading.Barrier(2)
     cloud_expired_pair = threading.Barrier(2)
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -74,6 +117,12 @@ def serve(root, log):
             if slow: time.sleep(10)
             href='https://example.invalid/stolen.mp4' if path == '/bad-dav/' else path+'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4'
             xml=('<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>'+href+'</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>1024</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>').encode()
+            if path=='/dav/' and state.get('subtitles'):
+                name,data=SUBTITLE_FILES['subtitle-external']
+                row=(f'<d:response><d:href>{escape(path+name)}</d:href><d:propstat><d:prop>'
+                     f'<d:resourcetype/><d:getcontentlength>{len(data)}</d:getcontentlength>'
+                     '</d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>')
+                xml=xml.replace(b'</d:multistatus>',row.encode()+b'</d:multistatus>')
             self.send_response(207)
             self.send_header('Content-Type','application/xml; charset=utf-8')
             self.send_header('Content-Length',str(len(xml)))
@@ -110,14 +159,43 @@ def serve(root, log):
                     self.reply({},401)
                     return
                 body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
-                if body.get('fids') != ['movie-file']:
+                fids=body.get('fids',[])
+                if state['mode'] in ('load_clean','load_delayed','load_outage','load_shared_link') and len(fids)==1 and fids[0] in LOAD_FILES:
+                    self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+LOAD_FILES[fids[0]]}]})
+                    return
+                if state.get('subtitles') and len(fids)==1 and fids[0] in SUBTITLE_FILES:
+                    self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+fids[0]}]})
+                    return
+                if fids != ['movie-file']:
                     self.reply({},400)
                     return
                 with lock:
                     state['downloads']+=1
                     number=state['downloads']
                     slow=state['fault']=='slow_download'
+                    denied=state['fault']=='deny_download'
+                    fault=state['fault']
+                    alternate=self.headers.get('Host')=='drive.quark.cn'
+                    if alternate:state['compatDownloads']=state.get('compatDownloads',0)+1
                     if slow:state['pendingDownloads']+=1
+                if fault=='download_auth_400':
+                    self.reply({'code':31001,'message':'fixture-private-response'},400)
+                    return
+                if fault in ('download_compat','download_both_400'):
+                    if not alternate:
+                        self.reply(b'<html>fixture-private-response</html>',400)
+                        return
+                    if ('quark-cloud-drive/' not in self.headers.get('User-Agent','')
+                            or self.headers.get('Accept')!='application/json, text/plain, */*'
+                            or self.headers.get('Referer')!='https://pan.quark.cn/'):
+                        self.reply({'code':901},400)
+                        return
+                    if fault=='download_both_400':
+                        self.reply({'code':24567,'message':'fixture-private-response'},400)
+                        return
+                if denied:
+                    self.reply({'status':403,'code':31001,'message':'fixture-private-response'})
+                    return
                 if slow:
                     try:time.sleep(10)
                     finally:
@@ -213,11 +291,28 @@ def serve(root, log):
             self.do_GET()
 
         def media(self,uri):
+            cdn = uri.path == '/cdn/movie.mp4'
             if uri.path.startswith('/dav/') and self.headers.get('Authorization') != 'Basic dHYtdGVzdDpmaXh0dXJl':
                 self.reply({},401)
                 return
             if uri.path.startswith('/stream/') and '__puus=tv-playback-fixture' not in self.headers.get('Cookie',''):
                 self.reply({},401)
+                return
+            with lock:
+                fault = state['fault']
+            if uri.path.startswith('/stream/') and fault == 'redirect_stream':
+                self.send_response(302)
+                self.send_header('Location','https://api.tmdb.org/cdn/movie.mp4?token=fixture-private-redirect')
+                self.send_header('Content-Length','0')
+                self.end_headers()
+                return
+            if cdn and (self.headers.get('Cookie') or self.headers.get('Authorization')
+                        or self.headers.get('Referer') != 'https://pan.quark.cn/'
+                        or 'Chrome/114.0.0.0' not in self.headers.get('User-Agent','')):
+                self.reply({},403)
+                return
+            if uri.path.startswith('/stream/') and fault == 'deny_stream':
+                self.reply({'message':'fixture-private-response'},403)
                 return
             if uri.path.endswith('/expired.mp4'):
                 self.reply({},403)
@@ -234,8 +329,16 @@ def serve(root, log):
                     except threading.BrokenBarrierError:pass
                 self.reply({},403)
                 return
-            video=root/'sample.mp4'
-            size=video.stat().st_size
+            name=uri.path.rsplit('/',1)[-1]
+            load_source=uri.path.startswith('/stream/') and name in LOAD_FILES.values()
+            video=root/(name if load_source else 'sample.mp4')
+            subtitle=None
+            if state.get('subtitles'):
+                if uri.path.startswith('/stream/'):
+                    subtitle=SUBTITLE_FILES.get(uri.path.split('/')[-1])
+                elif uri.path=='/dav/'+SUBTITLE_FILES['subtitle-external'][0]:
+                    subtitle=SUBTITLE_FILES['subtitle-external']
+            size=len(subtitle[1]) if subtitle else video.stat().st_size
             start,end=0,size-1
             ranged=self.headers.get('Range','')
             if ranged:
@@ -247,6 +350,9 @@ def serve(root, log):
                 start=int(match[1]);end=min(int(match[2]) if match[2] else end,end)
                 if start>end:
                     self.send_response(416);self.send_header('Content-Range',f'bytes */{size}');self.send_header('Content-Length','0');self.end_headers();return
+            shared_link = load_source and state['mode'] == 'load_shared_link'
+            if load_source and state['mode'] in ('load_delayed','load_outage') and start>=4*1024*1024:
+                time.sleep(3.5 if state['mode']=='load_delayed' else 9)
             with lock:
                 quark_stream=uri.path.startswith('/stream/')
                 fault=state['fault'] if quark_stream else 'none'
@@ -271,7 +377,7 @@ def serve(root, log):
             if bad_resume:
                 start,end,ranged=0,size-1,''
             self.send_response(206 if ranged else 200)
-            self.send_header('Content-Type','video/mp4')
+            self.send_header('Content-Type','text/plain' if subtitle else 'video/mp4')
             self.send_header('Accept-Ranges','bytes')
             self.send_header('ETag','"my-cinema-fixture-v1"')
             self.send_header('Content-Length',str(end-start+1))
@@ -279,12 +385,13 @@ def serve(root, log):
             self.end_headers()
             if self.command == 'HEAD':return
             try:
-                with video.open('rb') as stream:
+                with (io.BytesIO(subtitle[1]) if subtitle else video.open('rb')) as stream:
                     stream.seek(start)
                     remaining=end-start+1
                     while remaining>0:
                         chunk=stream.read(min(4096 if drop else 65536,remaining))
                         if not chunk:break
+                        if shared_link: pace_shared_link(len(chunk))
                         self.wfile.write(chunk);remaining-=len(chunk)
                         if drop:
                             self.wfile.flush()
@@ -309,7 +416,7 @@ def serve(root, log):
                     state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree','load_clean','load_delayed','load_outage','load_shared_link'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream','download_compat','download_both_400','download_auth_400']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     target=None
@@ -326,6 +433,7 @@ def serve(root, log):
                         if target is None:self.reply({},400);return
                     with lock:
                         state['mode'] = mode
+                        if 'subtitles' in query:state['subtitles']=query['subtitles']==['on']
                         state['fault']=fault
                         state['drops']=0
                         state['expiredLease']=state['downloads'] if fault=='expire_concurrent' else -1
@@ -344,7 +452,7 @@ def serve(root, log):
             if uri.path.startswith('/cloud/'):
                 self.cloud_media(uri, self.command=='HEAD')
                 return
-            if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/'):
+            if uri.path.startswith('/stream/') or uri.path.startswith('/dav/') or uri.path.startswith('/public-dav/') or uri.path == '/cdn/movie.mp4':
                 self.media(uri)
                 return
             if uri.path == '/1/clouddrive/file/sort':
@@ -357,10 +465,17 @@ def serve(root, log):
                         if slow: state['slowListStarts'] += 1
                     if slow: time.sleep(10)
                     rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
+                    if state['mode'] in ('load_clean','load_delayed','load_outage','load_shared_link'):
+                        rows=[{'fid':fid,'file_name':name,'file':True,'size':(root/name).stat().st_size}
+                              for fid,name in LOAD_FILES.items()] if parent=='0' else []
                     if state['mode']=='bridge_tree':
                         if parent=='0':rows=[{'fid':'tv-root','file_name':'影视 & 中文','file':False},{'fid':'outside','file_name':'不在挂载范围','file':False}]
                         elif parent=='tv-root':rows=[{'fid':'season2','file_name':'第2季 #目录','file':False}]
-                        elif parent=='season2':rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.H264.AAC.中文 & #测试.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
+                        elif parent=='season2':
+                            rows=[{'fid':'movie-file','file_name':QUARK_VIDEO_NAME,'file':True,'size':(root/'sample.mp4').stat().st_size}]
+                            if state.get('subtitles'):
+                                rows.extend({'fid':fid,'file_name':name,'file':True,'size':len(data)}
+                                            for fid,(name,data) in SUBTITLE_FILES.items() if fid!='subtitle-external')
                         else:rows=[]
                     self.reply({'status':200,'code':0,'data':{'list':rows},'metadata':{'_total':len(rows)}})
                 return

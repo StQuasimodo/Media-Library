@@ -26,7 +26,14 @@ with zipfile.ZipFile(apk) as archive:
     assert any(re.fullmatch(r'META-INF/[^/]+\.RSA', name) for name in names)
     native = [name for name in names if name.startswith('lib/') and name.endswith('.so')]
     assert {name.split('/')[1] for name in native} == {'armeabi-v7a', 'x86'}
-    for abi in ['armeabi-v7a', 'x86']:
+    # The older LibVLC runtime is missing symbols required by the pinned mpv libraries.
+    runtime_digests = {
+        'armeabi-v7a': '4df8b2e81690dd1393a94f65c18b41e5b91494b10b21415823a94ab6bb81018a',
+        'x86': '9eef90154d953ed3dc39abb4af5a8ca6fc76474c2f07e66e44c8fcbd60572f05',
+    }
+    for abi, digest in runtime_digests.items():
+        runtime = archive.read(f'lib/{abi}/libc++_shared.so')
+        assert hashlib.sha256(runtime).hexdigest() == digest, f'{abi} needs the pinned mpv C++ runtime'
         for library in ['libvlc.so', 'libvlcjni.so', 'libc++_shared.so', 'libplayer.so', 'libmpv.so']:
             assert f'lib/{abi}/{library}' in native
     assert 'assets/licenses/LGPL-2.1.txt' in names

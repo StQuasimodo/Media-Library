@@ -39,8 +39,6 @@ for abi, checksum in {
             parts = name.split('/')
             if len(parts) != 3 or parts[:2] != ['lib', abi] or not name.endswith('.so'):
                 continue
-            if parts[2] == 'libc++_shared.so':
-                continue  # one shared C++ runtime per ABI, supplied by LibVLC
             target = output / abi / parts[2]
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(archive.read(name))

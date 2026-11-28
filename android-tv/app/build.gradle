@@ -34,6 +34,12 @@ android {
             }
         }
     }
+    // Project JNI libraries take precedence over dependency libraries. Both
+    // decoders use the pinned mpv build's newer C++ runtime on each ABI.
+    packaging.jniLibs {
+        pickFirsts += ['**/libc++_shared.so']
+        keepDebugSymbols += ['**/libc++_shared.so']
+    }
     buildFeatures { buildConfig true }
     sourceSets { androidTest.assets.srcDir '../../tests/fixtures'; androidTest.assets.srcDir '../../updates'; main.assets.srcDir '../../src/shared/data' }
     buildTypes { release { minifyEnabled false } }

@@ -341,7 +341,9 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
     }
     private void shutdown(){
         if(closed)return;
-        closed=true;ui.removeCallbacksAndMessages(null);
+        closed=true;
+        ui.removeCallbacks(tick);
+        ui.removeCallbacks(hide);
         save();
         scope.close();
         if(created){

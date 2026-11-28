@@ -321,20 +321,20 @@ final class MediaTransfer {
             byte[] buffer=new byte[65536];long offset=from,partEnd=shape.end;int retries=0;
             boolean allowWindow=playbackVideo && quark && response.code()==206;
             while(!scope.cancelled()){
-                // A seek can overlap the retiring request. Retry admission at each
-                // segment boundary so that the new reader can inherit the slot.
-                if(window==null && allowWindow && end-partEnd>=SEGMENT_BYTES
-                        && mayPrefetch(file) && lookaheadSlot.tryAcquire()){
-                    window=new RangeWindow(file,metrics,partEnd+1,end);
-                    scope.own(window.cancellation);
-                }
                 if(window!=null)window.fill();
+                long sampledBytes=0, readNanos=0;
+                boolean sampling=window==null && allowWindow && end-partEnd>=SEGMENT_BYTES;
                 attempt.stage="读取视频数据";
                 InputStream input=prefetched==null?current.response.body().byteStream():prefetched;prefetched=null;boolean dropped=false;
                 while(!scope.cancelled()){
                     int limit=partEnd>=0?(int)Math.min(buffer.length,partEnd-offset+1):buffer.length;if(limit==0)break;
                     int count;try{
-                        count=read(input,buffer,0,limit,attempt);
+                        if(sampling){
+                            long begin=System.nanoTime();
+                            count=read(input,buffer,0,limit,attempt);
+                            readNanos+=System.nanoTime()-begin;
+                            sampledBytes+=Math.max(count,0);
+                        }else count=read(input,buffer,0,limit,attempt);
                         if(count<0&&partEnd>=0&&offset<=partEnd)throw new IOException("Media ended early");
                     }
                     catch(IOException failure){if(!quark||shape.total<=0||retries>=2)throw failure;dropped=true;break;}
@@ -343,6 +343,16 @@ final class MediaTransfer {
                     attempt.timing.begin(StreamMetrics.Step.WRITE);
                     try{write(output,buffer,count);written=count;}finally{attempt.timing.finish(written);}
                     offset+=count;attempt.forwarded+=count;
+                    // Start only after sampling body I/O. On a bandwidth-bound link,
+                    // parallel future bodies compete with bytes needed right now.
+                    if(sampling && sampledBytes>=512*1024){
+                        sampling=false;
+                        if(readNanos<100_000_000L && mayPrefetch(file) && lookaheadSlot.tryAcquire()){
+                            window=new RangeWindow(file,metrics,partEnd+1,end);
+                            scope.own(window.cancellation);
+                            window.fill();
+                        }
+                    }
                 }
                 scope.check();if(end>=0&&offset>end)return;if(partEnd<0)return;
                 current.close();current=null;

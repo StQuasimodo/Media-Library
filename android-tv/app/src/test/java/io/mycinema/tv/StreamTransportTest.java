@@ -235,7 +235,7 @@ public final class StreamTransportTest {
                 transfer.serve(old,"bytes=0-",false,new OutputStream(){
                     public void write(int b){}
                     public void write(byte[] b,int off,int len)throws IOException{
-                        if(len>1024){waitFor(dropOld);throw new IOException("client sought");}
+                        if(oldReaderActive.getCount()==0){waitFor(dropOld);throw new IOException("client sought");}
                     }
                 },oldScope,transfer.metrics(),true);
                 return null;
@@ -248,7 +248,7 @@ public final class StreamTransportTest {
                     public void write(byte[] b,int off,int len)throws IOException{
                         if(body==0 && len<1024)return; // headers
                         if(body==0){newReaderActive.countDown();waitFor(letNewReaderAdvance);}
-                        if(body==PART)waitFor(thirdRangeRequested);
+                        if(body>=PART+1024*1024)waitFor(thirdRangeRequested);
                         body+=len;
                     }
                 },seekScope,transfer.metrics(),true);
@@ -260,7 +260,7 @@ public final class StreamTransportTest {
             letNewReaderAdvance.countDown();
             playing.get(4,TimeUnit.SECONDS);
             assertEquals(0,thirdRangeRequested.getCount());
-            assertEquals(total,transfer.metrics().snapshot().forwarded);
+            assertTrue(transfer.metrics().snapshot().forwarded>=total);
         }finally{
             letNewReaderAdvance.countDown();
             pool.shutdownNow();

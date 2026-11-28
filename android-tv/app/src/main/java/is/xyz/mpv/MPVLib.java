@@ -6,19 +6,19 @@ import android.view.Surface;
 /** JNI bridge for the pinned mpv-android build. */
 public final class MPVLib {
     static { System.loadLibrary("mpv"); System.loadLibrary("player"); }
-    public native void create(Context context);
-    public native void init();
-    public native void destroy();
-    public native void attachSurface(Surface surface);
-    public native void detachSurface();
-    public native Boolean getPropertyBoolean(String name);
-    public native int setOptionString(String name,String value);
-    public native void command(String[] command);
-    public native Double getPropertyDouble(String name);
-    public native Integer getPropertyInt(String name);
-    public native void setPropertyInt(String name,int value);
-    public native String getPropertyString(String name);
-    public native void setPropertyBoolean(String name,boolean value);
+    public static native void create(Context context);
+    public static native void init();
+    public static native void destroy();
+    public static native void attachSurface(Surface surface);
+    public static native void detachSurface();
+    public static native Boolean getPropertyBoolean(String name);
+    public static native int setOptionString(String name,String value);
+    public static native void command(String[] command);
+    public static native Double getPropertyDouble(String name);
+    public static native Integer getPropertyInt(String name);
+    public static native void setPropertyString(String name,String value);
+    public static native String getPropertyString(String name);
+    public static native void setPropertyBoolean(String name,Boolean value);
     public static void eventProperty(String name) {}
     public static void eventProperty(String name,boolean value) {}
     public static void eventProperty(String name,long value) {}

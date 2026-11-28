@@ -172,7 +172,9 @@ final class PlaybackController implements Closeable {
                         if(session!=generation||disposed||attempt.cancelled()){if(ready!=null)ready.close();if(readySession!=null)readySession.close();if(readyHls!=null)readyHls.close();return;}relay=ready;davSession=readySession;hlsRelay=readyHls;
                         try{
                             // Only the winning, fully-resolved connection allocates a native decoder/Surface.
-                            ArrayList<String> options=new ArrayList<>();options.add("--quiet");options.add("--no-video-title-show");options.add("--network-caching=1500");
+                            ArrayList<String> options=new ArrayList<>();options.add("--quiet");options.add("--no-video-title-show");
+                            // The original stream can pause between CDN ranges on a shared link.
+                            options.add(readySession!=null?"--network-caching=3000":"--network-caching=1500");
                             vlc=new LibVLC(context,options);player=new MediaPlayer(vlc);final MediaPlayer engine=player;
                             engine.attachViews(video,null,false,false);engine.setEventListener(event->onEvent(session,engine,event));mutedForRestore=wantPaused;
                             Media media=new Media(vlc,Uri.parse(endpoint==null?ready.url():endpoint.url.toString()));

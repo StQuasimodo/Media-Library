@@ -41,12 +41,11 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
     private JSONObject file;
     private String key, variant;
     private long resume;
-    private MPVLib engine;
     private MediaSources.Lease endpoint;
     private SurfaceHolder surface;
     private TextView status;
     private LinearLayout controls;
-    private boolean closed, attached;
+    private boolean closed, created, initialized, attached;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
@@ -115,15 +114,34 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
 
     private void notice(String message){ui.post(()->{if(!closed)status.setText(message);});}
     private void option(String name,String value){
-        if(engine.setOptionString(name,value)<0)throw new IllegalStateException(name);
+        if(MPVLib.setOptionString(name,value)<0)throw new IllegalStateException(name);
     }
+    private void configureSubtitleFont(){
+        File directory=getDir("mpv-font",MODE_PRIVATE);
+        File fallback=new File(directory,"subfont.ttf");
+        if(!fallback.exists()){
+            // API 21 vendors use different names for the system Chinese fallback.
+            for(String name:new String[]{"NotoSansCJK-Regular.ttc","NotoSansHans-Regular.otf",
+                    "NotoSansSC-Regular.otf","DroidSansFallback.ttf","Roboto-Regular.ttf"}){
+                File font=new File("/system/fonts",name);
+                if(!font.canRead())continue;
+                try{android.system.Os.symlink(font.getPath(),fallback.getPath());}
+                catch(android.system.ErrnoException ignored){continue;}
+                break;
+            }
+        }
+        option("config-dir",directory.getPath());
+    }
+
     private void startIfReady(){
-        if(closed||surface==null||endpoint==null||engine!=null)return;
+        if(closed||surface==null||endpoint==null||created)return;
         try{
             if(!"127.0.0.1".equals(endpoint.url.host()))throw new IllegalStateException();
-            engine=new MPVLib();
-            engine.create(getApplicationContext());
+            MPVLib.create(getApplicationContext());
+            created=true;
             option("msg-level","all=no");
+            configureSubtitleFont();
+            option("demuxer-max-bytes","33554432");option("demuxer-max-back-bytes","4194304");
             option("vo","gpu");option("gpu-context","android");option("opengl-es","yes");
             option("ao","audiotrack");option("hwdec","auto");option("idle","yes");
             option("sub-auto","no");option("access-references","no");
@@ -131,10 +149,10 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
             if(auth!=null)option("http-header-fields","Authorization: "+auth);
             if(resume>0)option("start",Double.toString(resume/1000.0));
             option("sub-pos","90");option("secondary-sub-pos","8");
-            engine.init();
-            engine.attachSurface(surface.getSurface());attached=true;
-            option("force-window","yes");
-            engine.command(new String[]{"loadfile",endpoint.url.toString()});
+            MPVLib.init();
+            initialized=true;
+            attachVideo();
+            MPVLib.command(new String[]{"loadfile",endpoint.url.toString()});
             status.setText("");
             ui.postDelayed(tick,1000);
         }catch(RuntimeException|LinkageError error){
@@ -143,7 +161,7 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
     }
 
     private final Runnable hide=()->{
-        if(engine!=null&&!Boolean.TRUE.equals(engine.getPropertyBoolean("pause"))&&hasWindowFocus())
+        if(initialized&&!Boolean.TRUE.equals(MPVLib.getPropertyBoolean("pause"))&&hasWindowFocus())
             controls.setVisibility(View.GONE);
     };
     private void showControls(){
@@ -153,47 +171,48 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
     }
     @Override public void onWindowFocusChanged(boolean focused){
         super.onWindowFocusChanged(focused);
+        if(focused)getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         if(focused && controls!=null){ui.removeCallbacks(hide);ui.postDelayed(hide,5000);}
     }
     private final Runnable tick=new Runnable(){
         int count;
         @Override public void run(){
-            if(closed||engine==null)return;
+            if(closed||!initialized)return;
             if(++count%5==0)save();
-            if(Boolean.TRUE.equals(engine.getPropertyBoolean("eof-reached"))){save();finish();return;}
+            if(Boolean.TRUE.equals(MPVLib.getPropertyBoolean("eof-reached"))){save();finish();return;}
             ui.postDelayed(this,1000);
         }
     };
     private void save(){
-        if(engine==null)return;
-        Double t=engine.getPropertyDouble("time-pos"),d=engine.getPropertyDouble("duration");
+        if(!initialized)return;
+        Double t=MPVLib.getPropertyDouble("time-pos"),d=MPVLib.getPropertyDouble("duration");
         if(t==null||d==null||t<0||d<=0)return;
-        long position=Boolean.TRUE.equals(engine.getPropertyBoolean("eof-reached"))?0:(long)(t*1000);
+        long position=Boolean.TRUE.equals(MPVLib.getPropertyBoolean("eof-reached"))?0:(long)(t*1000);
         if(cloud==null)catalog.progress(key,position,(long)(d*1000));
         else cloud.save(key,variant,position,(long)(d*1000));
         setResult(RESULT_OK,new Intent().putExtra("position",position));
     }
 
     private void pause(){
-        if(engine==null)return;
-        engine.setPropertyBoolean("pause",!Boolean.TRUE.equals(engine.getPropertyBoolean("pause")));
+        if(!initialized)return;
+        MPVLib.setPropertyBoolean("pause",!Boolean.TRUE.equals(MPVLib.getPropertyBoolean("pause")));
         showControls();
     }
 
     private void choose(int slot){
-        if(engine==null)return;
+        if(!initialized)return;
         List<String> labels=new ArrayList<>(); List<Integer> ids=new ArrayList<>();
         labels.add("关闭");ids.add(-1);
-        Integer count=engine.getPropertyInt("track-list/count");
-        Integer active=engine.getPropertyInt(properties[slot]);
+        Integer count=MPVLib.getPropertyInt("track-list/count");
+        Integer active=MPVLib.getPropertyInt(properties[slot]);
         int selected=0;
         for(int n=0;count!=null&&n<count;n++){
             String prefix="track-list/"+n+"/";
-            if(!"sub".equals(engine.getPropertyString(prefix+"type")))continue;
-            Integer id=engine.getPropertyInt(prefix+"id");
+            if(!"sub".equals(MPVLib.getPropertyString(prefix+"type")))continue;
+            Integer id=MPVLib.getPropertyInt(prefix+"id");
             if(id==null)continue;
-            boolean ext=Boolean.TRUE.equals(engine.getPropertyBoolean(prefix+"external"));
-            String title=engine.getPropertyString(prefix+"title"),lang=engine.getPropertyString(prefix+"lang");
+            boolean ext=Boolean.TRUE.equals(MPVLib.getPropertyBoolean(prefix+"external"));
+            String title=MPVLib.getPropertyString(prefix+"title"),lang=MPVLib.getPropertyString(prefix+"lang");
             labels.add((ext?"外挂 ":"内嵌 ")+id+(lang==null?"":" · "+lang)+(title==null?"":" · "+title));
             ids.add(id);
             if(id.equals(active))selected=ids.size()-1;
@@ -207,10 +226,10 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
     }
     private void select(int slot,int id){
         selectionEpoch[slot]++;
-        if(id>0 && Integer.valueOf(id).equals(engine.getPropertyInt(properties[1-slot]))){
+        if(id>0 && Integer.valueOf(id).equals(MPVLib.getPropertyInt(properties[1-slot]))){
             status.setText("这条轨道已用于另一条字幕。");return;
         }
-        engine.command(new String[]{"set",properties[slot],id<0?"no":Integer.toString(id)});
+        MPVLib.command(new String[]{"set",properties[slot],id<0?"no":Integer.toString(id)});
         status.setText("");
     }
 
@@ -240,14 +259,14 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
                 ui.post(()->{
                     if(closed||selectionEpoch[slot]!=epoch){copy.delete();return;}
                     copies.add(copy);
-                    String other=engine.getPropertyString(properties[1-slot]);
-                    engine.command(new String[]{"sub-add",copy.getAbsolutePath(),"auto",entry.name});
-                    if(other!=null)engine.command(new String[]{"set",properties[1-slot],other});
-                    Integer count=engine.getPropertyInt("track-list/count");
+                    String other=MPVLib.getPropertyString(properties[1-slot]);
+                    MPVLib.command(new String[]{"sub-add",copy.getAbsolutePath(),"auto",entry.name});
+                    if(other!=null)MPVLib.command(new String[]{"set",properties[1-slot],other});
+                    Integer count=MPVLib.getPropertyInt("track-list/count");
                     for(int i=0;count!=null&&i<count;i++){
                         String prefix="track-list/"+i+"/";
-                        if(copy.getAbsolutePath().equals(engine.getPropertyString(prefix+"external-filename"))){
-                            Integer id=engine.getPropertyInt(prefix+"id");
+                        if(copy.getAbsolutePath().equals(MPVLib.getPropertyString(prefix+"external-filename"))){
+                            Integer id=MPVLib.getPropertyInt(prefix+"id");
                             if(id!=null){externalTracks.put(entry.id,id);select(slot,id);return;}
                         }
                     }
@@ -260,29 +279,57 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
     @Override public boolean onKeyDown(int code,KeyEvent event){
         if(code==KeyEvent.KEYCODE_MENU){showControls();return true;}
         if(code==KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE){if(event.getRepeatCount()==0)pause();return true;}
-        if(engine!=null && controls.getVisibility()!=View.VISIBLE){
+        if(initialized && controls.getVisibility()!=View.VISIBLE){
             if(code==KeyEvent.KEYCODE_DPAD_LEFT||code==KeyEvent.KEYCODE_DPAD_RIGHT){
-                engine.command(new String[]{"seek",code==KeyEvent.KEYCODE_DPAD_LEFT?"-10":"10","relative+exact"});return true;
+                MPVLib.command(new String[]{"seek",code==KeyEvent.KEYCODE_DPAD_LEFT?"-10":"10","relative+exact"});return true;
             }
             if(code==KeyEvent.KEYCODE_DPAD_CENTER||code==KeyEvent.KEYCODE_DPAD_UP||code==KeyEvent.KEYCODE_DPAD_DOWN){showControls();return true;}
         }
         return super.onKeyDown(code,event);
     }
-    @Override public void surfaceCreated(SurfaceHolder holder){surface=holder;startIfReady();}
-    @Override public void surfaceChanged(SurfaceHolder h,int format,int width,int height){}
+    @Override public void onBackPressed(){
+        if(controls.getVisibility()==View.VISIBLE)controls.setVisibility(View.GONE);
+        else super.onBackPressed();
+    }
+
+    private void attachVideo(){
+        MPVLib.attachSurface(surface.getSurface());
+        attached=true;
+        option("force-window","yes");
+        MPVLib.setPropertyString("vo","gpu");
+        android.graphics.Rect frame=surface.getSurfaceFrame();
+        if(frame.width()>0 && frame.height()>0)
+            MPVLib.setPropertyString("android-surface-size",frame.width()+"x"+frame.height());
+    }
+
+    @Override public void surfaceCreated(SurfaceHolder holder){
+        surface=holder;
+        if(initialized && !closed)attachVideo();
+        else startIfReady();
+    }
+    @Override public void surfaceChanged(SurfaceHolder h,int format,int width,int height){
+        if(attached)MPVLib.setPropertyString("android-surface-size",width+"x"+height);
+    }
     @Override public void surfaceDestroyed(SurfaceHolder holder){
-        if(attached){engine.detachSurface();attached=false;}
+        if(attached){
+            MPVLib.setPropertyString("vo","null");
+            MPVLib.setOptionString("force-window","no");
+            MPVLib.detachSurface();
+            attached=false;
+        }
         surface=null;
     }
     private void shutdown(){
         if(closed)return;
         closed=true;ui.removeCallbacksAndMessages(null);
-        if(engine!=null){
-            save();
-            scope.close();
-            if(attached){engine.detachSurface();attached=false;}
-            engine.destroy();engine=null;
-        }else scope.close();
+        save();
+        scope.close();
+        if(created){
+            if(attached){MPVLib.detachSurface();attached=false;}
+            MPVLib.destroy();
+            initialized=false;
+            created=false;
+        }
         worker.shutdownNow();
         for(File copy:copies)copy.delete();
         if(catalog!=null)catalog.close();

@@ -1,7 +1,6 @@
 package io.mycinema.tv;
 
 import android.app.Instrumentation;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.SystemClock;
@@ -11,7 +10,6 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import is.xyz.mpv.MPVLib;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.reflect.Field;
 
 final class DualSubtitleScenario {
     private final Instrumentation test;
@@ -43,10 +41,6 @@ final class DualSubtitleScenario {
         }
         test.waitForIdleSync();
     }
-    private MPVLib mpv()throws Exception{
-        Field field=DualSubtitleActivity.class.getDeclaredField("engine");field.setAccessible(true);
-        return (MPVLib)field.get(activity);
-    }
     private void pick(int slot,String label,boolean external)throws Exception{
         test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
         tap(slot==0?"主字幕":"副字幕");
@@ -54,30 +48,70 @@ final class DualSubtitleScenario {
         tap(label);
     }
     private void pair(String primary,String secondary,int index)throws Exception{
-        waitFor(()->primary.equals(mpv().getPropertyString("sub-text"))
-            &&secondary.equals(mpv().getPropertyString("secondary-sub-text")),"pair "+index);
+        waitFor(()->primary.equals(MPVLib.getPropertyString("sub-text"))
+            &&secondary.equals(MPVLib.getPropertyString("secondary-sub-text")),"pair "+index);
+        test.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
         Thread.sleep(300);
         Bitmap capture=test.getUiAutomation().takeScreenshot();
         if(capture==null)throw new AssertionError("dual subtitle screenshot");
         try(FileOutputStream output=new FileOutputStream(new File(activity.getFilesDir(),"dual-"+index+".png"))){
             capture.compress(Bitmap.CompressFormat.PNG,100,output);
+            for(int slot=0;slot<2;slot++){
+                String visibility=slot==0?"sub-visibility":"secondary-sub-visibility";
+                MPVLib.setPropertyBoolean(visibility,false);
+                try{
+                    final boolean lower=slot==0;
+                    waitFor(()->{
+                        Bitmap single=test.getUiAutomation().takeScreenshot();
+                        if(single==null)return false;
+                        try{return changedInSubtitleBand(capture,single,lower);}
+                        finally{single.recycle();}
+                    },"visible "+visibility+" pair "+index);
+                }finally{MPVLib.setPropertyBoolean(visibility,true);}
+                Thread.sleep(250);
+            }
         }finally{capture.recycle();}
     }
-    void run(MediaSources.Entry video)throws Exception{
-        activity=(DualSubtitleActivity)test.startActivitySync(new Intent(test.getTargetContext(),DualSubtitleActivity.class)
-            .putExtra("mediaKey",video.key()).putExtra("position",5000L).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+    // With a paused frame and hidden controls only the selected subtitle should disappear.
+    private static boolean changedInSubtitleBand(Bitmap both,Bitmap single,boolean lower){
+        int h=both.getHeight(),w=both.getWidth(),changed=0,other=0;
+        int[] a=new int[w],b=new int[w];
+        for(int y=0;y<h;y+=2){
+            both.getPixels(a,0,w,0,y,w,1);
+            single.getPixels(b,0,w,0,y,w,1);
+            for(int x=w/10;x<w*9/10;x+=2){
+                if(a[x]==b[x])continue;
+                if((y>=h/2)==lower)changed++;
+                else other++;
+            }
+        }
+        return changed>=80 && other<changed/4;
+    }
+
+    void run()throws Exception{
+        Instrumentation.ActivityMonitor monitor=test.addMonitor(DualSubtitleActivity.class.getName(),null,false);
         try{
-            waitFor(()->mpv()!=null&&mpv().getPropertyDouble("time-pos")!=null&&mpv().getPropertyDouble("time-pos")>5,"first frame clock");
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
+            for(int row=0;row<8;row++)test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_CENTER);
+            activity=(DualSubtitleActivity)test.waitForMonitorWithTimeout(monitor,15000);
+            if(activity==null)throw new AssertionError("dual subtitle playback menu");
+            waitFor(()->{
+                android.view.accessibility.AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();
+                return root!=null && root.findAccessibilityNodeInfosByText("正在连接").isEmpty()
+                    && !root.findAccessibilityNodeInfosByText("副字幕").isEmpty();
+            },"connected dual subtitle controls");
+            waitFor(()->{Double t=MPVLib.getPropertyDouble("time-pos");return t!=null&&t>=19;},"continue from the primary player");
             test.sendKeyDownUpSync(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
-            waitFor(()->Boolean.TRUE.equals(mpv().getPropertyBoolean("pause")),"remote pause");
-            String embedded="My Cinema controlled playback test", second="SECONDARY EMBEDDED TEST";
+            waitFor(()->Boolean.TRUE.equals(MPVLib.getPropertyBoolean("pause")),"remote pause");
+            String embedded="My Cinema controlled playback test", second="副字幕测试 / SECONDARY EMBEDDED TEST";
             pick(0,"内嵌 1",false);pick(1,"内嵌 2",false);pair(embedded,second,0);
             pick(1,"附加B.srt",true);pair(embedded,"SECONDARY SIDECAR TEST",1);
             pick(0,"附加A.srt",true);pair("PRIMARY SIDECAR TEST","SECONDARY SIDECAR TEST",2);
             pick(1,"内嵌 2",false);pair("PRIMARY SIDECAR TEST",second,3);
             pick(1,"关闭",false);
-            waitFor(()->"PRIMARY SIDECAR TEST".equals(mpv().getPropertyString("sub-text"))
-                &&!"SECONDARY EMBEDDED TEST".equals(mpv().getPropertyString("secondary-sub-text")),"independent disable");
-        }finally{test.runOnMainSync(activity::finish);test.waitForIdleSync();}
+            waitFor(()->"PRIMARY SIDECAR TEST".equals(MPVLib.getPropertyString("sub-text"))
+                &&!second.equals(MPVLib.getPropertyString("secondary-sub-text")),"independent disable");
+        }finally{test.removeMonitor(monitor);if(activity!=null)test.runOnMainSync(activity::finish);test.waitForIdleSync();}
     }
 }

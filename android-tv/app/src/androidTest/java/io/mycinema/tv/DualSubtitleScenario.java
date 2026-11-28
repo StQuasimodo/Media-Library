@@ -22,6 +22,9 @@ final class DualSubtitleScenario {
         throw new AssertionError("dual subtitle: "+label);
     }
     private void tap(String label)throws Exception{
+        tap(label,false);
+    }
+    private void tap(String label,boolean scroll)throws Exception{
         Rect rect=new Rect();
         waitFor(()->{
             AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();
@@ -32,6 +35,7 @@ final class DualSubtitleScenario {
                     node.getBoundsInScreen(rect);if(node.isVisibleToUser()&&!rect.isEmpty())return true;
                 }
             }
+            if(scroll)scrollForward(root);
             return false;
         },label);
         long now=SystemClock.uptimeMillis();
@@ -40,6 +44,14 @@ final class DualSubtitleScenario {
             test.sendPointerSync(event);event.recycle();
         }
         test.waitForIdleSync();
+    }
+    private boolean scrollForward(AccessibilityNodeInfo node){
+        if(node.isScrollable()&&node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD))return true;
+        for(int i=0;i<node.getChildCount();i++){
+            AccessibilityNodeInfo child=node.getChild(i);
+            if(child!=null&&scrollForward(child))return true;
+        }
+        return false;
     }
     private void pick(int slot,String label,boolean external)throws Exception{
         test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
@@ -92,8 +104,7 @@ final class DualSubtitleScenario {
         Instrumentation.ActivityMonitor monitor=test.addMonitor(DualSubtitleActivity.class.getName(),null,false);
         try{
             test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
-            for(int row=0;row<8;row++)test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
-            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_CENTER);
+            tap("双字幕播放",true);
             activity=(DualSubtitleActivity)test.waitForMonitorWithTimeout(monitor,15000);
             if(activity==null)throw new AssertionError("dual subtitle playback menu");
             waitFor(()->{

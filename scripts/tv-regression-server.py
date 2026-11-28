@@ -38,6 +38,8 @@ SUBTITLE_FILES = {
     'subtitle-auto': (QUARK_VIDEO_NAME[:-4]+'.zh-CN.ass', ass_subtitle('&H00B753EF','MY CINEMA AUTOMATIC')),
     'subtitle-manual': ('导演评论字幕.ass', ass_subtitle('&H0028A2F2','MY CINEMA MANUAL')),
     'subtitle-other-episode': ('Breaking.Bad.S02E02.zh-CN.ass', ass_subtitle('&H0000FF00','WRONG EPISODE')),
+    'subtitle-second-a': ('附加A.srt', b'1\n00:00:00,000 --> 00:02:55,000\nPRIMARY SIDECAR TEST\n'),
+    'subtitle-second-b': ('附加B.srt', b'1\n00:00:00,000 --> 00:02:55,000\nSECONDARY SIDECAR TEST\n'),
     'subtitle-external': (DAV_VIDEO_NAME[:-4]+'.srt', b'1\n00:00:00,000 --> 00:02:55,000\nEXTERNAL WEBDAV SUBTITLE\n'),
 }
 LOAD_FILES = {'load-720': 'load-720.mp4', 'load-1080': 'load-1080.mp4', 'load-4k': 'load-4k.mp4'}

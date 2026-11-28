@@ -53,6 +53,17 @@ public final class PlayerActivity extends Activity {
         LinearLayout actions=new LinearLayout(this);toggle=button("暂停 / 播放",this::toggle);toggle.setId(R.id.player_toggle);toggle.setNextFocusUpId(R.id.player_timeline);timeline.setNextFocusDownId(R.id.player_toggle);actions.addView(toggle);actions.addView(button("后退10秒",()->seek(-10000)));actions.addView(button("前进10秒",()->seek(10000)));actions.addView(button("音轨 / 字幕",this::tracks));actions.addView(button("重新连接",this::retry));actions.addView(button("退出播放",this::finish));android.widget.HorizontalScrollView rail=new android.widget.HorizontalScrollView(this);rail.setHorizontalScrollBarEnabled(false);rail.addView(actions);controls.addView(rail);setContentView(root);toggle.requestFocus();
     }
     @Override public void onWindowFocusChanged(boolean focus){super.onWindowFocusChanged(focus);if(focus){getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);scheduleHide();}}
+    @Override protected void onActivityResult(int request,int result,Intent data){
+        super.onActivityResult(request,result,data);
+        if(request==42 && result==RESULT_OK && data!=null)resume=data.getLongExtra("position",resume);
+    }
+    @Override protected void onRestart(){
+        super.onRestart();
+        if(catalog!=null&&file!=null){
+            String key=Json.text(file,"key");
+            resume=cloudProgress==null?catalog.position(key):cloudProgress.position(key,cloudVariant);
+        }
+    }
     @Override protected void onStart(){super.onStart();if(controller!=null)controller.start(video,resume,false);}
     private void retry(){if(controller!=null)controller.reconnect();}
     private void render(PlaybackController.Snapshot state){
@@ -72,14 +83,17 @@ public final class PlayerActivity extends Activity {
         if(controller==null)return;
         if(controller.engine()==null){showStreamDiagnostics();return;}
         RemoteUi.showList(new AlertDialog.Builder(this).setTitle("播放选项")
-            .setItems(new String[]{"选择音轨","选择字幕轨道","选择外挂字幕","调整音频同步","调整字幕同步","播放速度","播放信息","取流诊断"},
+            .setItems(new String[]{"选择音轨","选择字幕轨道","选择外挂字幕","调整音频同步","调整字幕同步","播放速度","播放信息","取流诊断","双字幕播放"},
                 (dialog,index)->{
                     if(index<2)selectTracks(index==0);
                     else if(index==2)chooseExternalSubtitle();
                     else if(index<5)adjustDelay(index==3);
                     else if(index==5)selectSpeed();
                     else if(index==6)playbackInfo();
-                    else showStreamDiagnostics();
+                    else if(index==7)showStreamDiagnostics();
+                    else startActivityForResult(new Intent(this,DualSubtitleActivity.class)
+                        .putExtra("mediaKey",Json.text(file,"key")).putExtra("cloudVariant",cloudVariant)
+                        .putExtra("position",controller.snapshot().position),42);
                 })
             .setNegativeButton("返回",null),0);
     }

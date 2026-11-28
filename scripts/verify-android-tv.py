@@ -27,7 +27,7 @@ with zipfile.ZipFile(apk) as archive:
     native = [name for name in names if name.startswith('lib/') and name.endswith('.so')]
     assert {name.split('/')[1] for name in native} == {'armeabi-v7a', 'x86'}
     for abi in ['armeabi-v7a', 'x86']:
-        for library in ['libvlc.so', 'libvlcjni.so', 'libc++_shared.so']:
+        for library in ['libvlc.so', 'libvlcjni.so', 'libc++_shared.so', 'libplayer.so', 'libmpv.so']:
             assert f'lib/{abi}/{library}' in native
     assert 'assets/licenses/LGPL-2.1.txt' in names
     assert 'assets/licenses/NOTICE.txt' in names
@@ -38,7 +38,7 @@ with zipfile.ZipFile(apk) as archive:
 report = {
     'version': version, 'developmentBuild': True, 'minSdk': 21, 'targetSdk': 35,
     'v1SignatureVerified': True, 'nativeLibraries': True, 'cpuAbiIndependent': False,
-    'nativeAbis': ['armeabi-v7a','x86'], 'player': 'LibVLC 3.7.7',
+    'nativeAbis': ['armeabi-v7a','x86'], 'player': 'LibVLC 3.7.7', 'dualSubtitlePlayer': 'mpv-android 2024-11-16',
     'source': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
     'run': os.environ.get('GITHUB_RUN_ID'), 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
     'bytes': apk.stat().st_size, 'actualTelevisionVerified': False,

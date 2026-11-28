@@ -37,7 +37,7 @@ collect() {
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q01-quark-dav-playing.png > "$out/q01-quark-dav-playing.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q02-cloud-versions.png > "$out/q02-cloud-versions.png" || true
   timeout 10s adb exec-out run-as io.mycinema.tv cat files/q03-cloud-hls-playing.png > "$out/q03-cloud-hls-playing.png" || true
-  for image in q04-auto-subtitle.png q05-manual-subtitle.png q06-playback-options.png q07-subtitle-picker.png; do
+  for image in q04-auto-subtitle.png q05-manual-subtitle.png q06-playback-options.png q07-subtitle-picker.png dual-0.png dual-1.png dual-2.png dual-3.png; do
     timeout 10s adb exec-out run-as io.mycinema.tv cat "files/$image" > "$out/$image" || true
   done
   # The following collection regression probes the PUBLIC TMDB endpoint first.
@@ -50,7 +50,7 @@ collect() {
 trap collect EXIT
 timeout 300s adb shell am instrument -w -e disposableEmulator true -e playbackLoad true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/load-instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/load-instrumentation.txt"
-timeout 420s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
+timeout 520s adb shell am instrument -w -e disposableEmulator true -e playback true -e buildRun "$GITHUB_RUN_ID" io.mycinema.tv.test/io.mycinema.tv.SmokeInstrumentation | tee "$out/instrumentation.txt"
 grep -q 'INSTRUMENTATION_RESULT: result=passed' "$out/instrumentation.txt"
 collect
 python3 - <<'PY'
@@ -58,6 +58,7 @@ import json,os
 report=json.load(open('.harness/tv-playback/report.json'))
 assert report['result']=='passed' and report['apiLevel']==22
 assert report['buildRun']==os.environ['GITHUB_RUN_ID']
+assert report['dualSubtitleFourCombinationsVerified']
 assert report['quarkAutoSubtitleRendered'] and report['quarkManualSubtitleRendered']
 assert report['externalDavSrtTrackVerified'] and report['subtitleCopiesRemovedOnExit']
 assert report['styledPlaybackDialogsAndDpadVerified']

@@ -161,6 +161,9 @@ final class ExternalSubtitleScenario {
             finish();
             await(this::noCopies,"Quark subtitle copies are removed on exit");
 
+            new DualSubtitleScenario(test).run(video);
+            Json.put(report,"dualSubtitleFourCombinationsVerified",true);
+
             MediaSources.Entry external=null;
             for(MediaSources.Entry file:sources.list("webdav",sources.root("webdav")))if(file.video())external=file;
             require(external!=null,"controlled external DAV video is present");

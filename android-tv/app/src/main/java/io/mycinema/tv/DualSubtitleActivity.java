@@ -45,7 +45,7 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
     private SurfaceHolder surface;
     private TextView status;
     private LinearLayout controls;
-    private boolean closed, created, initialized, attached;
+    private boolean closed, created, initialized, attached, checkedSidecars;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
@@ -178,6 +178,10 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
         int count;
         @Override public void run(){
             if(closed||!initialized)return;
+            if(!checkedSidecars && MPVLib.getPropertyDouble("time-pos")!=null){
+                checkedSidecars=true;
+                if(selectionEpoch[0]==0)matchPrimarySidecar();
+            }
             if(++count%5==0)save();
             if(Boolean.TRUE.equals(MPVLib.getPropertyBoolean("eof-reached"))){save();finish();return;}
             ui.postDelayed(this,1000);
@@ -201,6 +205,7 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
 
     private void choose(int slot){
         if(!initialized)return;
+        selectionEpoch[slot]++;
         List<String> labels=new ArrayList<>(); List<Integer> ids=new ArrayList<>();
         labels.add("关闭");ids.add(-1);
         Integer count=MPVLib.getPropertyInt("track-list/count");
@@ -230,7 +235,22 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
             status.setText("这条轨道已用于另一条字幕。");return;
         }
         MPVLib.command(new String[]{"set",properties[slot],id<0?"no":Integer.toString(id)});
+        String kind=id<0?"关":(externalTracks.containsValue(id)?"外挂 ":"内嵌 ")+id;
+        selectors[slot].setText((slot==0?"主字幕":"副字幕")+" · "+kind);
         status.setText("");
+    }
+
+    private void matchPrimarySidecar(){
+        worker.execute(()->{
+            try{
+                MediaSources sources=new MediaSources(this).withScope(scope);
+                List<MediaSources.Entry> files=SubtitleFiles.list(sources,file);
+                MediaSources.Entry match=SubtitleFiles.automatic(Json.text(file,"name"),files);
+                if(match!=null)ui.post(()->{
+                    if(!closed && selectionEpoch[0]==0)load(0,match);
+                });
+            }catch(Exception ignored){/* Manual selection remains available. */}
+        });
     }
 
     private void listSidecars(int slot){
@@ -334,6 +354,10 @@ public final class DualSubtitleActivity extends Activity implements SurfaceHolde
         for(File copy:copies)copy.delete();
         if(catalog!=null)catalog.close();
         if(cloud!=null)cloud.close();
+    }
+    @Override public void finish(){
+        if(initialized && !closed)save();
+        super.finish();
     }
     @Override protected void onStop(){shutdown();finish();super.onStop();}
     @Override protected void onDestroy(){shutdown();super.onDestroy();}

@@ -232,6 +232,10 @@ final class PlaybackLoadScenario {
             Json.put(report,"shared12Mbps720p",capped720);
             closePlayer();
             writeReport();
+            JSONObject moderate1080=measure("load-1080-moderate","load_shared_link",30);
+            Json.put(report,"shared12MbpsModerate1080p",moderate1080);
+            closePlayer();
+            writeReport();
             JSONObject capped1080=measure("load-1080","load_shared_link",30);
             Json.put(report,"shared12Mbps1080p",capped1080);
             closePlayer();
@@ -256,6 +260,7 @@ final class PlaybackLoadScenario {
             require(recovered.optString("playbackQuality").equals("continuous"),
                 "overlapped ranges did not sustain delayed 1080p");
             require(capped720.optString("playbackQuality").equals("continuous"),"720p failed on shared 12 Mb/s link");
+            require(moderate1080.optString("playbackQuality").equals("continuous"),"moderate 1080p failed on shared 12 Mb/s link");
             require(capped1080.optLong("firstFrameMs",-1)>=0 && !capped1080.optString("playbackQuality").equals("continuous"),
                 "expected actual 1080p playback to exceed the shared link budget");
             require(reproduced,"the delayed range case did not reproduce a measurable stall");

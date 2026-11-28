@@ -88,7 +88,7 @@ final class DualSubtitleScenario {
         return changed>=80 && other<changed/4;
     }
 
-    void run()throws Exception{
+    long run()throws Exception{
         Instrumentation.ActivityMonitor monitor=test.addMonitor(DualSubtitleActivity.class.getName(),null,false);
         try{
             test.sendKeyDownUpSync(KeyEvent.KEYCODE_MENU);
@@ -104,14 +104,23 @@ final class DualSubtitleScenario {
             waitFor(()->{Double t=MPVLib.getPropertyDouble("time-pos");return t!=null&&t>=19;},"continue from the primary player");
             test.sendKeyDownUpSync(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
             waitFor(()->Boolean.TRUE.equals(MPVLib.getPropertyBoolean("pause")),"remote pause");
+            waitFor(()->"MY CINEMA AUTOMATIC".equals(MPVLib.getPropertyString("sub-text")),"automatic primary sidecar");
             String embedded="My Cinema controlled playback test", second="副字幕测试 / SECONDARY EMBEDDED TEST";
             pick(0,"内嵌 1",false);pick(1,"内嵌 2",false);pair(embedded,second,0);
             pick(1,"附加B.srt",true);pair(embedded,"SECONDARY SIDECAR TEST",1);
             pick(0,"附加A.srt",true);pair("PRIMARY SIDECAR TEST","SECONDARY SIDECAR TEST",2);
             pick(1,"内嵌 2",false);pair("PRIMARY SIDECAR TEST",second,3);
+            double pausedAt=MPVLib.getPropertyDouble("time-pos");
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT);
+            waitFor(()->Math.abs(MPVLib.getPropertyDouble("time-pos")-pausedAt-10)<1.0,"seek while paused");
+            waitFor(()->"PRIMARY SIDECAR TEST".equals(MPVLib.getPropertyString("sub-text"))
+                &&second.equals(MPVLib.getPropertyString("secondary-sub-text")),"both tracks after seek");
             pick(1,"关闭",false);
             waitFor(()->"PRIMARY SIDECAR TEST".equals(MPVLib.getPropertyString("sub-text"))
                 &&!second.equals(MPVLib.getPropertyString("secondary-sub-text")),"independent disable");
+            test.sendKeyDownUpSync(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+            waitFor(()->MPVLib.getPropertyDouble("time-pos")>pausedAt+11,"remote resume");
+            return (long)(MPVLib.getPropertyDouble("time-pos")*1000);
         }finally{test.removeMonitor(monitor);if(activity!=null)test.runOnMainSync(activity::finish);test.waitForIdleSync();}
     }
 }

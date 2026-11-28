@@ -61,6 +61,8 @@ if(build.nativeLibraries){
   }
   if(code>=29){
     assert.equal(build.dualSubtitlePlayer,'mpv-android 2024-11-16');
+    const load=JSON.parse(readFileSync(join(evidence,'.harness/tv-playback/load-report.json'),'utf8'));
+    assert.equal(load.shared12MbpsModerate1080p.playbackQuality,'continuous');
     assert.equal(playback.dualSubtitleFourCombinationsVerified,true);
     assert.equal(playback.buildRun,runId);
   }

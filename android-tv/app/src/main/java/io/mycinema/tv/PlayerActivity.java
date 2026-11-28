@@ -50,7 +50,7 @@ public final class PlayerActivity extends Activity {
             if(code==KeyEvent.KEYCODE_DPAD_CENTER||code==KeyEvent.KEYCODE_ENTER){if(event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0){toggle();scheduleHide();}return true;}return false;
         });
         status=new TextView(this);status.setTextColor(MainActivity.PRIMARY);status.setTextSize(14);controls.addView(status);
-        LinearLayout actions=new LinearLayout(this);toggle=button("暂停 / 播放",this::toggle);toggle.setId(R.id.player_toggle);toggle.setNextFocusUpId(R.id.player_timeline);timeline.setNextFocusDownId(R.id.player_toggle);actions.addView(toggle);actions.addView(button("后退10秒",()->seek(-10000)));actions.addView(button("前进10秒",()->seek(10000)));actions.addView(button("音轨 / 字幕",this::tracks));actions.addView(button("重新连接",this::retry));actions.addView(button("退出播放",this::finish));android.widget.HorizontalScrollView rail=new android.widget.HorizontalScrollView(this);rail.setHorizontalScrollBarEnabled(false);rail.addView(actions);controls.addView(rail);setContentView(root);toggle.requestFocus();
+        LinearLayout actions=new LinearLayout(this);toggle=button("暂停 / 播放",this::toggle);toggle.setId(R.id.player_toggle);toggle.setNextFocusUpId(R.id.player_timeline);timeline.setNextFocusDownId(R.id.player_toggle);actions.addView(toggle);actions.addView(button("后退10秒",()->seek(-10000)));actions.addView(button("前进10秒",()->seek(10000)));actions.addView(button("音轨 / 字幕",this::tracks));actions.addView(button("双字幕",this::openDualSubtitles));actions.addView(button("重新连接",this::retry));actions.addView(button("退出播放",this::finish));android.widget.HorizontalScrollView rail=new android.widget.HorizontalScrollView(this);rail.setHorizontalScrollBarEnabled(false);rail.addView(actions);controls.addView(rail);setContentView(root);toggle.requestFocus();
     }
     @Override public void onWindowFocusChanged(boolean focus){super.onWindowFocusChanged(focus);if(focus){getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);scheduleHide();}}
     @Override protected void onActivityResult(int request,int result,Intent data){
@@ -91,11 +91,15 @@ public final class PlayerActivity extends Activity {
                     else if(index==5)selectSpeed();
                     else if(index==6)playbackInfo();
                     else if(index==7)showStreamDiagnostics();
-                    else startActivityForResult(new Intent(this,DualSubtitleActivity.class)
-                        .putExtra("mediaKey",Json.text(file,"key")).putExtra("cloudVariant",cloudVariant)
-                        .putExtra("position",controller.snapshot().position),42);
+                    else openDualSubtitles();
                 })
             .setNegativeButton("返回",null),0);
+    }
+    private void openDualSubtitles(){
+        if(controller==null)return;
+        startActivityForResult(new Intent(this,DualSubtitleActivity.class)
+            .putExtra("mediaKey",Json.text(file,"key")).putExtra("cloudVariant",cloudVariant)
+            .putExtra("position",controller.snapshot().position),42);
     }
     private void subtitleNotice(String message){
         if(!isFinishing())android.widget.Toast.makeText(this,message,android.widget.Toast.LENGTH_SHORT).show();

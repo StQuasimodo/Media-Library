@@ -42,7 +42,7 @@ SUBTITLE_FILES = {
     'subtitle-second-b': ('附加B.srt', b'1\n00:00:00,000 --> 00:02:55,000\nSECONDARY SIDECAR TEST\n'),
     'subtitle-external': (DAV_VIDEO_NAME[:-4]+'.srt', b'1\n00:00:00,000 --> 00:02:55,000\nEXTERNAL WEBDAV SUBTITLE\n'),
 }
-LOAD_FILES = {'load-720': 'load-720.mp4', 'load-1080': 'load-1080.mp4', 'load-4k': 'load-4k.mp4'}
+LOAD_FILES = {'load-1080-moderate': 'load-1080-moderate.mp4', 'load-720': 'load-720.mp4', 'load-1080': 'load-1080.mp4', 'load-4k': 'load-4k.mp4'}
 
 
 def png(color, width=160, height=240):

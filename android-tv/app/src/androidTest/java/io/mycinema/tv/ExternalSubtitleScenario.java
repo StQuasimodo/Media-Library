@@ -158,8 +158,9 @@ final class ExternalSubtitleScenario {
                 &&engine().getAudioTrack()==alternateAudio
                 &&engine().getSpuTrack()>=0&&painted(242,162,40,"q05-manual-subtitle.png"),
                 "manual ASS text replaces matching subtitle at the same playback position");
-            new DualSubtitleScenario(test).run();
-            await(()->engine()!=null&&engine().isPlaying()&&engine().getTime()>=19000,"return resumes original player");
+            long returnPosition=new DualSubtitleScenario(test).run();
+            await(()->engine()!=null&&engine().isPlaying()&&Math.abs(engine().getTime()-returnPosition)<3000,
+                "return resumes original player at the new position");
             finish();
             await(this::noCopies,"Quark subtitle copies are removed on exit");
             Json.put(report,"dualSubtitleFourCombinationsVerified",true);

@@ -43,7 +43,7 @@ public final class PlayerActivity extends Activity {
         timeline.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){
             public void onStartTrackingTouch(android.widget.SeekBar bar){draggingTimeline=true;remote.removeCallbacks(hideControls);}
             public void onProgressChanged(android.widget.SeekBar bar,int value,boolean fromUser){if(fromUser&&controller!=null){PlaybackController.Snapshot state=controller.snapshot();playbackTime.setText(clock(state.duration*value/1000)+" / "+clock(state.duration));}}
-            public void onStopTrackingTouch(android.widget.SeekBar bar){draggingTimeline=false;if(controller!=null){PlaybackController.Snapshot state=controller.snapshot();seek(state.duration*bar.getProgress()/1000-state.position);}scheduleHide();}
+            public void onStopTrackingTouch(android.widget.SeekBar bar){draggingTimeline=false;if(controller!=null){PlaybackController.Snapshot state=controller.snapshot();if(!controller.seekTo(state.duration*bar.getProgress()/1000))status.setText("当前媒体源尚不支持定位，或仍在缓冲。");}scheduleHide();}
         });
         timeline.setOnKeyListener((view,code,event)->{
             if(code==KeyEvent.KEYCODE_DPAD_LEFT||code==KeyEvent.KEYCODE_DPAD_RIGHT){if(event.getAction()==KeyEvent.ACTION_DOWN){long now=android.os.SystemClock.uptimeMillis();if(event.getRepeatCount()==0||now-lastSeekKey>=200){lastSeekKey=now;seek((code==KeyEvent.KEYCODE_DPAD_LEFT?-1:1)*(event.getRepeatCount()>8?30000:10000));}}return true;}

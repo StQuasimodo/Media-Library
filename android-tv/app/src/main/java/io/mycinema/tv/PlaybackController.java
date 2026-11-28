@@ -360,7 +360,16 @@ final class PlaybackController implements Closeable {
         playbackRate=rate;return true;
     }
     boolean seek(long delta){
-        if(player==null||restoreFailed||!player.isSeekable())return false;sample();long target=Math.max(0,position+delta);if(duration>0)target=Math.min(target,Math.max(0,duration-1000));player.setTime(target);return true;
+        if(player==null)return false;
+        sample();
+        return seekTo(position+delta);
+    }
+    boolean seekTo(long target){
+        if(player==null||restoreFailed||!player.isSeekable())return false;
+        target=Math.max(0,target);
+        if(duration>0)target=Math.min(target,Math.max(0,duration-1000));
+        player.setTime(target);
+        return true;
     }
     private void localLogin(MediaSources.Lease endpoint,int session,MediaPlayer engine,Media media){
         if(!endpoint.url.host().equals("127.0.0.1")||!endpoint.url.scheme().equals("http"))throw new IllegalArgumentException("Local endpoint required");

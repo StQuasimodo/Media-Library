@@ -40,7 +40,7 @@ SUBTITLE_FILES = {
     'subtitle-other-episode': ('Breaking.Bad.S02E02.zh-CN.ass', ass_subtitle('&H0000FF00','WRONG EPISODE')),
     'subtitle-external': (DAV_VIDEO_NAME[:-4]+'.srt', b'1\n00:00:00,000 --> 00:02:55,000\nEXTERNAL WEBDAV SUBTITLE\n'),
 }
-LOAD_FILES = {'load-1080': 'load-1080.mp4', 'load-4k': 'load-4k.mp4'}
+LOAD_FILES = {'load-720': 'load-720.mp4', 'load-1080': 'load-1080.mp4', 'load-4k': 'load-4k.mp4'}
 
 
 def png(color, width=160, height=240):
@@ -73,6 +73,18 @@ def serve(root, log):
              'pendingDownloads': 0, 'quarkGets': 0, 'unboundedQuarkGets': 0, 'maxQuarkRangeBytes': 0,
              'slowListStarts': 0, 'slowDavStarts': 0}
     lock = threading.Lock()
+    # One 12 Mb/s budget for every concurrent Range, including read-ahead.
+    link_lock = threading.Lock()
+    next_chunk_at = 0.0
+
+    def pace_shared_link(byte_count):
+        nonlocal next_chunk_at
+        with link_lock:
+            now = time.monotonic()
+            next_chunk_at = max(next_chunk_at, now) + byte_count * 8 / 12_000_000
+            delay = next_chunk_at - now
+        time.sleep(delay)
+
     expired_pair = threading.Barrier(2)
     cloud_expired_pair = threading.Barrier(2)
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -146,7 +158,7 @@ def serve(root, log):
                     return
                 body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
                 fids=body.get('fids',[])
-                if state['mode'] in ('load_clean','load_delayed','load_outage') and len(fids)==1 and fids[0] in LOAD_FILES:
+                if state['mode'] in ('load_clean','load_delayed','load_outage','load_shared_link') and len(fids)==1 and fids[0] in LOAD_FILES:
                     self.reply({'status':200,'code':0,'data':[{'download_url':'https://drive-pc.quark.cn/stream/'+LOAD_FILES[fids[0]]}]})
                     return
                 if state.get('subtitles') and len(fids)==1 and fids[0] in SUBTITLE_FILES:
@@ -336,6 +348,7 @@ def serve(root, log):
                 start=int(match[1]);end=min(int(match[2]) if match[2] else end,end)
                 if start>end:
                     self.send_response(416);self.send_header('Content-Range',f'bytes */{size}');self.send_header('Content-Length','0');self.end_headers();return
+            shared_link = load_source and state['mode'] == 'load_shared_link'
             if load_source and state['mode'] in ('load_delayed','load_outage') and start>=4*1024*1024:
                 time.sleep(3.5 if state['mode']=='load_delayed' else 9)
             with lock:
@@ -376,6 +389,7 @@ def serve(root, log):
                     while remaining>0:
                         chunk=stream.read(min(4096 if drop else 65536,remaining))
                         if not chunk:break
+                        if shared_link: pace_shared_link(len(chunk))
                         self.wfile.write(chunk);remaining-=len(chunk)
                         if drop:
                             self.wfile.flush()
@@ -400,7 +414,7 @@ def serve(root, log):
                     state['cloudMode']=cloud
                     mode = query.get('mode', [state['mode']])[0]
                     fault=query.get('fault',['none'])[0]
-                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree','load_clean','load_delayed','load_outage'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream','download_compat','download_both_400','download_auth_400']:
+                    if mode not in ['normal', 'offline', 'season3', 'rate_limit', 'images_fail', 'bridge_tree','load_clean','load_delayed','load_outage','load_shared_link'] or fault not in ['none','drop_expire','drop_always','bad_resume','bounded_only','expire_concurrent','slow_download','wrong_initial','slow_list','slow_dav','cloud_expire','cloud_expire_pair','cloud_drop_expire','cloud_slow_manifest','redirect_stream','deny_download','deny_stream','download_compat','download_both_400','download_auth_400']:
                         self.reply({'error': 'invalid fixture mode'}, 400)
                         return
                     target=None
@@ -449,7 +463,7 @@ def serve(root, log):
                         if slow: state['slowListStarts'] += 1
                     if slow: time.sleep(10)
                     rows=[{'fid':'movie-file','file_name':'Breaking.Bad.S02E01.1080p.WEB-DL.H264.AAC.mp4','file':True,'size':(root/'sample.mp4').stat().st_size}]
-                    if state['mode'] in ('load_clean','load_delayed','load_outage'):
+                    if state['mode'] in ('load_clean','load_delayed','load_outage','load_shared_link'):
                         rows=[{'fid':fid,'file_name':name,'file':True,'size':(root/name).stat().st_size}
                               for fid,name in LOAD_FILES.items()] if parent=='0' else []
                     if state['mode']=='bridge_tree':

@@ -18,7 +18,14 @@ ffmpeg -hide_banner -loglevel error -y -filter_threads 2 \
   -x265-params 'pools=2:frame-threads=2:hrd=1:strict-cbr=1:filler=1:log-level=error' \
   -c:a aac -b:a 128k -movflags +faststart -tag:v hvc1 "$root/load-4k.mp4"
 
-for fixture in load-1080 load-4k; do
+# Near the controlled shared link budget, with the same motion and audio source.
+ffmpeg -hide_banner -loglevel error -y -filter_threads 2 \
+  -f lavfi -i 'testsrc2=size=1280x720:rate=30' -f lavfi -i 'sine=frequency=440:sample_rate=48000' \
+  -t 28 -c:v libx264 -threads 3 -preset ultrafast -pix_fmt yuv420p \
+  -b:v 8M -minrate 8M -maxrate 8M -bufsize 8M -x264-params nal-hrd=cbr \
+  -c:a aac -b:a 128k -movflags +faststart "$root/load-720.mp4"
+
+for fixture in load-720 load-1080 load-4k; do
   ffprobe -v error -show_entries format=duration,bit_rate,size:stream=codec_name,profile,width,height,pix_fmt,avg_frame_rate \
     -of json "$root/$fixture.mp4" > "$out/$fixture-fixture.json"
 done
@@ -27,6 +34,7 @@ import json
 from pathlib import Path
 
 for file, width, codec, fps, min_bitrate in [
+    ('load-720', 1280, 'h264', '30/1', 7_000_000),
     ('load-1080', 1920, 'h264', '30/1', 20_000_000),
     ('load-4k', 3840, 'hevc', '24/1', 35_000_000),
 ]:

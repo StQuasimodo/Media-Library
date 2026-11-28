@@ -103,7 +103,14 @@ final class PlaybackController implements Closeable {
     }
 
     String streamDiagnostics(){
-        StringBuilder text=new StringBuilder(stateLabel(state));
+        boolean cloud=!Json.text(file,"_cloudVariant").isEmpty();
+        String route=cloud?"云端 HLS":Json.text(file,"source").equals("quark")?"夸克原画":"外部 WebDAV";
+        StringBuilder text=new StringBuilder(route).append(" · ").append(stateLabel(state));
+        long bytes=file.optLong("size",0);
+        if(!cloud && duration>0 && bytes>0){
+            double averageMbps=bytes*8.0/(duration*1000.0);
+            text.append(String.format(java.util.Locale.ROOT," · 文件平均 %.2f Mb/s",averageMbps));
+        }
         if(player!=null){
             long time=player.getTime();
             if(time>=0)text.append(" · 播放位置 ").append(time/1000).append(" 秒");

@@ -96,7 +96,7 @@ final class PlaybackLoadScenario {
             .putExtra("mediaKey",selected.key()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         FrameSample current=sample();
         while(current.pictures==0&&!current.state.equals("ERROR")
-            &&SystemClock.elapsedRealtime()-opened<(mode.equals("load_outage")?22000:FIRST_FRAME_LIMIT_MS)){
+            &&SystemClock.elapsedRealtime()-opened<((mode.equals("load_outage")||mode.equals("load_shared_link"))?25000:FIRST_FRAME_LIMIT_MS)){
             Thread.sleep(200);
             current=sample();
         }
@@ -181,7 +181,7 @@ final class PlaybackLoadScenario {
             android.content.ClipData content=clipboard.getPrimaryClip();
             if(content!=null)copied[0]=String.valueOf(content.getItemAt(0).getText());
         });
-        require(copied[0].contains("本次解码") && copied[0].contains("丢失") && copied[0].contains("播放位置")
+        require(copied[0].contains("夸克原画") && copied[0].contains("文件平均") && copied[0].contains("本次解码") && copied[0].contains("丢失") && copied[0].contains("播放位置")
             && copied[0].contains("等待上游响应")&&!copied[0].contains("https://")
             &&!copied[0].contains("__puus")&&!copied[0].contains("load-1080"),"clipboard contains only safe playback metrics");
     }
@@ -228,6 +228,15 @@ final class PlaybackLoadScenario {
             closePlayer();
             writeReport();
 
+            JSONObject capped720=measure("load-720","load_shared_link",30);
+            Json.put(report,"shared12Mbps720p",capped720);
+            closePlayer();
+            writeReport();
+            JSONObject capped1080=measure("load-1080","load_shared_link",30);
+            Json.put(report,"shared12Mbps1080p",capped1080);
+            closePlayer();
+            writeReport();
+
             JSONObject delayed=measure("load-1080","load_outage",30);
             boolean reproduced=delayed.optLong("longestFrameGapMs")>=2000
                 || delayed.optLong("advanceMs")<delayed.optLong("wallMs")*.75;
@@ -246,6 +255,9 @@ final class PlaybackLoadScenario {
                 "the improved case must encounter the same upstream delay");
             require(recovered.optString("playbackQuality").equals("continuous"),
                 "overlapped ranges did not sustain delayed 1080p");
+            require(capped720.optString("playbackQuality").equals("continuous"),"720p failed on shared 12 Mb/s link");
+            require(capped1080.optLong("firstFrameMs",-1)>=0 && !capped1080.optString("playbackQuality").equals("continuous"),
+                "expected actual 1080p playback to exceed the shared link budget");
             require(reproduced,"the delayed range case did not reproduce a measurable stall");
             Json.put(report,"result","passed");
             result.putString("result","passed");
